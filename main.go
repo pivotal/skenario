@@ -71,7 +71,7 @@ func main() {
 
 	w := csv.NewWriter(os.Stdout)
 
-	err = w.Write([]string{"time", "avg_concurrent_requests", "request_count", "desired_replicas"})
+	err = w.Write([]string{"time", "avg_concurrent_requests", "desired_replicas"})
 	if err != nil {
 		logger.Fatal("could not write header: %s", err.Error())
 	}
@@ -91,7 +91,7 @@ func main() {
 			PodName:                   fmt.Sprintf("simulator-pod-%d", i),
 			AverageConcurrentRequests: avgConcurrent,
 			//RequestCount:              reqCount,
-			LameDuck:                  false,
+			//LameDuck:                  false,
 		}
 		as.Record(ctx, stat)
 		desired, _ := as.Scale(ctx, t)

@@ -15,7 +15,7 @@ require (
 	github.com/knative/build v0.4.0 // indirect
 	github.com/knative/caching v0.0.0-20190118010831-97110f4e0cee // indirect
 	github.com/knative/pkg v0.0.0-20190225184048-41761b2c813c // indirect
-	github.com/knative/serving v0.4.0
+	github.com/knative/serving v0.4.1-0.20190304203539-5424ed3359ea
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -32,8 +32,8 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190226191147-529b322ea346 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.0.0-20190202010724-74b699b93c15 // indirect
-	k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb // indirect
+	k8s.io/api v0.0.0-20190202010724-74b699b93c15
+	k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb
 	k8s.io/client-go v10.0.0+incompatible
 	k8s.io/klog v0.2.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20190225204428-d50a959ae76a // indirect

@@ -57,6 +57,8 @@ github.com/knative/pkg v0.0.0-20190225184048-41761b2c813c h1:SDIyy8It5I5h/rUHMqe
 github.com/knative/pkg v0.0.0-20190225184048-41761b2c813c/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
 github.com/knative/serving v0.4.0 h1:bjpu17ZROxBYHlEtoNximwNWEosCa6KhFvBEcVpl/J0=
 github.com/knative/serving v0.4.0/go.mod h1:ljvMfwQy2qanaM/8xnBSK4Mz3Vv2NawC2fo5kFRJS1A=
+github.com/knative/serving v0.4.1-0.20190304203539-5424ed3359ea h1:yY0ui5LY1j5q00gU7eyeCQQCG+GWk59PnprReHOQtKw=
+github.com/knative/serving v0.4.1-0.20190304203539-5424ed3359ea/go.mod h1:ljvMfwQy2qanaM/8xnBSK4Mz3Vv2NawC2fo5kFRJS1A=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1 h1:mweAR1A6xJ3oS2pRaGiHgQ4OO8tzTaLawm8vnODuwDk=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
@@ -175,12 +177,8 @@ honnef.co/go/tools v0.0.0-20180728063816-88497007e858/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20180920025451-e3ad64cb4ed3/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 k8s.io/api v0.0.0-20190202010724-74b699b93c15 h1:AoUGjnJ3PJMFz+Rkp4lx3X+6mPUnY1MESJhbUSGX+pc=
 k8s.io/api v0.0.0-20190202010724-74b699b93c15/go.mod h1:iuAfoD4hCxJ8Onx9kaTIt30j7jUFS00AXQi6QMi99vA=
-k8s.io/api v0.0.0-20190226013409-f951fa7b8c72 h1:4wrH+M4Kpkbbjs4UzT7XOvuhgBczsd4eXfBn9T5WqKk=
-k8s.io/api v0.0.0-20190226013409-f951fa7b8c72/go.mod h1:iuAfoD4hCxJ8Onx9kaTIt30j7jUFS00AXQi6QMi99vA=
 k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb h1:+mNFBkhBgd0wFJ1K18cOYw3LVW7aMIM/pazb4i44aS0=
 k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
-k8s.io/apimachinery v0.0.0-20190223094358-dcb391cde5ca h1:rOczZwIfERvL7YLSQ96uI3NUYamzdK/MmSDIfChQRBk=
-k8s.io/apimachinery v0.0.0-20190223094358-dcb391cde5ca/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
 k8s.io/client-go v10.0.0+incompatible h1:F1IqCqw7oMBzDkqlcBymRq1450wD0eNqLE9jzUrIi34=
 k8s.io/client-go v10.0.0+incompatible/go.mod h1:7vJpHMYJwNQCWgzmNV+VYUl1zCObLyodBc8nIyt8L5s=
 k8s.io/klog v0.2.0 h1:0ElL0OHzF3N+OhoJTL0uca20SxtYt4X4+bzHeqrB83c=
