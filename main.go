@@ -110,7 +110,7 @@ func main() {
 			Style:     chart.StyleShow(),
 			Range: &chart.ContinuousRange{
 				Min:        0,
-				Max:        16,
+				Max:        30,
 				Domain:     0,
 				Descending: false,
 			},
