@@ -48,10 +48,10 @@ func main() {
 	config := &autoscaler.Config{
 		ContainerConcurrencyTargetPercentage: 1.0, // targeting 100% makes the test easier to read
 		// ContainerConcurrencyTargetDefault:    50.0,
-		MaxScaleUpRate:                       10.0,
-		StableWindow:                         stableWindow,
-		PanicWindow:                          panicWindow,
-		ScaleToZeroGracePeriod:               scaleToZeroGracePeriod,
+		MaxScaleUpRate:         10.0,
+		StableWindow:           stableWindow,
+		PanicWindow:            panicWindow,
+		ScaleToZeroGracePeriod: scaleToZeroGracePeriod,
 	}
 
 	dynConfig := autoscaler.NewDynamicConfig(config, logger)
@@ -79,13 +79,13 @@ func main() {
 	steps := int32(1000)
 
 	ch := chart.Chart{
-		Title:      fmt.Sprintf("Autoscaler Simulation %d", time.Now().UTC().Unix()),
+		Title: fmt.Sprintf("Autoscaler Simulation %d", time.Now().UTC().Unix()),
 		TitleStyle: chart.Style{
 			Show: true,
 		},
-		Background:     chart.Style{
-			Show:                false,
-			Padding:             chart.Box{
+		Background: chart.Style{
+			Show: false,
+			Padding: chart.Box{
 				Top:    80,
 				Left:   40,
 				Right:  20,
@@ -94,10 +94,10 @@ func main() {
 			},
 		},
 		XAxis: chart.XAxis{
-			Name: "Time",
-			NameStyle:      chart.StyleShow(),
-			Style: chart.StyleShow(),
-			Range:          &chart.ContinuousRange{
+			Name:      "Time",
+			NameStyle: chart.StyleShow(),
+			Style:     chart.StyleShow(),
+			Range: &chart.ContinuousRange{
 				Min:        0,
 				Max:        float64(steps),
 				Domain:     0,
@@ -105,10 +105,10 @@ func main() {
 			},
 		},
 		YAxis: chart.YAxis{
-			Name: "Avg Concurrent",
-			NameStyle:      chart.StyleShow(),
-			Style: chart.StyleShow(),
-			Range:          &chart.ContinuousRange{
+			Name:      "Avg Concurrent",
+			NameStyle: chart.StyleShow(),
+			Style:     chart.StyleShow(),
+			Range: &chart.ContinuousRange{
 				Min:        0,
 				Max:        16,
 				Domain:     0,
@@ -116,10 +116,10 @@ func main() {
 			},
 		},
 		YAxisSecondary: chart.YAxis{
-			Name: "Desired Replicas",
-			NameStyle:      chart.StyleShow(),
-			Style: chart.StyleShow(),
-			Range:          &chart.ContinuousRange{
+			Name:      "Desired Replicas",
+			NameStyle: chart.StyleShow(),
+			Style:     chart.StyleShow(),
+			Range: &chart.ContinuousRange{
 				Min:        0,
 				Max:        16,
 				Domain:     0,
@@ -133,16 +133,16 @@ func main() {
 	}
 
 	desiredPoints := chart.ContinuousSeries{
-		Name:            "Desired Replicas",
-		Style:           chart.StyleShow(),
+		Name:  "Desired Replicas",
+		Style: chart.StyleShow(),
 	}
 	runningPoints := chart.ContinuousSeries{
-		Name:            "Running Replicas",
-		Style:           chart.StyleShow(),
+		Name:  "Running Replicas",
+		Style: chart.StyleShow(),
 	}
 	concurrentPoints := chart.ContinuousSeries{
-		Name:            "Avg Concurrency",
-		Style:           chart.StyleShow(),
+		Name:  "Avg Concurrency",
+		Style: chart.StyleShow(),
 	}
 
 	for i := int32(0); i < steps; i++ {
@@ -188,7 +188,6 @@ func main() {
 
 	ch.Series = []chart.Series{desiredPoints, runningPoints, concurrentPoints}
 
-
 	pngFile, err := os.OpenFile("chart.png", os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		logger.Fatalf("could not open or create chart file: %s", err.Error())
@@ -208,7 +207,7 @@ type SimStepper interface {
 }
 
 type linear struct {
-	step int
+	step        int
 	lastDesired int32
 }
 
