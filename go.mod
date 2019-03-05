@@ -25,6 +25,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/prometheus/common v0.2.0
 	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/wcharczuk/go-chart v2.0.2-0.20190219185203-9852fce5a172+incompatible // indirect
 	go.opencensus.io v0.19.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect

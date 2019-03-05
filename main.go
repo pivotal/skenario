@@ -2,13 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/plotutil"
-	"gonum.org/v1/plot/vg"
+	"github.com/wcharczuk/go-chart"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -18,7 +14,6 @@ import (
 	"k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"gonum.org/v1/plot"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakes "k8s.io/client-go/kubernetes/fake"
@@ -51,9 +46,9 @@ func main() {
 	endpointsInformer = informerFactory.Core().V1().Endpoints()
 
 	config := &autoscaler.Config{
-		ContainerConcurrencyTargetPercentage: 10.0, // targeting 100% makes the test easier to read
-		ContainerConcurrencyTargetDefault:    80.0,
-		MaxScaleUpRate:                       2.0,
+		ContainerConcurrencyTargetPercentage: 1.0, // targeting 100% makes the test easier to read
+		// ContainerConcurrencyTargetDefault:    50.0,
+		MaxScaleUpRate:                       10.0,
 		StableWindow:                         stableWindow,
 		PanicWindow:                          panicWindow,
 		ScaleToZeroGracePeriod:               scaleToZeroGracePeriod,
@@ -73,94 +68,180 @@ func main() {
 
 	t := time.Now()
 
-	w := csv.NewWriter(os.Stdout)
-
-	err = w.Write([]string{"time", "avg_concurrent_requests", "desired_replicas"})
-	if err != nil {
-		logger.Fatal("could not write header: %s", err.Error())
-	}
+	// w := csv.NewWriter(os.Stdout)
+	// err = w.Write([]string{"time", "avg_concurrent_requests", "desired_replicas"})
+	// if err != nil {
+	// 	logger.Fatal("could not write header: %s", err.Error())
+	// }
 
 	var stepper SimStepper
 	stepper = &linear{step: 0}
-	steps := int32(500)
+	steps := int32(1000)
 
-	plot, err := plot.New()
-	if err != nil {
-		panic(err)
+	ch := chart.Chart{
+		Title:      fmt.Sprintf("Autoscaler Simulation %d", time.Now().UTC().Unix()),
+		TitleStyle: chart.Style{
+			Show: true,
+		},
+		Background:     chart.Style{
+			Show:                false,
+			Padding:             chart.Box{
+				Top:    80,
+				Left:   40,
+				Right:  20,
+				Bottom: 20,
+				IsSet:  false,
+			},
+		},
+		XAxis: chart.XAxis{
+			Name: "Time",
+			NameStyle:      chart.StyleShow(),
+			Style: chart.StyleShow(),
+			Range:          &chart.ContinuousRange{
+				Min:        0,
+				Max:        float64(steps),
+				Domain:     0,
+				Descending: false,
+			},
+		},
+		YAxis: chart.YAxis{
+			Name: "Avg Concurrent",
+			NameStyle:      chart.StyleShow(),
+			Style: chart.StyleShow(),
+			Range:          &chart.ContinuousRange{
+				Min:        0,
+				Max:        16,
+				Domain:     0,
+				Descending: false,
+			},
+		},
+		YAxisSecondary: chart.YAxis{
+			Name: "Desired Replicas",
+			NameStyle:      chart.StyleShow(),
+			Style: chart.StyleShow(),
+			Range:          &chart.ContinuousRange{
+				Min:        0,
+				Max:        16,
+				Domain:     0,
+				Descending: false,
+			},
+		},
 	}
 
-	plot.Title.Text = "Autoscaler Simulation"
-	plot.X.Label.Text = "Time"
-	plot.Y.Label.Text = "Something"
+	ch.Elements = []chart.Renderable{
+		chart.LegendLeft(&ch),
+	}
 
-	desiredPoints := make(plotter.XYs, steps)
-	concurrentPoints := make(plotter.XYs, steps)
-
+	desiredPoints := chart.ContinuousSeries{
+		Name:            "Desired Replicas",
+		Style:           chart.StyleShow(),
+	}
+	runningPoints := chart.ContinuousSeries{
+		Name:            "Running Replicas",
+		Style:           chart.StyleShow(),
+	}
+	concurrentPoints := chart.ContinuousSeries{
+		Name:            "Avg Concurrency",
+		Style:           chart.StyleShow(),
+	}
 
 	for i := int32(0); i < steps; i++ {
 		stepper.Step(int(i))
 
 		t = t.Add(time.Second)
-		avgConcurrent := float64(stepper.AverageConcurrent())
-		// reqCount := i
+		avgConcurrent := stepper.AverageConcurrent()
+		reqCount := stepper.RequestCount()
 
-		stat := autoscaler.Stat{
-			Time:                      &t,
-			PodName:                   fmt.Sprintf("simulator-pod-%d", i),
-			AverageConcurrentRequests: avgConcurrent,
-			// RequestCount:              reqCount,
+		for j := 0; j < stepper.RunningPods(); j++ {
+			stat := autoscaler.Stat{
+				Time:                      &t,
+				PodName:                   fmt.Sprintf("simulator-pod-%d", j),
+				AverageConcurrentRequests: avgConcurrent,
+				RequestCount:              int32(reqCount),
+			}
+			as.Record(ctx, stat)
 		}
-		as.Record(ctx, stat)
 		desired, _ := as.Scale(ctx, t)
 
 		createEndpoints(addIps(makeEndpoints(), int(stepper.RunningPods())))
 
-		err = w.Write([]string{
-			strconv.Itoa(int(t.Unix())),
-			strconv.FormatFloat(avgConcurrent, 'f', 2, 64),
-			// strconv.Itoa(int(reqCount)),
-			strconv.Itoa(int(desired)),
-		})
-		if err != nil {
-			logger.Fatalf("could not write record: %s", err.Error())
-		}
+		// err = w.Write([]string{
+		// 	strconv.Itoa(int(t.Unix())),
+		// 	strconv.FormatFloat(avgConcurrent, 'f', 2, 64),
+		// 	// strconv.Itoa(int(reqCount)),
+		// 	strconv.Itoa(int(desired)),
+		// })
+		// if err != nil {
+		// 	logger.Fatalf("could not write record: %s", err.Error())
+		// }
 
-		desiredPoints[i].X = float64(t.Unix())
-		desiredPoints[i].Y = float64(desired)
-		concurrentPoints[i].X = float64(t.Unix())
-		concurrentPoints[i].Y = float64(avgConcurrent)
+		desiredPoints.XValues = append(desiredPoints.XValues, float64(i))
+		desiredPoints.YValues = append(desiredPoints.YValues, float64(desired))
+
+		runningPoints.XValues = append(runningPoints.XValues, float64(i))
+		runningPoints.YValues = append(runningPoints.YValues, float64(stepper.RunningPods()))
+
+		concurrentPoints.XValues = append(concurrentPoints.XValues, float64(i))
+		concurrentPoints.YValues = append(concurrentPoints.YValues, float64(avgConcurrent))
 	}
-	w.Flush()
+	// w.Flush()
 
-	err = plotutil.AddLines(plot, "Desired Replicas", desiredPoints, "Avg Concurrency", concurrentPoints)
+	ch.Series = []chart.Series{desiredPoints, runningPoints, concurrentPoints}
+
+
+	pngFile, err := os.OpenFile("chart.png", os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
-		logger.Fatalf("could not add plot points: %s", err.Error())
+		logger.Fatalf("could not open or create chart file: %s", err.Error())
 	}
 
-	if err = plot.Save(12*vg.Inch, 8*vg.Inch, "points.png"); err != nil {
-		logger.Fatalf("could not save plot: %s", err.Error())
+	err = ch.Render(chart.PNG, pngFile)
+	if err != nil {
+		logger.Fatalf("could not render chart: %s", err.Error())
 	}
 }
 
 type SimStepper interface {
 	AverageConcurrent() float64
+	RequestCount() int
 	RunningPods() int
 	Step(step int)
 }
 
 type linear struct {
 	step int
+	lastDesired int32
 }
 
 func (l *linear) AverageConcurrent() float64 {
-	if l.step < 50 {
-		return float64(l.step)
+	return float64(l.RequestCount()) / float64(l.RunningPods())
+}
+
+func (l *linear) RequestCount() int {
+	if l.step < 100 {
+		return 10
+	} else if l.step < 200 {
+		return 20
+	} else if l.step < 300 {
+		return 40
+	} else if l.step < 600 {
+		return 80
 	}
-	return 50.0
+
+	return 10
 }
 
 func (l *linear) RunningPods() int {
-	return l.step
+	if l.step < 100 {
+		return 1
+	} else if l.step < 250 {
+		return 2
+	} else if l.step < 450 {
+		return 3
+	} else if l.step < 650 {
+		return 4
+	}
+
+	return 4
 }
 
 func (l *linear) Step(step int) {
