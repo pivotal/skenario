@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 	"os"
 	"strconv"
 	"time"
@@ -15,6 +18,7 @@ import (
 	"k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 
+	"gonum.org/v1/plot"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakes "k8s.io/client-go/kubernetes/fake"
@@ -24,7 +28,7 @@ const (
 	stableWindow           = 60 * time.Second
 	panicWindow            = 6 * time.Second
 	scaleToZeroGracePeriod = 30 * time.Second
-	testNamespace = "simulator-namespace"
+	testNamespace          = "simulator-namespace"
 )
 
 var (
@@ -47,9 +51,9 @@ func main() {
 	endpointsInformer = informerFactory.Core().V1().Endpoints()
 
 	config := &autoscaler.Config{
-		ContainerConcurrencyTargetPercentage: 1.0, // targeting 100% makes the test easier to read
-		ContainerConcurrencyTargetDefault:    15.0,
-		MaxScaleUpRate:                       100.0,
+		ContainerConcurrencyTargetPercentage: 10.0, // targeting 100% makes the test easier to read
+		ContainerConcurrencyTargetDefault:    80.0,
+		MaxScaleUpRate:                       2.0,
 		StableWindow:                         stableWindow,
 		PanicWindow:                          panicWindow,
 		ScaleToZeroGracePeriod:               scaleToZeroGracePeriod,
@@ -62,7 +66,7 @@ func main() {
 		testNamespace,
 		"revisionService",
 		endpointsInformer,
-		100.0,
+		10.0,
 		&mockReporter{},
 	)
 	ctx := context.TODO()
@@ -78,20 +82,33 @@ func main() {
 
 	var stepper SimStepper
 	stepper = &linear{step: 0}
+	steps := int32(500)
 
-	for i := int32(0); i < 200; i++ {
+	plot, err := plot.New()
+	if err != nil {
+		panic(err)
+	}
+
+	plot.Title.Text = "Autoscaler Simulation"
+	plot.X.Label.Text = "Time"
+	plot.Y.Label.Text = "Something"
+
+	desiredPoints := make(plotter.XYs, steps)
+	concurrentPoints := make(plotter.XYs, steps)
+
+
+	for i := int32(0); i < steps; i++ {
 		stepper.Step(int(i))
 
 		t = t.Add(time.Second)
 		avgConcurrent := float64(stepper.AverageConcurrent())
-		//reqCount := i
+		// reqCount := i
 
 		stat := autoscaler.Stat{
 			Time:                      &t,
 			PodName:                   fmt.Sprintf("simulator-pod-%d", i),
 			AverageConcurrentRequests: avgConcurrent,
-			//RequestCount:              reqCount,
-			//LameDuck:                  false,
+			// RequestCount:              reqCount,
 		}
 		as.Record(ctx, stat)
 		desired, _ := as.Scale(ctx, t)
@@ -101,15 +118,28 @@ func main() {
 		err = w.Write([]string{
 			strconv.Itoa(int(t.Unix())),
 			strconv.FormatFloat(avgConcurrent, 'f', 2, 64),
-			//strconv.Itoa(int(reqCount)),
+			// strconv.Itoa(int(reqCount)),
 			strconv.Itoa(int(desired)),
 		})
-
 		if err != nil {
-			logger.Fatal("could not write record: %s", err.Error())
+			logger.Fatalf("could not write record: %s", err.Error())
 		}
+
+		desiredPoints[i].X = float64(t.Unix())
+		desiredPoints[i].Y = float64(desired)
+		concurrentPoints[i].X = float64(t.Unix())
+		concurrentPoints[i].Y = float64(avgConcurrent)
 	}
 	w.Flush()
+
+	err = plotutil.AddLines(plot, "Desired Replicas", desiredPoints, "Avg Concurrency", concurrentPoints)
+	if err != nil {
+		logger.Fatalf("could not add plot points: %s", err.Error())
+	}
+
+	if err = plot.Save(12*vg.Inch, 8*vg.Inch, "points.png"); err != nil {
+		logger.Fatalf("could not save plot: %s", err.Error())
+	}
 }
 
 type SimStepper interface {
@@ -123,7 +153,10 @@ type linear struct {
 }
 
 func (l *linear) AverageConcurrent() float64 {
-	return float64(l.step)
+	if l.step < 50 {
+		return float64(l.step)
+	}
+	return 50.0
 }
 
 func (l *linear) RunningPods() int {
@@ -131,9 +164,7 @@ func (l *linear) RunningPods() int {
 }
 
 func (l *linear) Step(step int) {
-	if step < 50 {
-		l.step = step
-	}
+	l.step = step
 }
 
 type mockReporter struct{}
