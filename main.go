@@ -27,7 +27,7 @@ const (
 	maxScaleUpRate         = 10.0
 	testNamespace          = "simulator-namespace"
 	testName               = "revisionService"
-	steps                  = int32(1000)
+	steps                  = 1000
 )
 
 var (
@@ -76,12 +76,12 @@ func main() {
 	var stepper SimStepper
 	stepper = &linear{step: 0}
 
-	ch, desiredPoints, runningPoints, concurrentPoints := prepareChart(steps)
+	ch, desiredPoints, runningPoints, concurrentPoints := prepareChart()
 
 	createEndpoints(makeEndpoints())
 
 	t = time.Unix(0, 0)
-	for i := int32(0); i < steps; i++ {
+	for i := 0; i < steps; i++ {
 		stepper.Step(int(i))
 
 		t = t.Add(time.Second)
@@ -121,7 +121,7 @@ func main() {
 	}
 }
 
-func prepareChart(steps int32) (chart.Chart, chart.ContinuousSeries, chart.ContinuousSeries, chart.ContinuousSeries) {
+func prepareChart() (chart.Chart, chart.ContinuousSeries, chart.ContinuousSeries, chart.ContinuousSeries) {
 	ch := chart.Chart{
 		Title: fmt.Sprintf("Autoscaler Simulation %d", time.Now().UTC().Unix()),
 		TitleStyle: chart.Style{
