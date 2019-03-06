@@ -85,15 +85,12 @@ func main() {
 		stepper.Step(int(i))
 
 		t = t.Add(time.Second)
-		avgConcurrent := stepper.AverageConcurrent()
-		reqCount := stepper.RequestCount()
-
 		for j := 0; j < stepper.RunningPods(); j++ {
 			stat := autoscaler.Stat{
 				Time:                      &t,
 				PodName:                   fmt.Sprintf("simulator-pod-%d", j),
-				AverageConcurrentRequests: avgConcurrent,
-				RequestCount:              int32(reqCount),
+				AverageConcurrentRequests: stepper.AverageConcurrent(),
+				RequestCount:              int32(stepper.RequestCount()),
 			}
 			as.Record(ctx, stat)
 		}
@@ -108,7 +105,7 @@ func main() {
 		runningPoints.YValues = append(runningPoints.YValues, float64(stepper.RunningPods()))
 
 		concurrentPoints.XValues = append(concurrentPoints.XValues, float64(i))
-		concurrentPoints.YValues = append(concurrentPoints.YValues, float64(avgConcurrent))
+		concurrentPoints.YValues = append(concurrentPoints.YValues, float64(stepper.AverageConcurrent()))
 	}
 
 	ch.Series = []chart.Series{desiredPoints, runningPoints, concurrentPoints}
