@@ -73,6 +73,8 @@ func main() {
 
 	ch, desiredPoints, runningPoints, concurrentPoints := prepareChart(steps)
 
+	createEndpoints(makeEndpoints())
+
 	for i := int32(0); i < steps; i++ {
 		stepper.Step(int(i))
 
@@ -91,7 +93,7 @@ func main() {
 		}
 		desired, _ := as.Scale(ctx, t)
 
-		createEndpoints(addIps(makeEndpoints(), int(stepper.RunningPods())))
+		updateEndpoints(addIps(makeEndpoints(), int(stepper.RunningPods())))
 
 		desiredPoints.XValues = append(desiredPoints.XValues, float64(i))
 		desiredPoints.YValues = append(desiredPoints.YValues, float64(desired))
@@ -308,6 +310,25 @@ func addIps(ep *corev1.Endpoints, ipCount int) *corev1.Endpoints {
 }
 
 func createEndpoints(ep *corev1.Endpoints) {
-	fakeClient.CoreV1().Endpoints(testNamespace).Create(ep)
-	endpointsInformer.Informer().GetIndexer().Add(ep)
+	_, err := fakeClient.CoreV1().Endpoints(testNamespace).Create(ep)
+	if err != nil {
+		logger.Fatalf("could not create endpoint: %s", err.Error())
+	}
+
+	err = endpointsInformer.Informer().GetIndexer().Add(ep)
+	if err != nil {
+		logger.Fatalf("could not create endpoint informer: %s", err.Error())
+	}
+}
+
+func updateEndpoints(ep *corev1.Endpoints) {
+	_, err := fakeClient.CoreV1().Endpoints(testNamespace).Update(ep)
+	if err != nil {
+		logger.Fatalf("could not update endpoint: %s", err.Error())
+	}
+
+	err = endpointsInformer.Informer().GetIndexer().Update(ep)
+	if err != nil {
+		logger.Fatalf("could not update endpoint informer: %s", err.Error())
+	}
 }
