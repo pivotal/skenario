@@ -24,6 +24,7 @@ const (
 	panicWindow            = 6 * time.Second
 	scaleToZeroGracePeriod = 30 * time.Second
 	targetConcurrency      = 5.0
+	maxScaleUpRate         = 10.0
 	testNamespace          = "simulator-namespace"
 	testName               = "revisionService"
 	steps                  = int32(1000)
@@ -49,7 +50,7 @@ func main() {
 	endpointsInformer = informerFactory.Core().V1().Endpoints()
 
 	config := &autoscaler.Config{
-		MaxScaleUpRate:         10.0,
+		MaxScaleUpRate:         maxScaleUpRate,
 		StableWindow:           stableWindow,
 		PanicWindow:            panicWindow,
 		ScaleToZeroGracePeriod: scaleToZeroGracePeriod,
