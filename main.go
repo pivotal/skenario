@@ -34,6 +34,7 @@ var (
 	endpointsInformer v1.EndpointsInformer
 	fakeClient        kubernetes.Interface
 	logger            *zap.SugaredLogger
+	t                 time.Time
 )
 
 func main() {
@@ -71,8 +72,6 @@ func main() {
 	)
 	ctx := context.TODO()
 
-	t := time.Now()
-
 	var stepper SimStepper
 	stepper = &linear{step: 0}
 
@@ -80,6 +79,7 @@ func main() {
 
 	createEndpoints(makeEndpoints())
 
+	t = time.Unix(0, 0)
 	for i := int32(0); i < steps; i++ {
 		stepper.Step(int(i))
 
