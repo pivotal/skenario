@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/wcharczuk/go-chart"
 	"os"
 	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/prometheus/common/log"
+	"github.com/wcharczuk/go-chart"
 	"go.uber.org/zap"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/informers/core/v1"
@@ -24,6 +24,7 @@ const (
 	panicWindow            = 6 * time.Second
 	scaleToZeroGracePeriod = 30 * time.Second
 	testNamespace          = "simulator-namespace"
+	testName               = "revisionService"
 )
 
 var (
@@ -46,8 +47,6 @@ func main() {
 	endpointsInformer = informerFactory.Core().V1().Endpoints()
 
 	config := &autoscaler.Config{
-		ContainerConcurrencyTargetPercentage: 1.0, // targeting 100% makes the test easier to read
-		// ContainerConcurrencyTargetDefault:    50.0,
 		MaxScaleUpRate:         10.0,
 		StableWindow:           stableWindow,
 		PanicWindow:            panicWindow,
@@ -56,23 +55,19 @@ func main() {
 
 	dynConfig := autoscaler.NewDynamicConfig(config, logger)
 
+	targetConcurrency := 5.0
+
 	as, err := autoscaler.New(
 		dynConfig,
 		testNamespace,
-		"revisionService",
+		testName,
 		endpointsInformer,
-		10.0,
+		targetConcurrency,
 		&mockReporter{},
 	)
 	ctx := context.TODO()
 
 	t := time.Now()
-
-	// w := csv.NewWriter(os.Stdout)
-	// err = w.Write([]string{"time", "avg_concurrent_requests", "desired_replicas"})
-	// if err != nil {
-	// 	logger.Fatal("could not write header: %s", err.Error())
-	// }
 
 	var stepper SimStepper
 	stepper = &linear{step: 0}
@@ -83,6 +78,8 @@ func main() {
 		TitleStyle: chart.Style{
 			Show: true,
 		},
+		Width:  1200,
+		Height: 800,
 		Background: chart.Style{
 			Show: false,
 			Padding: chart.Box{
@@ -94,7 +91,7 @@ func main() {
 			},
 		},
 		XAxis: chart.XAxis{
-			Name:      "Time",
+			Name:      "Time (S)",
 			NameStyle: chart.StyleShow(),
 			Style:     chart.StyleShow(),
 			Range: &chart.ContinuousRange{
@@ -105,7 +102,7 @@ func main() {
 			},
 		},
 		YAxis: chart.YAxis{
-			Name:      "Avg Concurrent",
+			Name:      "Avg Concurrent (QPS)",
 			NameStyle: chart.StyleShow(),
 			Style:     chart.StyleShow(),
 			Range: &chart.ContinuousRange{
@@ -116,7 +113,7 @@ func main() {
 			},
 		},
 		YAxisSecondary: chart.YAxis{
-			Name:      "Desired Replicas",
+			Name:      "Desired (Pods)",
 			NameStyle: chart.StyleShow(),
 			Style:     chart.StyleShow(),
 			Range: &chart.ContinuousRange{
@@ -133,15 +130,18 @@ func main() {
 	}
 
 	desiredPoints := chart.ContinuousSeries{
-		Name:  "Desired Replicas",
-		Style: chart.StyleShow(),
+		Name: "Desired Pods",
+		Style: chart.Style{
+			Show:        true,
+			StrokeWidth: 3,
+		},
 	}
 	runningPoints := chart.ContinuousSeries{
-		Name:  "Running Replicas",
+		Name:  "Running Pods",
 		Style: chart.StyleShow(),
 	}
 	concurrentPoints := chart.ContinuousSeries{
-		Name:  "Avg Concurrency",
+		Name:  "Avg Concurrent QPS",
 		Style: chart.StyleShow(),
 	}
 
@@ -165,16 +165,6 @@ func main() {
 
 		createEndpoints(addIps(makeEndpoints(), int(stepper.RunningPods())))
 
-		// err = w.Write([]string{
-		// 	strconv.Itoa(int(t.Unix())),
-		// 	strconv.FormatFloat(avgConcurrent, 'f', 2, 64),
-		// 	// strconv.Itoa(int(reqCount)),
-		// 	strconv.Itoa(int(desired)),
-		// })
-		// if err != nil {
-		// 	logger.Fatalf("could not write record: %s", err.Error())
-		// }
-
 		desiredPoints.XValues = append(desiredPoints.XValues, float64(i))
 		desiredPoints.YValues = append(desiredPoints.YValues, float64(desired))
 
@@ -184,13 +174,12 @@ func main() {
 		concurrentPoints.XValues = append(concurrentPoints.XValues, float64(i))
 		concurrentPoints.YValues = append(concurrentPoints.YValues, float64(avgConcurrent))
 	}
-	// w.Flush()
 
 	ch.Series = []chart.Series{desiredPoints, runningPoints, concurrentPoints}
 
 	pngFile, err := os.OpenFile("chart.png", os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
-		logger.Fatalf("could not open or create chart file: %s", err.Error())
+		logger.Fatalf("could not open or create chart.png file: %s", err.Error())
 	}
 
 	err = ch.Render(chart.PNG, pngFile)
@@ -224,6 +213,8 @@ func (l *linear) RequestCount() int {
 		return 40
 	} else if l.step < 600 {
 		return 80
+	} else if l.step < 80 {
+		return 20
 	}
 
 	return 10
@@ -232,11 +223,13 @@ func (l *linear) RequestCount() int {
 func (l *linear) RunningPods() int {
 	if l.step < 100 {
 		return 1
-	} else if l.step < 250 {
+	} else if l.step < 350 {
 		return 2
-	} else if l.step < 450 {
-		return 3
+	} else if l.step < 550 {
+		return 4
 	} else if l.step < 650 {
+		return 6
+	} else if l.step < 750 {
 		return 4
 	}
 
@@ -293,7 +286,7 @@ func makeEndpoints() *corev1.Endpoints {
 	return &corev1.Endpoints{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
-			Name:      "revisionService",
+			Name:      testName,
 		},
 	}
 }

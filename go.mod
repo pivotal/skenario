@@ -3,7 +3,9 @@ module knative-simulator
 go 1.12
 
 require (
+	github.com/blend/go-sdk v1.1.1 // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
 	github.com/google/go-containerregistry v0.0.0-20190222233527-d3e6a441f49f // indirect
@@ -25,14 +27,14 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/prometheus/common v0.2.0
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/wcharczuk/go-chart v2.0.2-0.20190219185203-9852fce5a172+incompatible // indirect
+	github.com/wcharczuk/go-chart v2.0.2-0.20190219185203-9852fce5a172+incompatible
 	go.opencensus.io v0.19.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
+	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 // indirect
 	golang.org/x/oauth2 v0.0.0-20190226191147-529b322ea346 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
-	gonum.org/v1/plot v0.0.0-20190226100656-17082f689264 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/api v0.0.0-20190202010724-74b699b93c15
 	k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb
