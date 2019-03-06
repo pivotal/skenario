@@ -33,6 +33,7 @@ var (
 	informerFactory   informers.SharedInformerFactory
 	endpointsInformer v1.EndpointsInformer
 	fakeClient        kubernetes.Interface
+	logger            *zap.SugaredLogger
 )
 
 func main() {
@@ -40,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatal("config error!!1!: %s", err.Error())
 	}
-	logger := unsugaredLogger.Sugar()
+	logger = unsugaredLogger.Sugar()
 
 	fakeClient = fakes.NewSimpleClientset()
 	informerFactory = informers.NewSharedInformerFactory(fakeClient, 0)
