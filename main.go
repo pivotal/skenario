@@ -36,8 +36,6 @@ var (
 )
 
 func main() {
-	fmt.Println("starting")
-
 	unsugaredLogger, err := zap.NewDevelopment()
 	if err != nil {
 		log.Fatal("config error!!1!: %s", err.Error())
