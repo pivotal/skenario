@@ -36,6 +36,7 @@ var (
 	fakeClient        kubernetes.Interface
 	logger            *zap.SugaredLogger
 	t                 time.Time
+	stepper SimStepper
 )
 
 func main() {
@@ -44,43 +45,16 @@ func main() {
 		log.Fatal("config error!!1!: %s", err.Error())
 	}
 	logger = unsugaredLogger.Sugar()
-
-	fakeClient = fakes.NewSimpleClientset()
-	informerFactory = informers.NewSharedInformerFactory(fakeClient, 0)
-	endpointsInformer = informerFactory.Core().V1().Endpoints()
-
-	config := &autoscaler.Config{
-		MaxScaleUpRate:         maxScaleUpRate,
-		StableWindow:           stableWindow,
-		PanicWindow:            panicWindow,
-		ScaleToZeroGracePeriod: scaleToZeroGracePeriod,
-	}
-
-	dynConfig := autoscaler.NewDynamicConfig(config, logger)
-
-	statsReporter, err := autoscaler.NewStatsReporter(testNamespace, testName, "config-1", "revision-1")
+	as, err := prepareAutoscaler()
 	if err != nil {
-		logger.Fatalf("could not create stats reporter: %s", err.Error())
+		logger.Fatalf("could not prepare autoscaler: %s", err.Error())
 	}
-
-	as, err := autoscaler.New(
-		dynConfig,
-		testNamespace,
-		testName,
-		endpointsInformer,
-		targetConcurrency,
-		statsReporter,
-	)
-	ctx := context.TODO()
-
-	var stepper SimStepper
-	stepper = &linear{step: 0}
-
 	ch, desiredPoints, runningPoints, concurrentPoints := prepareChart()
-
+	ctx := context.TODO()
+	stepper = &linear{step: 0}
 	createEndpoints(makeEndpoints())
-
 	t = time.Unix(0, 0)
+
 	for i := 0; i < steps; i++ {
 		stepper.Step(int(i))
 
@@ -119,6 +93,35 @@ func main() {
 	if err != nil {
 		logger.Fatalf("could not render chart: %s", err.Error())
 	}
+}
+
+func prepareAutoscaler() (*autoscaler.Autoscaler, error) {
+	fakeClient = fakes.NewSimpleClientset()
+	informerFactory = informers.NewSharedInformerFactory(fakeClient, 0)
+	endpointsInformer = informerFactory.Core().V1().Endpoints()
+
+	config := &autoscaler.Config{
+		MaxScaleUpRate:         maxScaleUpRate,
+		StableWindow:           stableWindow,
+		PanicWindow:            panicWindow,
+		ScaleToZeroGracePeriod: scaleToZeroGracePeriod,
+	}
+
+	dynConfig := autoscaler.NewDynamicConfig(config, logger)
+
+	statsReporter, err := autoscaler.NewStatsReporter(testNamespace, testName, "config-1", "revision-1")
+	if err != nil {
+		logger.Fatalf("could not create stats reporter: %s", err.Error())
+	}
+
+	return autoscaler.New(
+		dynConfig,
+		testNamespace,
+		testName,
+		endpointsInformer,
+		targetConcurrency,
+		statsReporter,
+	)
 }
 
 func prepareChart() (chart.Chart, chart.ContinuousSeries, chart.ContinuousSeries, chart.ContinuousSeries) {
