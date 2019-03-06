@@ -23,8 +23,10 @@ const (
 	stableWindow           = 60 * time.Second
 	panicWindow            = 6 * time.Second
 	scaleToZeroGracePeriod = 30 * time.Second
+	targetConcurrency      = 5.0
 	testNamespace          = "simulator-namespace"
 	testName               = "revisionService"
+	steps                  = int32(1000)
 )
 
 var (
@@ -55,8 +57,6 @@ func main() {
 
 	dynConfig := autoscaler.NewDynamicConfig(config, logger)
 
-	targetConcurrency := 5.0
-
 	as, err := autoscaler.New(
 		dynConfig,
 		testNamespace,
@@ -71,7 +71,6 @@ func main() {
 
 	var stepper SimStepper
 	stepper = &linear{step: 0}
-	steps := int32(1000)
 
 	ch, desiredPoints, runningPoints, concurrentPoints := prepareChart(steps)
 
@@ -192,7 +191,7 @@ func prepareChart(steps int32) (chart.Chart, chart.ContinuousSeries, chart.Conti
 	}
 
 	return ch, desiredPoints, runningPoints, concurrentPoints
-	}
+}
 
 type SimStepper interface {
 	AverageConcurrent() float64
