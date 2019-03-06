@@ -73,6 +73,52 @@ func main() {
 	stepper = &linear{step: 0}
 	steps := int32(1000)
 
+	ch, desiredPoints, runningPoints, concurrentPoints := prepareChart(steps)
+
+	for i := int32(0); i < steps; i++ {
+		stepper.Step(int(i))
+
+		t = t.Add(time.Second)
+		avgConcurrent := stepper.AverageConcurrent()
+		reqCount := stepper.RequestCount()
+
+		for j := 0; j < stepper.RunningPods(); j++ {
+			stat := autoscaler.Stat{
+				Time:                      &t,
+				PodName:                   fmt.Sprintf("simulator-pod-%d", j),
+				AverageConcurrentRequests: avgConcurrent,
+				RequestCount:              int32(reqCount),
+			}
+			as.Record(ctx, stat)
+		}
+		desired, _ := as.Scale(ctx, t)
+
+		createEndpoints(addIps(makeEndpoints(), int(stepper.RunningPods())))
+
+		desiredPoints.XValues = append(desiredPoints.XValues, float64(i))
+		desiredPoints.YValues = append(desiredPoints.YValues, float64(desired))
+
+		runningPoints.XValues = append(runningPoints.XValues, float64(i))
+		runningPoints.YValues = append(runningPoints.YValues, float64(stepper.RunningPods()))
+
+		concurrentPoints.XValues = append(concurrentPoints.XValues, float64(i))
+		concurrentPoints.YValues = append(concurrentPoints.YValues, float64(avgConcurrent))
+	}
+
+	ch.Series = []chart.Series{desiredPoints, runningPoints, concurrentPoints}
+
+	pngFile, err := os.OpenFile("chart.png", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		logger.Fatalf("could not open or create chart.png file: %s", err.Error())
+	}
+
+	err = ch.Render(chart.PNG, pngFile)
+	if err != nil {
+		logger.Fatalf("could not render chart: %s", err.Error())
+	}
+}
+
+func prepareChart(steps int32) (chart.Chart, chart.ContinuousSeries, chart.ContinuousSeries, chart.ContinuousSeries) {
 	ch := chart.Chart{
 		Title: fmt.Sprintf("Autoscaler Simulation %d", time.Now().UTC().Unix()),
 		TitleStyle: chart.Style{
@@ -145,48 +191,8 @@ func main() {
 		Style: chart.StyleShow(),
 	}
 
-	for i := int32(0); i < steps; i++ {
-		stepper.Step(int(i))
-
-		t = t.Add(time.Second)
-		avgConcurrent := stepper.AverageConcurrent()
-		reqCount := stepper.RequestCount()
-
-		for j := 0; j < stepper.RunningPods(); j++ {
-			stat := autoscaler.Stat{
-				Time:                      &t,
-				PodName:                   fmt.Sprintf("simulator-pod-%d", j),
-				AverageConcurrentRequests: avgConcurrent,
-				RequestCount:              int32(reqCount),
-			}
-			as.Record(ctx, stat)
-		}
-		desired, _ := as.Scale(ctx, t)
-
-		createEndpoints(addIps(makeEndpoints(), int(stepper.RunningPods())))
-
-		desiredPoints.XValues = append(desiredPoints.XValues, float64(i))
-		desiredPoints.YValues = append(desiredPoints.YValues, float64(desired))
-
-		runningPoints.XValues = append(runningPoints.XValues, float64(i))
-		runningPoints.YValues = append(runningPoints.YValues, float64(stepper.RunningPods()))
-
-		concurrentPoints.XValues = append(concurrentPoints.XValues, float64(i))
-		concurrentPoints.YValues = append(concurrentPoints.YValues, float64(avgConcurrent))
+	return ch, desiredPoints, runningPoints, concurrentPoints
 	}
-
-	ch.Series = []chart.Series{desiredPoints, runningPoints, concurrentPoints}
-
-	pngFile, err := os.OpenFile("chart.png", os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		logger.Fatalf("could not open or create chart.png file: %s", err.Error())
-	}
-
-	err = ch.Render(chart.PNG, pngFile)
-	if err != nil {
-		logger.Fatalf("could not render chart: %s", err.Error())
-	}
-}
 
 type SimStepper interface {
 	AverageConcurrent() float64
