@@ -25,8 +25,6 @@ func (p *dummyProc) Advance(t time.Time, description string) {
 	add := time.Duration(r) * time.Nanosecond
 	nextTime := t.Add(add)
 
-	fmt.Printf("[%d] Scheduled event for %d\n", t.UnixNano(), nextTime.UnixNano())
-
 	p.count += 1
 	evt := &Event{
 		Time:        nextTime,
