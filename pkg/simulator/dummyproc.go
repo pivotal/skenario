@@ -21,7 +21,7 @@ func NewDummyProc(name string) Process {
 
 func (p *dummyProc) Advance(t time.Time, description string) {
 	fmt.Printf("[%d] %s\n", t.UnixNano(), description)
-	r := rand.Intn(1000000)
+	r := rand.Int63n(int64(time.Second*30))
 	add := time.Duration(r) * time.Nanosecond
 	nextTime := t.Add(add)
 
