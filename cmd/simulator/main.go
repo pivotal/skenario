@@ -1,19 +1,16 @@
 package main
 
 import (
-	"context"
 	"time"
 
 	"knative-simulator/pkg/simulator"
 )
 
 func main() {
-	env := simulator.NewEnvironment()
-	env.AddProcess("foo").Run()
-	env.AddProcess("bar").Run()
+	env := simulator.NewEnvironment(time.Unix(0,0), 10 * time.Millisecond)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
+	simulator.NewDummyProc("foo").Run(env)
+	simulator.NewDummyProc("bar").Run(env)
 
-	env.Run(ctx)
+	env.Run()
 }
