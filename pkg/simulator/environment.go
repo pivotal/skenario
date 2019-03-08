@@ -26,11 +26,10 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 		return l.Time.Before(r.Time)
 	})
 
-
 	env := &Environment{
 		futureEvents: heap,
-		simTime: begin,
-		endTime: begin.Add(runFor),
+		simTime:      begin,
+		endTime:      begin.Add(runFor),
 	}
 
 	termEvent := &Event{
