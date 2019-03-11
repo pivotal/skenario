@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	cold                   = "DeadCold"
-	diskPulling            = "Pulling"
-	diskWarm               = "DiskWarm"
-	launchingFromDisk      = "LaunchingFromDisk"
-	pageCacheWarm          = "PageCacheWarm"
-	launchingFromPageCache = "LaunchingFromPageCache"
-	liveProcess            = "LiveProcess"
+	StateCold                   = "DeadCold"
+	StateDiskPulling            = "Pulling"
+	StateDiskWarm               = "DiskWarm"
+	StateLaunchingFromDisk      = "LaunchingFromDisk"
+	StatePageCacheWarm          = "PageCacheWarm"
+	StateLaunchingFromPageCache = "LaunchingFromPageCache"
+	StateLiveProcess            = "LiveProcess"
 
 	beginPulling    = "begin_pulling"
 	finishPulling   = "finish_pulling"
@@ -27,11 +27,11 @@ const (
 )
 
 var (
-	EvtBeginPulling            = fsm.EventDesc{Name: beginPulling, Src: []string{cold}, Dst: diskPulling}
-	EvtFinishPulling           = fsm.EventDesc{Name: finishPulling, Src: []string{diskPulling}, Dst: diskWarm}
-	EvtLaunchFromDisk          = fsm.EventDesc{Name: launchFromDisk, Src: []string{diskWarm}, Dst: launchingFromDisk}
-	EvtFinishLaunchingFromDisk = fsm.EventDesc{Name: finishLaunching, Src: []string{launchingFromDisk, launchingFromPageCache}, Dst: liveProcess}
-	EvtKillProcess             = fsm.EventDesc{Name: killProcess, Src: []string{liveProcess}, Dst: pageCacheWarm}
+	evtBeginPulling            = fsm.EventDesc{Name: beginPulling, Src: []string{StateCold}, Dst: StateDiskPulling}
+	evtFinishPulling           = fsm.EventDesc{Name: finishPulling, Src: []string{StateDiskPulling}, Dst: StateDiskWarm}
+	evtLaunchFromDisk          = fsm.EventDesc{Name: launchFromDisk, Src: []string{StateDiskWarm}, Dst: StateLaunchingFromDisk}
+	evtFinishLaunchingFromDisk = fsm.EventDesc{Name: finishLaunching, Src: []string{StateLaunchingFromDisk, StateLaunchingFromPageCache}, Dst: StateLiveProcess}
+	evtKillProcess             = fsm.EventDesc{Name: killProcess, Src: []string{StateLiveProcess}, Dst: StatePageCacheWarm}
 )
 
 type Executable struct {
@@ -80,27 +80,38 @@ func (e *Executable) Advance(t time.Time, eventName string) (identifier, outcome
 
 func (e *Executable) Run(env *simulator.Environment) {
 	e.env = env
-
 	r := rand.Intn(100)
+
+	var kickoffEventName string
+	switch e.fsm.Current() {
+	case StateCold:
+		kickoffEventName = beginPulling
+	case StateDiskWarm:
+		kickoffEventName = launchFromDisk
+	default:
+		fmt.Println("Info: ignored state", e.fsm.Current(), "and set to", StateCold)
+		e.fsm.SetState(StateCold)
+		kickoffEventName = beginPulling
+	}
 
 	env.Schedule(&simulator.Event{
 		Time:        env.Time().Add(time.Duration(r) * time.Millisecond),
-		EventName:   EvtBeginPulling.Name,
+		EventName:   kickoffEventName,
 		AdvanceFunc: e.Advance,
 	})
 }
 
-func NewExecutable(name string) *Executable {
+func NewExecutable(name , initialState string) *Executable {
 	return &Executable{
 		name: name,
 		fsm: fsm.NewFSM(
-			cold,
+			initialState,
 			fsm.Events{
-				EvtBeginPulling,
-				EvtFinishPulling,
-				EvtLaunchFromDisk,
-				EvtFinishLaunchingFromDisk,
-				EvtKillProcess,
+				evtBeginPulling,
+				evtFinishPulling,
+				evtLaunchFromDisk,
+				evtFinishLaunchingFromDisk,
+				evtKillProcess,
 			},
 			fsm.Callbacks{},
 		),
