@@ -6,13 +6,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/looplab/fsm"
 	"k8s.io/client-go/tools/cache"
 )
 
 type Environment struct {
 	futureEvents *cache.Heap
 	simTime      time.Time
+	startTime    time.Time
 	endTime      time.Time
+
+	fsm *fsm.FSM
 }
 
 func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
@@ -29,22 +33,39 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	env := &Environment{
 		futureEvents: heap,
 		simTime:      begin,
+		startTime:    begin,
 		endTime:      begin.Add(runFor),
+	}
+
+	env.fsm = fsm.NewFSM(
+		"STARTING",
+		fsm.Events{
+			{Name: "start", Src: []string{"STARTING"}, Dst: "RUNNING"},
+			{Name: "terminate", Src: []string{"RUNNING"}, Dst: "TERMINATED"},
+		},
+		fsm.Callbacks{},
+	)
+
+	startEvent := &Event{
+		Time:        env.startTime,
+		EventName:   "start",
+		AdvanceFunc: env.Start,
 	}
 
 	termEvent := &Event{
 		Time:        env.endTime,
-		Description: "Termination event",
+		EventName:   "terminate",
 		AdvanceFunc: env.Terminate,
 	}
 
+	env.Schedule(startEvent)
 	env.Schedule(termEvent)
 
 	return env
 }
 
 func (env *Environment) Run() {
-	fmt.Printf("[%d] Simulation begins\n", env.simTime.UnixNano())
+	//fmt.Printf("[%d] Simulation begins\n", env.simTime.UnixNano())
 
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
@@ -56,13 +77,14 @@ func (env *Environment) Run() {
 
 		next := nextIface.(*Event)
 		env.simTime = next.Time
-		next.AdvanceFunc(next.Time, next.Description)
+		procName, outcome := next.AdvanceFunc(next.Time, next.EventName)
+		fmt.Printf("[%d] [%s] %s: %s\n", next.Time.UnixNano(), procName, next.EventName, outcome)
 	}
 }
 
 func (env *Environment) Schedule(event *Event) {
 	if event.Time.After(env.endTime) {
-		fmt.Printf("Ignoring event scheduled after termination: [%d] %s\n", event.Time.UnixNano(), event.Description)
+		fmt.Printf("Ignoring event scheduled after termination: [%d] %s\n", event.Time.UnixNano(), event.EventName)
 		return
 	}
 
@@ -72,7 +94,11 @@ func (env *Environment) Schedule(event *Event) {
 	}
 }
 
-func (env *Environment) Terminate(time time.Time, description string) {
-	fmt.Printf("[%d] Reached termination event", time.UnixNano())
+func (env *Environment) Start(time time.Time, description string) (identifier, outcome string) {
+	return "Environment", "Started simulation"
+}
+
+func (env *Environment) Terminate(time time.Time, description string) (identifier, outcome string) {
 	env.futureEvents.Close()
+	return "Environment", "Reached termination event"
 }

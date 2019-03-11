@@ -4,50 +4,65 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/looplab/fsm"
 )
 
 type dummyProc struct {
-	name  string
-	env   *Environment
-	count int
+	name     string
+	env      *Environment
+	fsm      *fsm.FSM
+	evtCount map[string]int
 }
 
-func NewDummyProc(name string) Process {
-	return &dummyProc{
-		name:  name,
-		count: 0,
+func NewDummyProc(name, initialState string) Process {
+	dp := &dummyProc{
+		name: name,
+		evtCount: make(map[string]int, 0),
 	}
+
+	dp.fsm = fsm.NewFSM(
+		initialState,
+		fsm.Events{
+			{Name: "foo->bar", Src: []string{"FOO"}, Dst: "BAR"},
+			{Name: "bar->foo", Src: []string{"BAR"}, Dst: "FOO"},
+		},
+		fsm.Callbacks{},
+	)
+
+	return dp
 }
 
-func (p *dummyProc) Advance(t time.Time, description string) {
-	fmt.Printf("[%d] %s\n", t.UnixNano(), description)
-	r := rand.Int63n(int64(time.Second*30))
+func (dp *dummyProc) Name() string {
+	return dp.name
+}
+
+func (dp *dummyProc) Advance(t time.Time, eventName string) (identifier, outcome string) {
+	r := rand.Int63n(int64(time.Second * 30))
 	add := time.Duration(r) * time.Nanosecond
 	nextTime := t.Add(add)
+	dp.evtCount[eventName]++
 
-	p.count += 1
-	evt := &Event{
+	dp.env.Schedule(&Event{
 		Time:        nextTime,
-		Description: fmt.Sprintf("%s %d", p.name, p.count),
-		AdvanceFunc: p.Advance,
-	}
+		EventName:   dp.fsm.AvailableTransitions()[0],
+		AdvanceFunc: dp.Advance,
+	})
 
-	p.env.Schedule(evt)
-
-	return
+	return dp.name, fmt.Sprintf("# %d", dp.evtCount[eventName])
 }
 
-func (p *dummyProc) Run(env *Environment) {
-	p.env = env
+func (dp *dummyProc) Run(env *Environment) {
+	dp.env = env
 
 	r := rand.Intn(10000)
 	t := time.Unix(0, int64(r)).UTC()
 
 	evt := &Event{
 		Time:        t,
-		Description: fmt.Sprintf("process.Run() %s", p.name),
-		AdvanceFunc: p.Advance,
+		EventName:   "foo->bar",
+		AdvanceFunc: dp.Advance,
 	}
 
-	p.env.Schedule(evt)
+	dp.env.Schedule(evt)
 }

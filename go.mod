@@ -19,6 +19,7 @@ require (
 	github.com/knative/pkg v0.0.0-20190225184048-41761b2c813c // indirect
 	github.com/knative/serving v0.4.1-0.20190304203539-5424ed3359ea
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/looplab/fsm v0.1.0
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect

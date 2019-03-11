@@ -1,10 +1,9 @@
 package simulator
 
-import (
-	"time"
-)
+import "time"
 
 type Process interface {
-	Advance(t time.Time, description string)
+	Name() string
+	Advance(t time.Time, eventName string)  (identifier, outcome string)
 	Run(env *Environment)
 }

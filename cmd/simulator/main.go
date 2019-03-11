@@ -7,10 +7,10 @@ import (
 )
 
 func main() {
-	env := simulator.NewEnvironment(time.Unix(0, 0), 10*time.Minute)
+	env := simulator.NewEnvironment(time.Unix(0, 0), 1000*time.Minute)
 
-	simulator.NewDummyProc("foo").Run(env)
-	simulator.NewDummyProc("bar").Run(env)
+	simulator.NewDummyProc("fooFirst", "FOO").Run(env)
+	simulator.NewDummyProc("barFirst", "BAR").Run(env)
 
 	env.Run()
 }

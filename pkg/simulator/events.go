@@ -2,10 +2,10 @@ package simulator
 
 import "time"
 
-type AdvanceFunc func(time time.Time, description string)
+type AdvanceFunc func(t time.Time, eventName string)  (identifier, outcome string)
 
 type Event struct {
 	Time        time.Time
-	Description string
+	EventName   string
 	AdvanceFunc AdvanceFunc
 }
