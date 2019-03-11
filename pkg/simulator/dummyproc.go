@@ -15,7 +15,7 @@ type dummyProc struct {
 	evtCount map[string]int
 }
 
-func NewDummyProc(name, initialState string) Process {
+func NewDummyProc(name, initialState string) *dummyProc {
 	dp := &dummyProc{
 		name: name,
 		evtCount: make(map[string]int, 0),
@@ -31,10 +31,6 @@ func NewDummyProc(name, initialState string) Process {
 	)
 
 	return dp
-}
-
-func (dp *dummyProc) Name() string {
-	return dp.name
 }
 
 func (dp *dummyProc) Advance(t time.Time, eventName string) (identifier, outcome string) {
