@@ -15,7 +15,7 @@ func main() {
 	model.NewExecutable("exec-2", model.StateCold).Run(env)
 	model.NewExecutable("exec-3", model.StateCold).Run(env)
 	model.NewExecutable("exec-4", model.StateDiskWarm).Run(env)
-	model.NewExecutable("exec-5", model.StateDiskWarm).Run(env)
+	model.NewExecutable("exec-5", model.StatePageCacheWarm).Run(env)
 
 	env.Run()
 }
