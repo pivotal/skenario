@@ -65,8 +65,6 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 }
 
 func (env *Environment) Run() {
-	//fmt.Printf("[%d] Simulation begins\n", env.simTime.UnixNano())
-
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
 		if err != nil && strings.Contains(err.Error(), "heap is closed") {
@@ -101,4 +99,8 @@ func (env *Environment) Start(time time.Time, description string) (identifier, o
 func (env *Environment) Terminate(time time.Time, description string) (identifier, outcome string) {
 	env.futureEvents.Close()
 	return "Environment", "Reached termination event"
+}
+
+func (env *Environment) Time() time.Time {
+	return env.simTime
 }
