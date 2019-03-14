@@ -23,7 +23,7 @@ const (
 	finishPulling       = "finish_pulling"
 	launchFromDisk      = "launch_from_disk"
 	launchFromPageCache = "launch_from_page_cache"
-	finishLaunching     = "finish_launching"
+	finishLaunching     = "finish_launching_process"
 	killProcess         = "kill_process"
 )
 
@@ -37,43 +37,57 @@ var (
 )
 
 type Executable struct {
-	name string
-	fsm  *fsm.FSM
-	env  *simulator.Environment
+	name     string
+	fsm      *fsm.FSM
+	env      *simulator.Environment
+	replicas []*RevisionReplica
 }
 
 func (e *Executable) Advance(t time.Time, eventName string) (identifier, outcome string) {
-	nextEventMap := map[string]simulator.Event{
-		beginPulling: {
-			EventName:   finishPulling,
-			Time:        t.Add(90 * time.Second),
-			AdvanceFunc: e.Advance,
-		},
-		finishPulling: {
-			EventName:   launchFromDisk,
-			Time:        t.Add(1 * time.Second),
-			AdvanceFunc: e.Advance,
-		},
-		launchFromDisk: {
-			EventName:   finishLaunching,
-			Time:        t.Add(10 * time.Second),
-			AdvanceFunc: e.Advance,
-		},
-		launchFromPageCache: {
-			EventName:   finishLaunching,
-			Time:        t.Add(100 * time.Millisecond),
-			AdvanceFunc: e.Advance,
-		},
-		finishLaunching: {
-			EventName:   killProcess,
-			Time:        t.Add(30 * time.Second),
-			AdvanceFunc: e.Advance,
-		},
+	var nextExecEvtName, nextReplicaEvtName string
+	var nextExecEvtTime, nextReplicaEvtTime time.Time
+
+	switch eventName {
+	case beginPulling:
+		nextExecEvtName = finishPulling
+		nextExecEvtTime = t.Add(90 * time.Second)
+	case finishPulling:
+		nextExecEvtName = launchFromDisk
+		nextExecEvtTime = t.Add(1 * time.Second)
+	case launchFromDisk:
+		nextExecEvtName = finishLaunching
+		nextExecEvtTime = t.Add(10 * time.Second)
+	case launchFromPageCache:
+		nextExecEvtName = finishLaunching
+		nextExecEvtTime = t.Add(100 * time.Millisecond)
+	case finishLaunching:
+		nextReplicaEvtName = finishLaunchingReplica
+		nextReplicaEvtTime = t.Add(10 * time.Millisecond)
+	case killProcess:
+		nextReplicaEvtName = finishTerminatingReplica
+		nextReplicaEvtTime = t.Add(10 * time.Millisecond)
 	}
 
-	if eventName != killProcess {
-		evt := nextEventMap[eventName]
-		e.env.Schedule(&evt)
+	if eventName != killProcess && eventName != finishLaunching {
+		execEvt := &simulator.Event{
+			EventName:   nextExecEvtName,
+			Time:        nextExecEvtTime,
+			AdvanceFunc: e.Advance,
+		}
+
+		e.env.Schedule(execEvt)
+	}
+
+	if nextReplicaEvtName != "" {
+		for _, r := range e.replicas {
+			replicaEvt := &simulator.Event{
+				EventName:   nextReplicaEvtName,
+				Time:        nextReplicaEvtTime,
+				AdvanceFunc: r.Advance,
+			}
+
+			e.env.Schedule(replicaEvt)
+		}
 	}
 
 	current := e.fsm.Current()
@@ -108,6 +122,10 @@ func (e *Executable) Run(env *simulator.Environment) {
 		EventName:   kickoffEventName,
 		AdvanceFunc: e.Advance,
 	})
+}
+
+func (e *Executable) AddRevisionReplica(replica *RevisionReplica) {
+	e.replicas = append(e.replicas, replica)
 }
 
 func NewExecutable(name, initialState string) *Executable {

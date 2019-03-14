@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/looplab/fsm"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -65,6 +67,7 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 }
 
 func (env *Environment) Run() {
+	printer := message.NewPrinter(language.AmericanEnglish)
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
 		if err != nil && strings.Contains(err.Error(), "heap is closed") {
@@ -76,7 +79,7 @@ func (env *Environment) Run() {
 		next := nextIface.(*Event)
 		env.simTime = next.Time
 		procName, outcome := next.AdvanceFunc(next.Time, next.EventName)
-		fmt.Printf("[%d] [%s] %s: %s\n", next.Time.UnixNano(), procName, next.EventName, outcome)
+		printer.Printf("[%21d] [ %-15s ] [ %-30s ] %s\n", next.Time.UnixNano(), procName, next.EventName, outcome)
 	}
 }
 
