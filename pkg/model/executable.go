@@ -86,6 +86,8 @@ func (e *Executable) Advance(t time.Time, eventName string) (identifier, fromSta
 				AdvanceFunc: r.Advance,
 			}
 
+			r.nextEvt = replicaEvt
+
 			e.env.Schedule(replicaEvt)
 		}
 	}
@@ -99,7 +101,7 @@ func (e *Executable) Advance(t time.Time, eventName string) (identifier, fromSta
 	return e.name, current, e.fsm.Current(), ""
 }
 
-func (e *Executable) Run(env *simulator.Environment) {
+func (e *Executable) Run(env *simulator.Environment, startingAt time.Time) {
 	e.env = env
 	r := rand.Intn(100)
 
@@ -118,7 +120,7 @@ func (e *Executable) Run(env *simulator.Environment) {
 	}
 
 	env.Schedule(&simulator.Event{
-		Time:        env.Time().Add(time.Duration(r) * time.Millisecond),
+		Time:        startingAt.Add(time.Duration(r) * time.Millisecond),
 		EventName:   kickoffEventName,
 		AdvanceFunc: e.Advance,
 	})

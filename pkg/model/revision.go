@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -19,60 +20,89 @@ const (
 )
 
 type RevisionReplica struct {
-	name               string
-	fsm                *fsm.FSM
-	env                *simulator.Environment
-	executable         *Executable
-	numCurrentRequests int64
+	name                string
+	fsm                 *fsm.FSM
+	env                 *simulator.Environment
+	executable          *Executable
+	numCurrentRequests  int64
+	numBufferedRequests int64
+	nextEvt             *simulator.Event
 }
 
 func (rr *RevisionReplica) Run() {
 	r := rand.Intn(1000)
 
-	rr.env.Schedule(&simulator.Event{
+	rr.nextEvt = &simulator.Event{
 		Time:        rr.env.Time().Add(time.Duration(r) * time.Millisecond),
 		EventName:   launchReplica,
 		AdvanceFunc: rr.Advance,
-	})
+	}
+	rr.env.Schedule(rr.nextEvt)
+
+	rr.executable.AddRevisionReplica(rr)
+	rr.executable.Run(rr.env, rr.nextEvt.Time)
 }
 
 func (rr *RevisionReplica) Advance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
-	// special cases
+	currEventTime := rr.nextEvt.Time
+
 	switch eventName {
 	case launchReplica:
-		rr.executable.AddRevisionReplica(rr)
-		rr.executable.Run(rr.env)
+		// handled by Run
 	case finishLaunchingReplica:
-		rr.env.Schedule(&simulator.Event{
-			Time:        t.Add(180 * time.Second),
-			EventName:   terminateReplica,
-			AdvanceFunc: rr.Advance,
-		})
+		// handled by the Executable
 	case receiveRequest:
-		rr.numCurrentRequests++
+		switch rr.fsm.Current() {
+		case "ReplicaNotLaunched":
+		case "ReplicaLaunching":
+			rr.numBufferedRequests++
+			if rr.nextEvt.EventName == finishLaunchingReplica {
+				rr.env.Schedule(&simulator.Event{
+					Time:        currEventTime.Add(50 * time.Millisecond),
+					EventName:   receiveRequest,
+					AdvanceFunc: rr.Advance,
+				})
+			}
 
-		rr.env.Schedule(&simulator.Event{
-			Time:        t.Add(1 * time.Second),
-			EventName:   completeRequest,
-			AdvanceFunc: rr.Advance,
-		})
+			return rr.name, "ReplicaLaunching", "ReplicaLaunching", fmt.Sprintf("numBufferedRequests: %3d currentNumRequests: %3d", rr.numBufferedRequests, rr.numCurrentRequests)
+		case "ReplicaActive":
+			rr.numCurrentRequests++
+			if rr.numBufferedRequests > 0 {
+				rr.numBufferedRequests--
+			}
+
+			rr.nextEvt = &simulator.Event{
+				Time:        t.Add(1 * time.Second),
+				EventName:   completeRequest,
+				AdvanceFunc: rr.Advance,
+			}
+		}
 	case completeRequest:
 		rr.numCurrentRequests--
 	case terminateReplica:
-		rr.env.Schedule(&simulator.Event{
+		rr.nextEvt = &simulator.Event{
 			Time:        t.Add(2 * time.Second),
 			EventName:   killProcess,
 			AdvanceFunc: rr.executable.Advance,
-		})
+		}
+	}
+
+	if rr.nextEvt.Time.After(currEventTime) {
+		rr.env.Schedule(rr.nextEvt)
 	}
 
 	current := rr.fsm.Current()
 	err := rr.fsm.Event(eventName)
 	if err != nil {
-		panic(err.Error())
+		switch err.(type) {
+		case fsm.NoTransitionError:
+		// ignore
+		default:
+			panic(err.Error())
+		}
 	}
 
-	return rr.name, current, rr.fsm.Current(), ""
+	return rr.name, current, rr.fsm.Current(), fmt.Sprintf("numBufferedRequests: %3d currentNumRequests: %3d", rr.numBufferedRequests, rr.numCurrentRequests)
 }
 
 func NewRevisionReplica(name string, exec *Executable, env *simulator.Environment) *RevisionReplica {
@@ -93,13 +123,7 @@ func NewRevisionReplica(name string, exec *Executable, env *simulator.Environmen
 			{Name: terminateReplica, Src: []string{"ReplicaActive"}, Dst: "ReplicaTerminating"},             // kill Executable as well?
 			{Name: finishTerminatingReplica, Src: []string{"ReplicaTerminating"}, Dst: "ReplicaTerminated"}, // kill Executable as well?
 		},
-		fsm.Callbacks{
-			"before_become_idle": func(e *fsm.Event) {
-				if rr.numCurrentRequests > 0 {
-					e.Cancel(nil)
-				}
-			},
-		},
+		fsm.Callbacks{},
 	)
 
 	return rr
