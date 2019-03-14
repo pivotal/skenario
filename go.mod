@@ -35,6 +35,7 @@ require (
 	go.uber.org/zap v1.9.1
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 // indirect
 	golang.org/x/oauth2 v0.0.0-20190226191147-529b322ea346 // indirect
+	golang.org/x/text v0.3.0
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/api v0.0.0-20190202010724-74b699b93c15

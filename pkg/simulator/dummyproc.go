@@ -33,7 +33,7 @@ func NewDummyProc(name, initialState string) *dummyProc {
 	return dp
 }
 
-func (dp *dummyProc) Advance(t time.Time, eventName string) (identifier, outcome string) {
+func (dp *dummyProc) Advance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
 	r := rand.Int63n(int64(time.Second * 30))
 	add := time.Duration(r) * time.Nanosecond
 	nextTime := t.Add(add)
@@ -45,7 +45,7 @@ func (dp *dummyProc) Advance(t time.Time, eventName string) (identifier, outcome
 		AdvanceFunc: dp.Advance,
 	})
 
-	return dp.name, fmt.Sprintf("# %d", dp.evtCount[eventName])
+	return dp.name, "ignore", "ignore", fmt.Sprintf("# %d", dp.evtCount[eventName])
 }
 
 func (dp *dummyProc) Run(env *Environment) {

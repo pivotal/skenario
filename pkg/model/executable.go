@@ -43,7 +43,7 @@ type Executable struct {
 	replicas []*RevisionReplica
 }
 
-func (e *Executable) Advance(t time.Time, eventName string) (identifier, outcome string) {
+func (e *Executable) Advance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
 	var nextExecEvtName, nextReplicaEvtName string
 	var nextExecEvtTime, nextReplicaEvtTime time.Time
 
@@ -96,7 +96,7 @@ func (e *Executable) Advance(t time.Time, eventName string) (identifier, outcome
 		panic(err.Error())
 	}
 
-	return e.name, fmt.Sprintf("%s --> %s", current, e.fsm.Current())
+	return e.name, current, e.fsm.Current(), ""
 }
 
 func (e *Executable) Run(env *simulator.Environment) {

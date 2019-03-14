@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -37,7 +36,7 @@ func (rr *RevisionReplica) Run() {
 	})
 }
 
-func (rr *RevisionReplica) Advance(t time.Time, eventName string) (identifier, outcome string) {
+func (rr *RevisionReplica) Advance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
 	// special cases
 	switch eventName {
 	case launchReplica:
@@ -73,7 +72,7 @@ func (rr *RevisionReplica) Advance(t time.Time, eventName string) (identifier, o
 		panic(err.Error())
 	}
 
-	return rr.name, fmt.Sprintf("%s --> %s", current, rr.fsm.Current())
+	return rr.name, current, rr.fsm.Current(), ""
 }
 
 func NewRevisionReplica(name string, exec *Executable, env *simulator.Environment) *RevisionReplica {
