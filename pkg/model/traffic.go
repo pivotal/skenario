@@ -10,14 +10,16 @@ import (
 type Traffic struct {
 	env       *simulator.Environment
 	replica   *RevisionReplica
+	buffer    *KBuffer
 	beginTime time.Time
 	endTime   time.Time
 }
 
-func NewTraffic(env *simulator.Environment, replica *RevisionReplica, begin time.Time, runFor time.Duration) *Traffic {
+func NewTraffic(env *simulator.Environment, buffer *KBuffer, replica *RevisionReplica, begin time.Time, runFor time.Duration) *Traffic {
 	return &Traffic{
 		env:       env,
 		replica:   replica,
+		buffer:    buffer,
 		beginTime: begin,
 		endTime:   begin.Add(runFor),
 	}
@@ -27,17 +29,14 @@ func (tr *Traffic) Run() {
 	t := tr.beginTime
 
 	for {
-		r := rand.Int63n(5000)
+		r := rand.Int63n(10000)
 		t = t.Add(time.Duration(r) * time.Millisecond)
 
 		if t.After(tr.endTime) {
 			return
 		}
 
-		tr.env.Schedule(&simulator.Event{
-			Time:        t,
-			EventName:   receiveRequest,
-			AdvanceFunc: tr.replica.Advance,
-		})
+		req := NewRequest(tr.env, tr.buffer, tr.replica, t)
+		req.Run()
 	}
 }

@@ -17,8 +17,8 @@ func main() {
 	exec1 := model.NewExecutable("exec-1", model.StateCold)
 	replica1 := model.NewRevisionReplica("revision-1", exec1, env)
 	replica1.Run()
-
-	traffic := model.NewTraffic(env, replica1, begin, tenMinutes)
+	buffer := model.NewKBuffer(env)
+	traffic := model.NewTraffic(env, buffer, replica1, begin, tenMinutes)
 	traffic.Run()
 
 	env.Run()
