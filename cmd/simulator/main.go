@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"knative-simulator/pkg/model"
@@ -9,6 +10,8 @@ import (
 )
 
 func main() {
+	startPrep := time.Now()
+
 	begin := time.Unix(0, 0).UTC()
 	tenMinutes := 10 * time.Minute
 
@@ -21,5 +24,12 @@ func main() {
 	traffic := model.NewTraffic(env, buffer, replica1, begin, tenMinutes)
 	traffic.Run()
 
+	fmt.Println("=== BEGIN TRACE ===============================================================================================================================================")
 	env.Run()
+	fmt.Println("=== END TRACE =================================================================================================================================================")
+
+	endSim := time.Now()
+
+	fmt.Printf("Sim clock duration:  %s\n", tenMinutes)
+	fmt.Printf("Real clock duration: %s\n", endSim.Sub(startPrep))
 }

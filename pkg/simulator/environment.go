@@ -1,7 +1,6 @@
 package simulator
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -13,10 +12,11 @@ import (
 )
 
 type Environment struct {
-	futureEvents *cache.Heap
-	simTime      time.Time
-	startTime    time.Time
-	endTime      time.Time
+	futureEvents  *cache.Heap
+	ignoredEvents []*Event
+	simTime       time.Time
+	startTime     time.Time
+	endTime       time.Time
 
 	fsm *fsm.FSM
 }
@@ -34,6 +34,7 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 
 	env := &Environment{
 		futureEvents: heap,
+		ignoredEvents: make([]*Event, 0),
 		simTime:      begin,
 		startTime:    begin,
 		endTime:      begin.Add(runFor),
@@ -68,10 +69,16 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 
 func (env *Environment) Run() {
 	printer := message.NewPrinter(language.AmericanEnglish)
-	printer.Printf("%-21s   %-20s  %-26s   %-22s -->  %-25s   %s\n", "TIME", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
+	printer.Printf("%20s    %-18s  %-26s    %-22s -->  %-25s  %s\n", "TIME", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
+	printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
 		if err != nil && strings.Contains(err.Error(), "heap is closed") {
+			for _, e := range env.ignoredEvents{
+				printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
+				printer.Println("Ignored events were ignored as they were scheduled after termination:")
+				printer.Printf("%20d    %-18s  %-26s\n", e.Time.UnixNano(), "", e.EventName)
+			}
 			return
 		} else if err != nil {
 			panic(err)
@@ -80,13 +87,14 @@ func (env *Environment) Run() {
 		next := nextIface.(*Event)
 		env.simTime = next.Time
 		procName, fromState, toState, note := next.AdvanceFunc(next.Time, next.EventName)
-		printer.Printf("[%21d] %-20s  %-26s   %-22s -->  %-25s   %s\n", next.Time.UnixNano(), procName, next.EventName, fromState, toState, note)
+		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.Time.UnixNano(), procName, next.EventName, fromState, toState, note)
 	}
 }
 
 func (env *Environment) Schedule(event *Event) {
 	if event.Time.After(env.endTime) {
-		fmt.Printf("Ignoring event scheduled after termination: [%d] %s\n", event.Time.UnixNano(), event.EventName)
+		env.ignoredEvents = append(env.ignoredEvents, event)
+
 		return
 	}
 
