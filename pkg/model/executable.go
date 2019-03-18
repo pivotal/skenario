@@ -47,7 +47,7 @@ func (e *Executable) Identity() string {
 	return e.name
 }
 
-func (e *Executable) OnAdvance(t time.Time, eventName string) (fromState, toState, note string) {
+func (e *Executable) OnAdvance(t time.Time, eventName string) (result simulator.TransitionResult) {
 	var nextExecEvtName, nextReplicaEvtName string
 	var nextExecEvtTime, nextReplicaEvtTime time.Time
 
@@ -102,7 +102,7 @@ func (e *Executable) OnAdvance(t time.Time, eventName string) (fromState, toStat
 		panic(err.Error())
 	}
 
-	return current, e.fsm.Current(), ""
+	return simulator.TransitionResult{FromState: current, ToState: e.fsm.Current()}
 }
 
 func (e *Executable) Run(env *simulator.Environment, startingAt time.Time) {

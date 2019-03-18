@@ -50,7 +50,7 @@ func (rr *RevisionReplica) Identity() string {
 	return rr.name
 }
 
-func (rr *RevisionReplica) OnAdvance(t time.Time, eventName string) (fromState, toState, note string) {
+func (rr *RevisionReplica) OnAdvance(t time.Time, eventName string) (result simulator.TransitionResult) {
 	currEventTime := rr.nextEvt.Time
 
 	switch eventName {
@@ -81,7 +81,7 @@ func (rr *RevisionReplica) OnAdvance(t time.Time, eventName string) (fromState, 
 		}
 	}
 
-	return current, rr.fsm.Current(), ""
+	return simulator.TransitionResult{FromState: current, ToState: rr.fsm.Current()}
 }
 
 func NewRevisionReplica(name string, exec *Executable, env *simulator.Environment) *RevisionReplica {

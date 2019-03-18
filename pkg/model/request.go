@@ -46,7 +46,7 @@ func (r *Request) Identity() string {
 	return r.name
 }
 
-func (r *Request) OnAdvance(t time.Time, eventName string) (fromState, toState, note string) {
+func (r *Request) OnAdvance(t time.Time, eventName string) (result simulator.TransitionResult) {
 	n := ""
 	switch eventName {
 	case requestArrivedAtIngress:
@@ -105,7 +105,7 @@ func (r *Request) OnAdvance(t time.Time, eventName string) (fromState, toState, 
 		}
 	}
 
-	return currentState, r.fsm.Current(), n
+	return simulator.TransitionResult{FromState: currentState, ToState: r.fsm.Current(), Note: n}
 }
 
 func (r *Request) Run() {

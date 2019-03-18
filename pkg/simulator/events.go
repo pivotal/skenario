@@ -7,3 +7,9 @@ type Event struct {
 	EventName   string
 	Subject     Process
 }
+
+type TransitionResult struct {
+	FromState string
+	ToState   string
+	Note      string
+}
