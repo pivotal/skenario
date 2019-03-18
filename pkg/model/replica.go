@@ -50,17 +50,17 @@ func (rr *RevisionReplica) Identity() string {
 	return rr.name
 }
 
-func (rr *RevisionReplica) OnAdvance(t time.Time, eventName string) (result simulator.TransitionResult) {
+func (rr *RevisionReplica) OnAdvance(event *simulator.Event) (result simulator.TransitionResult) {
 	currEventTime := rr.nextEvt.Time
 
-	switch eventName {
+	switch event.EventName {
 	case launchReplica:
 		// handled by Run
 	case finishLaunchingReplica:
 		// handled by the Executable
 	case terminateReplica:
 		rr.nextEvt = &simulator.Event{
-			Time:        t.Add(2 * time.Second),
+			Time:        event.Time.Add(2 * time.Second),
 			EventName:   killProcess,
 			Subject:     rr.executable,
 		}
@@ -71,7 +71,7 @@ func (rr *RevisionReplica) OnAdvance(t time.Time, eventName string) (result simu
 	}
 
 	current := rr.fsm.Current()
-	err := rr.fsm.Event(eventName)
+	err := rr.fsm.Event(event.EventName)
 	if err != nil {
 		switch err.(type) {
 		case fsm.NoTransitionError:

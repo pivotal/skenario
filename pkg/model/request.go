@@ -46,19 +46,19 @@ func (r *Request) Identity() string {
 	return r.name
 }
 
-func (r *Request) OnAdvance(t time.Time, eventName string) (result simulator.TransitionResult) {
+func (r *Request) OnAdvance(event *simulator.Event) (result simulator.TransitionResult) {
 	n := ""
-	switch eventName {
+	switch event.EventName {
 	case requestArrivedAtIngress:
 		if r.destination.fsm.Is(StateReplicaActive) {
 			r.env.Schedule(&simulator.Event{
-				Time:        t.Add(1 * time.Nanosecond),
+				Time:        event.Time.Add(1 * time.Nanosecond),
 				EventName:   sentRequestToReplica,
 				Subject:     r,
 			})
 		} else {
 			r.env.Schedule(&simulator.Event{
-				Time:        t.Add(1 * time.Nanosecond),
+				Time:        event.Time.Add(1 * time.Nanosecond),
 				EventName:   requestBuffered,
 				Subject:     r,
 			})
@@ -77,7 +77,7 @@ func (r *Request) OnAdvance(t time.Time, eventName string) (result simulator.Tra
 		r.buffer.DeleteRequest(r.name)
 
 		r.env.Schedule(&simulator.Event{
-			Time:        t.Add(10 * time.Millisecond),
+			Time:        event.Time.Add(10 * time.Millisecond),
 			EventName:   beginRequestProcessing,
 			Subject:     r,
 		})
@@ -85,17 +85,17 @@ func (r *Request) OnAdvance(t time.Time, eventName string) (result simulator.Tra
 		rnd := rand.Intn(900) + 100
 
 		r.env.Schedule(&simulator.Event{
-			Time:        t.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
+			Time:        event.Time.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
 			EventName:   finishRequestProcessing,
 			Subject:     r,
 		})
 	case finishRequestProcessing:
-		duration := t.Sub(r.arrivalTime)
+		duration := event.Time.Sub(r.arrivalTime)
 		n = fmt.Sprintf("Request took %dms", duration.Nanoseconds()/1000000)
 	}
 
 	currentState := r.fsm.Current()
-	err := r.fsm.Event(eventName)
+	err := r.fsm.Event(event.EventName)
 	if err != nil {
 		switch err.(type) {
 		case fsm.NoTransitionError:

@@ -47,32 +47,32 @@ func (e *Executable) Identity() string {
 	return e.name
 }
 
-func (e *Executable) OnAdvance(t time.Time, eventName string) (result simulator.TransitionResult) {
+func (e *Executable) OnAdvance(event *simulator.Event) (result simulator.TransitionResult) {
 	var nextExecEvtName, nextReplicaEvtName string
 	var nextExecEvtTime, nextReplicaEvtTime time.Time
 
-	switch eventName {
+	switch event.EventName {
 	case beginPulling:
 		nextExecEvtName = finishPulling
-		nextExecEvtTime = t.Add(90 * time.Second)
+		nextExecEvtTime = event.Time.Add(90 * time.Second)
 	case finishPulling:
 		nextExecEvtName = launchFromDisk
-		nextExecEvtTime = t.Add(1 * time.Second)
+		nextExecEvtTime = event.Time.Add(1 * time.Second)
 	case launchFromDisk:
 		nextExecEvtName = finishLaunching
-		nextExecEvtTime = t.Add(10 * time.Second)
+		nextExecEvtTime = event.Time.Add(10 * time.Second)
 	case launchFromPageCache:
 		nextExecEvtName = finishLaunching
-		nextExecEvtTime = t.Add(100 * time.Millisecond)
+		nextExecEvtTime = event.Time.Add(100 * time.Millisecond)
 	case finishLaunching:
 		nextReplicaEvtName = finishLaunchingReplica
-		nextReplicaEvtTime = t.Add(10 * time.Millisecond)
+		nextReplicaEvtTime = event.Time.Add(10 * time.Millisecond)
 	case killProcess:
 		nextReplicaEvtName = finishTerminatingReplica
-		nextReplicaEvtTime = t.Add(10 * time.Millisecond)
+		nextReplicaEvtTime = event.Time.Add(10 * time.Millisecond)
 	}
 
-	if eventName != killProcess && eventName != finishLaunching {
+	if event.EventName != killProcess && event.EventName != finishLaunching {
 		execEvt := &simulator.Event{
 			EventName:   nextExecEvtName,
 			Time:        nextExecEvtTime,
@@ -97,7 +97,7 @@ func (e *Executable) OnAdvance(t time.Time, eventName string) (result simulator.
 	}
 
 	current := e.fsm.Current()
-	err := e.fsm.Event(eventName)
+	err := e.fsm.Event(event.EventName)
 	if err != nil {
 		panic(err.Error())
 	}
