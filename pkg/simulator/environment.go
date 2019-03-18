@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/looplab/fsm"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"k8s.io/client-go/tools/cache"
@@ -20,8 +19,6 @@ type Environment struct {
 	simTime   time.Time
 	startTime time.Time
 	endTime   time.Time
-
-	fsm *fsm.FSM
 }
 
 func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
@@ -43,15 +40,6 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 		startTime:           begin,
 		endTime:             begin.Add(runFor),
 	}
-
-	env.fsm = fsm.NewFSM(
-		"SimulationStarting",
-		fsm.Events{
-			{Name: "start_simulation", Src: []string{"SimulationStarting"}, Dst: "SimulationRunning"},
-			{Name: "terminate_simulation", Src: []string{"SimulationRunning"}, Dst: "SimulationTerminated"},
-		},
-		fsm.Callbacks{},
-	)
 
 	startEvent := &Event{
 		OccursAt:  env.startTime,
