@@ -23,7 +23,7 @@ const (
 )
 
 type RevisionReplica struct {
-	name                string
+	name                simulator.ProcessIdentity
 	fsm                 *fsm.FSM
 	env                 *simulator.Environment
 	executable          *Executable
@@ -54,7 +54,7 @@ func (rr *RevisionReplica) Run() {
 	})
 }
 
-func (rr *RevisionReplica) Identity() string {
+func (rr *RevisionReplica) Identity() simulator.ProcessIdentity {
 	return rr.name
 }
 
@@ -105,7 +105,7 @@ func (rr *RevisionReplica) OnSchedule(event *simulator.Event) {
 	}
 }
 
-func NewRevisionReplica(name string, exec *Executable, env *simulator.Environment) *RevisionReplica {
+func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *simulator.Environment) *RevisionReplica {
 	rr := &RevisionReplica{
 		name:               name,
 		env:                env,

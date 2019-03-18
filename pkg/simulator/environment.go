@@ -13,7 +13,7 @@ import (
 type Environment struct {
 	futureEvents        *cache.Heap
 	ignoredEvents       []*Event
-	registeredListeners map[string]map[string]SchedulingListener // [Identity][EventName]Process
+	registeredListeners map[ProcessIdentity]map[string]SchedulingListener // [ProcessIdentity][EventName]Process
 
 	simTime   time.Time
 	startTime time.Time
@@ -34,7 +34,7 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	env := &Environment{
 		futureEvents:        heap,
 		ignoredEvents:       make([]*Event, 0),
-		registeredListeners: make(map[string]map[string]SchedulingListener),
+		registeredListeners: make(map[ProcessIdentity]map[string]SchedulingListener),
 		simTime:             begin,
 		startTime:           begin,
 		endTime:             begin.Add(runFor),
@@ -101,7 +101,7 @@ func (env *Environment) Schedule(event *Event) {
 	}
 }
 
-func (env *Environment) Identity() string {
+func (env *Environment) Identity() ProcessIdentity {
 	return "Environment"
 }
 
@@ -117,7 +117,7 @@ func (env *Environment) OnOccurrence(event *Event) (result TransitionResult) {
 	}
 }
 
-func (env *Environment) ListenForScheduling(subjectIdentity, eventName string, listener SchedulingListener) {
+func (env *Environment) ListenForScheduling(subjectIdentity ProcessIdentity, eventName string, listener SchedulingListener) {
 	if _, ok := env.registeredListeners[subjectIdentity]; ok {
 		env.registeredListeners[subjectIdentity][eventName] = listener
 	} else {

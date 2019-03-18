@@ -34,7 +34,7 @@ var (
 )
 
 type Request struct {
-	name        string
+	name        simulator.ProcessIdentity
 	fsm         *fsm.FSM
 	env         *simulator.Environment
 	buffer      *KBuffer
@@ -42,7 +42,7 @@ type Request struct {
 	arrivalTime time.Time
 }
 
-func (r *Request) Identity() string {
+func (r *Request) Identity() simulator.ProcessIdentity {
 	return r.name
 }
 
@@ -118,7 +118,7 @@ func (r *Request) Run() {
 
 func NewRequest(env *simulator.Environment, buffer *KBuffer, destination *RevisionReplica, arrivalTime time.Time) *Request {
 	req := &Request{
-		name:        fmt.Sprintf("req-%012d", rand.Int63n(100000000000)),
+		name:        simulator.ProcessIdentity(fmt.Sprintf("req-%012d", rand.Int63n(100000000000))),
 		env:         env,
 		buffer:      buffer,
 		destination: destination,

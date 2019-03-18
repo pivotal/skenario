@@ -37,13 +37,13 @@ var (
 )
 
 type Executable struct {
-	name     string
+	name     simulator.ProcessIdentity
 	fsm      *fsm.FSM
 	env      *simulator.Environment
 	replicas []*RevisionReplica
 }
 
-func (e *Executable) Identity() string {
+func (e *Executable) Identity() simulator.ProcessIdentity {
 	return e.name
 }
 
@@ -129,7 +129,7 @@ func (e *Executable) AddRevisionReplica(replica *RevisionReplica) {
 	e.env.ListenForScheduling(replica.Identity(), finishTerminatingReplica, e)
 }
 
-func NewExecutable(name, initialState string, env *simulator.Environment) *Executable {
+func NewExecutable(name simulator.ProcessIdentity, initialState string, env *simulator.Environment) *Executable {
 	return &Executable{
 		name: name,
 		env: env,

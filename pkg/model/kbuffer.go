@@ -4,14 +4,14 @@ import "knative-simulator/pkg/simulator"
 
 type KBuffer struct {
 	env      *simulator.Environment
-	requests map[string]*Request
+	requests map[simulator.ProcessIdentity]*Request
 }
 
-func (kb *KBuffer) AddRequest(reqName string, req *Request) {
+func (kb *KBuffer) AddRequest(reqName simulator.ProcessIdentity, req *Request) {
 	kb.requests[reqName] = req
 }
 
-func (kb *KBuffer) DeleteRequest(reqName string) *Request {
+func (kb *KBuffer) DeleteRequest(reqName simulator.ProcessIdentity) *Request {
 	delReq := kb.requests[reqName]
 	delete(kb.requests, reqName)
 
@@ -21,6 +21,6 @@ func (kb *KBuffer) DeleteRequest(reqName string) *Request {
 func NewKBuffer(env *simulator.Environment) *KBuffer {
 	return &KBuffer{
 		env:      env,
-		requests: make(map[string]*Request),
+		requests: make(map[simulator.ProcessIdentity]*Request),
 	}
 }
