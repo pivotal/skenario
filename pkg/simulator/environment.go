@@ -1,7 +1,6 @@
 package simulator
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -119,7 +118,6 @@ func (env *Environment) OnOccurrence(event *Event) (result TransitionResult) {
 }
 
 func (env *Environment) ListenForScheduling(subjectIdentity, eventName string, listener SchedulingListener) {
-	fmt.Println(subjectIdentity, eventName, listener)
 	if _, ok := env.registeredListeners[subjectIdentity]; ok {
 		env.registeredListeners[subjectIdentity][eventName] = listener
 	} else {
