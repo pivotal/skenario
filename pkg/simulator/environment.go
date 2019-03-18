@@ -1,6 +1,7 @@
 package simulator
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -12,11 +13,13 @@ import (
 )
 
 type Environment struct {
-	futureEvents  *cache.Heap
-	ignoredEvents []*Event
-	simTime       time.Time
-	startTime     time.Time
-	endTime       time.Time
+	futureEvents        *cache.Heap
+	ignoredEvents       []*Event
+	registeredListeners map[string]map[string]SchedulingListener // [Identity][EventName]Process
+
+	simTime   time.Time
+	startTime time.Time
+	endTime   time.Time
 
 	fsm *fsm.FSM
 }
@@ -33,11 +36,12 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	})
 
 	env := &Environment{
-		futureEvents:  heap,
-		ignoredEvents: make([]*Event, 0),
-		simTime:       begin,
-		startTime:     begin,
-		endTime:       begin.Add(runFor),
+		futureEvents:        heap,
+		ignoredEvents:       make([]*Event, 0),
+		registeredListeners: make(map[string]map[string]SchedulingListener),
+		simTime:             begin,
+		startTime:           begin,
+		endTime:             begin.Add(runFor),
 	}
 
 	env.fsm = fsm.NewFSM(
@@ -92,6 +96,12 @@ func (env *Environment) Run() {
 }
 
 func (env *Environment) Schedule(event *Event) {
+	if evtNameMap, ok := env.registeredListeners[event.Subject.Identity()]; ok {
+		if listener, ok := evtNameMap[event.EventName]; ok {
+			listener.OnSchedule(event)
+		}
+	}
+
 	if event.OccursAt.After(env.endTime) {
 		env.ignoredEvents = append(env.ignoredEvents, event)
 
@@ -117,6 +127,16 @@ func (env *Environment) OnAdvance(event *Event) (result TransitionResult) {
 		return TransitionResult{FromState: "SimulationRunning", ToState: "SimulationTerminated", Note: "Reached termination event"}
 	default:
 		panic("Unknown event for Environment")
+	}
+}
+
+func (env *Environment) ListenForScheduling(subjectIdentity, eventName string, listener SchedulingListener) {
+	fmt.Println(subjectIdentity, eventName, listener)
+	if _, ok := env.registeredListeners[subjectIdentity]; ok {
+		env.registeredListeners[subjectIdentity][eventName] = listener
+	} else {
+		env.registeredListeners[subjectIdentity] = make(map[string]SchedulingListener)
+		env.registeredListeners[subjectIdentity][eventName] = listener
 	}
 }
 

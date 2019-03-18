@@ -17,7 +17,7 @@ func main() {
 
 	env := simulator.NewEnvironment(begin, tenMinutes)
 
-	exec1 := model.NewExecutable("exec-1", model.StateCold)
+	exec1 := model.NewExecutable("exec-1", model.StateCold, env)
 	replica1 := model.NewRevisionReplica("revision-1", exec1, env)
 	replica1.Run()
 	buffer := model.NewKBuffer(env)

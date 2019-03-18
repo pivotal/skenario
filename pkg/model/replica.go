@@ -35,6 +35,8 @@ type RevisionReplica struct {
 func (rr *RevisionReplica) Run() {
 	r := rand.Intn(1000)
 
+	rr.env.ListenForScheduling(rr.executable.name, finishLaunching, rr)
+
 	rr.nextEvt = &simulator.Event{
 		OccursAt:  rr.env.Time().Add(time.Duration(r) * time.Millisecond),
 		EventName: launchReplica,
@@ -43,7 +45,13 @@ func (rr *RevisionReplica) Run() {
 	rr.env.Schedule(rr.nextEvt)
 
 	rr.executable.AddRevisionReplica(rr)
-	rr.executable.Run(rr.env, rr.nextEvt.OccursAt)
+	rr.executable.Run(rr.nextEvt.OccursAt)
+
+	rr.env.Schedule(&simulator.Event{
+		EventName: terminateReplica,
+		OccursAt:  rr.env.Time().Add(8 * time.Minute),
+		Subject:   rr,
+	})
 }
 
 func (rr *RevisionReplica) Identity() string {
@@ -54,15 +62,11 @@ func (rr *RevisionReplica) OnAdvance(event *simulator.Event) (result simulator.T
 	currEventTime := rr.nextEvt.OccursAt
 
 	switch event.EventName {
-	case launchReplica:
-		// handled by Run
-	case finishLaunchingReplica:
-		// handled by the Executable
 	case terminateReplica:
 		rr.nextEvt = &simulator.Event{
 			OccursAt:  event.OccursAt.Add(2 * time.Second),
-			EventName: killProcess,
-			Subject:   rr.executable,
+			EventName: finishTerminatingReplica,
+			Subject:   rr,
 		}
 	}
 
@@ -82,6 +86,23 @@ func (rr *RevisionReplica) OnAdvance(event *simulator.Event) (result simulator.T
 	}
 
 	return simulator.TransitionResult{FromState: current, ToState: rr.fsm.Current()}
+}
+
+func (rr *RevisionReplica) OnSchedule(event *simulator.Event) {
+	switch event.EventName {
+	case finishLaunching:
+		rr.env.Schedule(&simulator.Event{
+			EventName: finishLaunchingReplica,
+			OccursAt:  event.OccursAt.Add(10 * time.Millisecond),
+			Subject:   rr,
+		})
+	case killProcess:
+		rr.env.Schedule(&simulator.Event{
+			EventName: finishTerminatingReplica,
+			OccursAt:  event.OccursAt.Add(10 * time.Millisecond),
+			Subject:   rr,
+		})
+	}
 }
 
 func NewRevisionReplica(name string, exec *Executable, env *simulator.Environment) *RevisionReplica {
