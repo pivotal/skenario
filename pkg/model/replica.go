@@ -38,7 +38,7 @@ func (rr *RevisionReplica) Run() {
 	rr.nextEvt = &simulator.Event{
 		Time:        rr.env.Time().Add(time.Duration(r) * time.Millisecond),
 		EventName:   launchReplica,
-		AdvanceFunc: rr.Advance,
+		Subject:     rr,
 	}
 	rr.env.Schedule(rr.nextEvt)
 
@@ -46,7 +46,7 @@ func (rr *RevisionReplica) Run() {
 	rr.executable.Run(rr.env, rr.nextEvt.Time)
 }
 
-func (rr *RevisionReplica) Advance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
+func (rr *RevisionReplica) OnAdvance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
 	currEventTime := rr.nextEvt.Time
 
 	switch eventName {
@@ -58,7 +58,7 @@ func (rr *RevisionReplica) Advance(t time.Time, eventName string) (identifier, f
 		rr.nextEvt = &simulator.Event{
 			Time:        t.Add(2 * time.Second),
 			EventName:   killProcess,
-			AdvanceFunc: rr.executable.Advance,
+			Subject:     rr.executable,
 		}
 	}
 
@@ -91,9 +91,9 @@ func NewRevisionReplica(name string, exec *Executable, env *simulator.Environmen
 	rr.fsm = fsm.NewFSM(
 		StateReplicaNotLaunched,
 		fsm.Events{
-			{Name: launchReplica, Src: []string{StateReplicaNotLaunched}, Dst: StateReplicaLaunching},     // register callback with Executable
-			{Name: finishLaunchingReplica, Src: []string{StateReplicaLaunching}, Dst: StateReplicaActive}, // register callback with Executable
-			{Name: terminateReplica, Src: []string{StateReplicaActive}, Dst: StateReplicaTerminating},          // kill Executable as well?
+			{Name: launchReplica, Src: []string{StateReplicaNotLaunched}, Dst: StateReplicaLaunching},             // register callback with Executable
+			{Name: finishLaunchingReplica, Src: []string{StateReplicaLaunching}, Dst: StateReplicaActive},         // register callback with Executable
+			{Name: terminateReplica, Src: []string{StateReplicaActive}, Dst: StateReplicaTerminating},             // kill Executable as well?
 			{Name: finishTerminatingReplica, Src: []string{StateReplicaTerminating}, Dst: StateReplicaTerminated}, // kill Executable as well?
 		},
 		fsm.Callbacks{},

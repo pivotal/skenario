@@ -43,7 +43,7 @@ type Executable struct {
 	replicas []*RevisionReplica
 }
 
-func (e *Executable) Advance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
+func (e *Executable) OnAdvance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
 	var nextExecEvtName, nextReplicaEvtName string
 	var nextExecEvtTime, nextReplicaEvtTime time.Time
 
@@ -72,7 +72,7 @@ func (e *Executable) Advance(t time.Time, eventName string) (identifier, fromSta
 		execEvt := &simulator.Event{
 			EventName:   nextExecEvtName,
 			Time:        nextExecEvtTime,
-			AdvanceFunc: e.Advance,
+			Subject:     e,
 		}
 
 		e.env.Schedule(execEvt)
@@ -83,7 +83,7 @@ func (e *Executable) Advance(t time.Time, eventName string) (identifier, fromSta
 			replicaEvt := &simulator.Event{
 				EventName:   nextReplicaEvtName,
 				Time:        nextReplicaEvtTime,
-				AdvanceFunc: r.Advance,
+				Subject:     r,
 			}
 
 			r.nextEvt = replicaEvt
@@ -122,7 +122,7 @@ func (e *Executable) Run(env *simulator.Environment, startingAt time.Time) {
 	env.Schedule(&simulator.Event{
 		Time:        startingAt.Add(time.Duration(r) * time.Millisecond),
 		EventName:   kickoffEventName,
-		AdvanceFunc: e.Advance,
+		Subject:     e,
 	})
 }
 

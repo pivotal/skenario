@@ -42,7 +42,7 @@ type Request struct {
 	arrivalTime time.Time
 }
 
-func (r *Request) Advance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
+func (r *Request) OnAdvance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
 	n := ""
 	switch eventName {
 	case requestArrivedAtIngress:
@@ -50,13 +50,13 @@ func (r *Request) Advance(t time.Time, eventName string) (identifier, fromState,
 			r.env.Schedule(&simulator.Event{
 				Time:        t.Add(1 * time.Nanosecond),
 				EventName:   sentRequestToReplica,
-				AdvanceFunc: r.Advance,
+				Subject:     r,
 			})
 		} else {
 			r.env.Schedule(&simulator.Event{
 				Time:        t.Add(1 * time.Nanosecond),
 				EventName:   requestBuffered,
-				AdvanceFunc: r.Advance,
+				Subject:     r,
 			})
 		}
 	case requestBuffered:
@@ -66,7 +66,7 @@ func (r *Request) Advance(t time.Time, eventName string) (identifier, fromState,
 			r.env.Schedule(&simulator.Event{
 				Time:        r.destination.nextEvt.Time.Add(10 * time.Millisecond),
 				EventName:   sentRequestToReplica,
-				AdvanceFunc: r.Advance,
+				Subject:     r,
 			})
 		}
 	case sentRequestToReplica:
@@ -75,7 +75,7 @@ func (r *Request) Advance(t time.Time, eventName string) (identifier, fromState,
 		r.env.Schedule(&simulator.Event{
 			Time:        t.Add(10 * time.Millisecond),
 			EventName:   beginRequestProcessing,
-			AdvanceFunc: r.Advance,
+			Subject:     r,
 		})
 	case beginRequestProcessing:
 		rnd := rand.Intn(900) + 100
@@ -83,7 +83,7 @@ func (r *Request) Advance(t time.Time, eventName string) (identifier, fromState,
 		r.env.Schedule(&simulator.Event{
 			Time:        t.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
 			EventName:   finishRequestProcessing,
-			AdvanceFunc: r.Advance,
+			Subject:     r,
 		})
 	case finishRequestProcessing:
 		duration := t.Sub(r.arrivalTime)
@@ -108,7 +108,7 @@ func (r *Request) Run() {
 	r.env.Schedule(&simulator.Event{
 		Time:        r.arrivalTime,
 		EventName:   requestArrivedAtIngress,
-		AdvanceFunc: r.Advance,
+		Subject:     r,
 	})
 }
 

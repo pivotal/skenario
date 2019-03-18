@@ -33,11 +33,11 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	})
 
 	env := &Environment{
-		futureEvents: heap,
+		futureEvents:  heap,
 		ignoredEvents: make([]*Event, 0),
-		simTime:      begin,
-		startTime:    begin,
-		endTime:      begin.Add(runFor),
+		simTime:       begin,
+		startTime:     begin,
+		endTime:       begin.Add(runFor),
 	}
 
 	env.fsm = fsm.NewFSM(
@@ -52,13 +52,13 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	startEvent := &Event{
 		Time:        env.startTime,
 		EventName:   "start_simulation",
-		AdvanceFunc: env.Start,
+		Subject:     env,
 	}
 
 	termEvent := &Event{
 		Time:        env.endTime,
 		EventName:   "terminate_simulation",
-		AdvanceFunc: env.Terminate,
+		Subject:     env,
 	}
 
 	env.Schedule(startEvent)
@@ -74,7 +74,7 @@ func (env *Environment) Run() {
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
 		if err != nil && strings.Contains(err.Error(), "heap is closed") {
-			for _, e := range env.ignoredEvents{
+			for _, e := range env.ignoredEvents {
 				printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 				printer.Println("Ignored events were ignored as they were scheduled after termination:")
 				printer.Printf("%20d    %-18s  %-26s\n", e.Time.UnixNano(), "", e.EventName)
@@ -86,7 +86,7 @@ func (env *Environment) Run() {
 
 		next := nextIface.(*Event)
 		env.simTime = next.Time
-		procName, fromState, toState, note := next.AdvanceFunc(next.Time, next.EventName)
+		procName, fromState, toState, note := next.Subject.OnAdvance(next.Time, next.EventName)
 		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.Time.UnixNano(), procName, next.EventName, fromState, toState, note)
 	}
 }
@@ -104,13 +104,16 @@ func (env *Environment) Schedule(event *Event) {
 	}
 }
 
-func (env *Environment) Start(time time.Time, description string) (identifier, fromState, toState, note string) {
-	return "Environment", "SimulationStarting", "SimulationRunning", "Started simulation"
-}
-
-func (env *Environment) Terminate(time time.Time, description string) (identifier, fromState, toState, note string) {
-	env.futureEvents.Close()
-	return "Environment", "SimulationRunning", "SimulationTerminated", "Reached termination event"
+func (env *Environment) OnAdvance(time time.Time, eventName string) (identifier, fromState, toState, note string) {
+	switch eventName {
+	case "start_simulation":
+		return "Environment", "SimulationStarting", "SimulationRunning", "Started simulation"
+	case "terminate_simulation":
+		env.futureEvents.Close()
+		return "Environment", "SimulationRunning", "SimulationTerminated", "Reached termination event"
+	default:
+		panic("Unknown event for Environment")
+	}
 }
 
 func (env *Environment) Time() time.Time {
