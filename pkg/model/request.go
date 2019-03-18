@@ -48,46 +48,46 @@ func (r *Request) Identity() simulator.ProcessIdentity {
 
 func (r *Request) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
 	n := ""
-	switch event.EventName {
+	switch event.Name {
 	case requestArrivedAtIngress:
 		if r.destination.fsm.Is(StateReplicaActive) {
 			r.env.Schedule(&simulator.Event{
-				OccursAt:  event.OccursAt.Add(1 * time.Nanosecond),
-				EventName: sentRequestToReplica,
-				Subject:   r,
+				OccursAt: event.OccursAt.Add(1 * time.Nanosecond),
+				Name:     sentRequestToReplica,
+				Subject:  r,
 			})
 		} else {
 			r.env.Schedule(&simulator.Event{
-				OccursAt:  event.OccursAt.Add(1 * time.Nanosecond),
-				EventName: requestBuffered,
-				Subject:   r,
+				OccursAt: event.OccursAt.Add(1 * time.Nanosecond),
+				Name:     requestBuffered,
+				Subject:  r,
 			})
 		}
 	case requestBuffered:
 		r.buffer.AddRequest(r.name, r)
 
-		if r.destination.nextEvt.EventName == finishLaunchingReplica {
+		if r.destination.nextEvt.Name == finishLaunchingReplica {
 			r.env.Schedule(&simulator.Event{
-				OccursAt:  r.destination.nextEvt.OccursAt.Add(10 * time.Millisecond),
-				EventName: sentRequestToReplica,
-				Subject:   r,
+				OccursAt: r.destination.nextEvt.OccursAt.Add(10 * time.Millisecond),
+				Name:     sentRequestToReplica,
+				Subject:  r,
 			})
 		}
 	case sentRequestToReplica:
 		r.buffer.DeleteRequest(r.name)
 
 		r.env.Schedule(&simulator.Event{
-			OccursAt:  event.OccursAt.Add(10 * time.Millisecond),
-			EventName: beginRequestProcessing,
-			Subject:   r,
+			OccursAt: event.OccursAt.Add(10 * time.Millisecond),
+			Name:     beginRequestProcessing,
+			Subject:  r,
 		})
 	case beginRequestProcessing:
 		rnd := rand.Intn(900) + 100
 
 		r.env.Schedule(&simulator.Event{
-			OccursAt:  event.OccursAt.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
-			EventName: finishRequestProcessing,
-			Subject:   r,
+			OccursAt: event.OccursAt.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
+			Name:     finishRequestProcessing,
+			Subject:  r,
 		})
 	case finishRequestProcessing:
 		duration := event.OccursAt.Sub(r.arrivalTime)
@@ -95,7 +95,7 @@ func (r *Request) OnOccurrence(event *simulator.Event) (result simulator.Transit
 	}
 
 	currentState := r.fsm.Current()
-	err := r.fsm.Event(event.EventName)
+	err := r.fsm.Event(string(event.Name))
 	if err != nil {
 		switch err.(type) {
 		case fsm.NoTransitionError:
@@ -110,9 +110,9 @@ func (r *Request) OnOccurrence(event *simulator.Event) (result simulator.Transit
 
 func (r *Request) Run() {
 	r.env.Schedule(&simulator.Event{
-		OccursAt:  r.arrivalTime,
-		EventName: requestArrivedAtIngress,
-		Subject:   r,
+		OccursAt: r.arrivalTime,
+		Name:     requestArrivedAtIngress,
+		Subject:  r,
 	})
 }
 

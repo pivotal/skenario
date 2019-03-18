@@ -48,10 +48,10 @@ func (e *Executable) Identity() simulator.ProcessIdentity {
 }
 
 func (e *Executable) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
-	var nextExecEvtName string
+	var nextExecEvtName simulator.EventName
 	var nextExecEvtTime time.Time
 
-	switch event.EventName {
+	switch event.Name {
 	case beginPulling:
 		nextExecEvtName = finishPulling
 		nextExecEvtTime = event.OccursAt.Add(90 * time.Second)
@@ -70,18 +70,18 @@ func (e *Executable) OnOccurrence(event *simulator.Event) (result simulator.Tran
 		}
 	}
 
-	if event.EventName != killProcess && event.EventName != finishLaunching {
+	if event.Name != killProcess && event.Name != finishLaunching {
 		execEvt := &simulator.Event{
-			EventName: nextExecEvtName,
-			OccursAt:  nextExecEvtTime,
-			Subject:   e,
+			Name:     nextExecEvtName,
+			OccursAt: nextExecEvtTime,
+			Subject:  e,
 		}
 
 		e.env.Schedule(execEvt)
 	}
 
 	current := e.fsm.Current()
-	err := e.fsm.Event(event.EventName)
+	err := e.fsm.Event(string(event.Name))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -90,11 +90,11 @@ func (e *Executable) OnOccurrence(event *simulator.Event) (result simulator.Tran
 }
 
 func (e *Executable) OnSchedule(event *simulator.Event) {
-	if event.EventName == finishTerminatingReplica {
+	if event.Name == finishTerminatingReplica {
 		e.env.Schedule(&simulator.Event{
-			EventName: killProcess,
-			OccursAt:  event.OccursAt.Add(-100 * time.Millisecond),
-			Subject:   e,
+			Name:     killProcess,
+			OccursAt: event.OccursAt.Add(-100 * time.Millisecond),
+			Subject:  e,
 		})
 	}
 }
@@ -102,7 +102,7 @@ func (e *Executable) OnSchedule(event *simulator.Event) {
 func (e *Executable) Run(startingAt time.Time) {
 	r := rand.Intn(100)
 
-	var kickoffEventName string
+	var kickoffEventName simulator.EventName
 	switch e.fsm.Current() {
 	case StateCold:
 		kickoffEventName = beginPulling
@@ -117,9 +117,9 @@ func (e *Executable) Run(startingAt time.Time) {
 	}
 
 	e.env.Schedule(&simulator.Event{
-		OccursAt:  startingAt.Add(time.Duration(r) * time.Millisecond),
-		EventName: kickoffEventName,
-		Subject:   e,
+		OccursAt: startingAt.Add(time.Duration(r) * time.Millisecond),
+		Name:     kickoffEventName,
+		Subject:  e,
 	})
 }
 

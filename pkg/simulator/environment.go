@@ -13,7 +13,7 @@ import (
 type Environment struct {
 	futureEvents        *cache.Heap
 	ignoredEvents       []*Event
-	registeredListeners map[ProcessIdentity]map[string]SchedulingListener // [ProcessIdentity][EventName]Process
+	registeredListeners map[ProcessIdentity]map[EventName]SchedulingListener
 
 	simTime   time.Time
 	startTime time.Time
@@ -34,22 +34,22 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	env := &Environment{
 		futureEvents:        heap,
 		ignoredEvents:       make([]*Event, 0),
-		registeredListeners: make(map[ProcessIdentity]map[string]SchedulingListener),
+		registeredListeners: make(map[ProcessIdentity]map[EventName]SchedulingListener),
 		simTime:             begin,
 		startTime:           begin,
 		endTime:             begin.Add(runFor),
 	}
 
 	startEvent := &Event{
-		OccursAt:  env.startTime,
-		EventName: "start_simulation",
-		Subject:   env,
+		OccursAt: env.startTime,
+		Name:     "start_simulation",
+		Subject:  env,
 	}
 
 	termEvent := &Event{
-		OccursAt:  env.endTime,
-		EventName: "terminate_simulation",
-		Subject:   env,
+		OccursAt: env.endTime,
+		Name:     "terminate_simulation",
+		Subject:  env,
 	}
 
 	env.Schedule(startEvent)
@@ -68,7 +68,7 @@ func (env *Environment) Run() {
 			for _, e := range env.ignoredEvents {
 				printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 				printer.Println("Ignored events were ignored as they were scheduled after termination:")
-				printer.Printf("%20d    %-18s  %-26s\n", e.OccursAt.UnixNano(), "", e.EventName)
+				printer.Printf("%20d    %-18s  %-26s\n", e.OccursAt.UnixNano(), "", e.Name)
 			}
 			return
 		} else if err != nil {
@@ -78,13 +78,13 @@ func (env *Environment) Run() {
 		next := nextIface.(*Event)
 		env.simTime = next.OccursAt
 		result := next.Subject.OnOccurrence(next)
-		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.OccursAt.UnixNano(), next.Subject.Identity(), next.EventName, result.FromState, result.ToState, result.Note)
+		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.OccursAt.UnixNano(), next.Subject.Identity(), next.Name, result.FromState, result.ToState, result.Note)
 	}
 }
 
 func (env *Environment) Schedule(event *Event) {
 	if evtNameMap, ok := env.registeredListeners[event.Subject.Identity()]; ok {
-		if listener, ok := evtNameMap[event.EventName]; ok {
+		if listener, ok := evtNameMap[event.Name]; ok {
 			listener.OnSchedule(event)
 		}
 	}
@@ -106,7 +106,7 @@ func (env *Environment) Identity() ProcessIdentity {
 }
 
 func (env *Environment) OnOccurrence(event *Event) (result TransitionResult) {
-	switch event.EventName {
+	switch event.Name {
 	case "start_simulation":
 		return TransitionResult{FromState: "SimulationStarting", ToState: "SimulationRunning", Note: "Started simulation"}
 	case "terminate_simulation":
@@ -117,11 +117,11 @@ func (env *Environment) OnOccurrence(event *Event) (result TransitionResult) {
 	}
 }
 
-func (env *Environment) ListenForScheduling(subjectIdentity ProcessIdentity, eventName string, listener SchedulingListener) {
+func (env *Environment) ListenForScheduling(subjectIdentity ProcessIdentity, eventName EventName, listener SchedulingListener) {
 	if _, ok := env.registeredListeners[subjectIdentity]; ok {
 		env.registeredListeners[subjectIdentity][eventName] = listener
 	} else {
-		env.registeredListeners[subjectIdentity] = make(map[string]SchedulingListener)
+		env.registeredListeners[subjectIdentity] = make(map[EventName]SchedulingListener)
 		env.registeredListeners[subjectIdentity][eventName] = listener
 	}
 }

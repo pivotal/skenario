@@ -2,10 +2,12 @@ package simulator
 
 import "time"
 
+type EventName string
+
 type Event struct {
-	OccursAt  time.Time
-	EventName string
-	Subject   Process
+	OccursAt time.Time
+	Name     EventName
+	Subject  Process
 }
 
 type TransitionResult struct {

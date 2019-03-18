@@ -38,9 +38,9 @@ func (rr *RevisionReplica) Run() {
 	rr.env.ListenForScheduling(rr.executable.name, finishLaunching, rr)
 
 	rr.nextEvt = &simulator.Event{
-		OccursAt:  rr.env.Time().Add(time.Duration(r) * time.Millisecond),
-		EventName: launchReplica,
-		Subject:   rr,
+		OccursAt: rr.env.Time().Add(time.Duration(r) * time.Millisecond),
+		Name:     launchReplica,
+		Subject:  rr,
 	}
 	rr.env.Schedule(rr.nextEvt)
 
@@ -48,9 +48,9 @@ func (rr *RevisionReplica) Run() {
 	rr.executable.Run(rr.nextEvt.OccursAt)
 
 	rr.env.Schedule(&simulator.Event{
-		EventName: terminateReplica,
-		OccursAt:  rr.env.Time().Add(8 * time.Minute),
-		Subject:   rr,
+		Name:     terminateReplica,
+		OccursAt: rr.env.Time().Add(8 * time.Minute),
+		Subject:  rr,
 	})
 }
 
@@ -61,12 +61,12 @@ func (rr *RevisionReplica) Identity() simulator.ProcessIdentity {
 func (rr *RevisionReplica) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
 	currEventTime := rr.nextEvt.OccursAt
 
-	switch event.EventName {
+	switch event.Name {
 	case terminateReplica:
 		rr.nextEvt = &simulator.Event{
-			OccursAt:  event.OccursAt.Add(2 * time.Second),
-			EventName: finishTerminatingReplica,
-			Subject:   rr,
+			OccursAt: event.OccursAt.Add(2 * time.Second),
+			Name:     finishTerminatingReplica,
+			Subject:  rr,
 		}
 	}
 
@@ -75,7 +75,7 @@ func (rr *RevisionReplica) OnOccurrence(event *simulator.Event) (result simulato
 	}
 
 	current := rr.fsm.Current()
-	err := rr.fsm.Event(event.EventName)
+	err := rr.fsm.Event(string(event.Name))
 	if err != nil {
 		switch err.(type) {
 		case fsm.NoTransitionError:
@@ -89,18 +89,18 @@ func (rr *RevisionReplica) OnOccurrence(event *simulator.Event) (result simulato
 }
 
 func (rr *RevisionReplica) OnSchedule(event *simulator.Event) {
-	switch event.EventName {
+	switch event.Name {
 	case finishLaunching:
 		rr.env.Schedule(&simulator.Event{
-			EventName: finishLaunchingReplica,
-			OccursAt:  event.OccursAt.Add(10 * time.Millisecond),
-			Subject:   rr,
+			Name:     finishLaunchingReplica,
+			OccursAt: event.OccursAt.Add(10 * time.Millisecond),
+			Subject:  rr,
 		})
 	case killProcess:
 		rr.env.Schedule(&simulator.Event{
-			EventName: finishTerminatingReplica,
-			OccursAt:  event.OccursAt.Add(10 * time.Millisecond),
-			Subject:   rr,
+			Name:     finishTerminatingReplica,
+			OccursAt: event.OccursAt.Add(10 * time.Millisecond),
+			Subject:  rr,
 		})
 	}
 }
