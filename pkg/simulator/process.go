@@ -2,12 +2,16 @@ package simulator
 
 type ProcessIdentity string
 
-type Process interface {
+type Identifiable interface {
 	Identity() ProcessIdentity
+}
+
+type Process interface {
+	Identifiable
 	OnOccurrence(event *Event) (result TransitionResult)
 }
 
 type SchedulingListener interface {
-	Identity() ProcessIdentity
+	Identifiable
 	OnSchedule(event *Event)
 }
