@@ -69,7 +69,7 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 
 func (env *Environment) Run() {
 	printer := message.NewPrinter(language.AmericanEnglish)
-	printer.Printf("%20s    %-18s  %-26s    %-22s -->  %-25s  %s\n", "TIME", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
+	printer.Printf("%20s    %-18s  %-26s    %-22s -->  %-25s  %s\n", "TIME (ns)", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
 	printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
