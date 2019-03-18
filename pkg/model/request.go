@@ -42,7 +42,11 @@ type Request struct {
 	arrivalTime time.Time
 }
 
-func (r *Request) OnAdvance(t time.Time, eventName string) (identifier, fromState, toState, note string) {
+func (r *Request) Identity() string {
+	return r.name
+}
+
+func (r *Request) OnAdvance(t time.Time, eventName string) (fromState, toState, note string) {
 	n := ""
 	switch eventName {
 	case requestArrivedAtIngress:
@@ -101,7 +105,7 @@ func (r *Request) OnAdvance(t time.Time, eventName string) (identifier, fromStat
 		}
 	}
 
-	return r.name, currentState, r.fsm.Current(), n
+	return currentState, r.fsm.Current(), n
 }
 
 func (r *Request) Run() {

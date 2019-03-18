@@ -86,8 +86,8 @@ func (env *Environment) Run() {
 
 		next := nextIface.(*Event)
 		env.simTime = next.Time
-		procName, fromState, toState, note := next.Subject.OnAdvance(next.Time, next.EventName)
-		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.Time.UnixNano(), procName, next.EventName, fromState, toState, note)
+		fromState, toState, note := next.Subject.OnAdvance(next.Time, next.EventName)
+		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.Time.UnixNano(), next.Subject.Identity(), next.EventName, fromState, toState, note)
 	}
 }
 
@@ -104,13 +104,17 @@ func (env *Environment) Schedule(event *Event) {
 	}
 }
 
-func (env *Environment) OnAdvance(time time.Time, eventName string) (identifier, fromState, toState, note string) {
+func (env *Environment) Identity() string {
+	return "Environment"
+}
+
+func (env *Environment) OnAdvance(t time.Time, eventName string) (fromState, toState, note string) {
 	switch eventName {
 	case "start_simulation":
-		return "Environment", "SimulationStarting", "SimulationRunning", "Started simulation"
+		return "SimulationStarting", "SimulationRunning", "Started simulation"
 	case "terminate_simulation":
 		env.futureEvents.Close()
-		return "Environment", "SimulationRunning", "SimulationTerminated", "Reached termination event"
+		return "SimulationRunning", "SimulationTerminated", "Reached termination event"
 	default:
 		panic("Unknown event for Environment")
 	}
