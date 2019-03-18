@@ -58,7 +58,7 @@ func (rr *RevisionReplica) Identity() string {
 	return rr.name
 }
 
-func (rr *RevisionReplica) OnAdvance(event *simulator.Event) (result simulator.TransitionResult) {
+func (rr *RevisionReplica) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
 	currEventTime := rr.nextEvt.OccursAt
 
 	switch event.EventName {

@@ -46,7 +46,7 @@ func (r *Request) Identity() string {
 	return r.name
 }
 
-func (r *Request) OnAdvance(event *simulator.Event) (result simulator.TransitionResult) {
+func (r *Request) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
 	n := ""
 	switch event.EventName {
 	case requestArrivedAtIngress:

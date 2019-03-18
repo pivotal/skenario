@@ -90,7 +90,7 @@ func (env *Environment) Run() {
 
 		next := nextIface.(*Event)
 		env.simTime = next.OccursAt
-		result := next.Subject.OnAdvance(next)
+		result := next.Subject.OnOccurrence(next)
 		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.OccursAt.UnixNano(), next.Subject.Identity(), next.EventName, result.FromState, result.ToState, result.Note)
 	}
 }
@@ -118,7 +118,7 @@ func (env *Environment) Identity() string {
 	return "Environment"
 }
 
-func (env *Environment) OnAdvance(event *Event) (result TransitionResult) {
+func (env *Environment) OnOccurrence(event *Event) (result TransitionResult) {
 	switch event.EventName {
 	case "start_simulation":
 		return TransitionResult{FromState: "SimulationStarting", ToState: "SimulationRunning", Note: "Started simulation"}

@@ -47,7 +47,7 @@ func (e *Executable) Identity() string {
 	return e.name
 }
 
-func (e *Executable) OnAdvance(event *simulator.Event) (result simulator.TransitionResult) {
+func (e *Executable) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
 	var nextExecEvtName string
 	var nextExecEvtTime time.Time
 
