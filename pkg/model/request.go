@@ -52,15 +52,15 @@ func (r *Request) OnAdvance(event *simulator.Event) (result simulator.Transition
 	case requestArrivedAtIngress:
 		if r.destination.fsm.Is(StateReplicaActive) {
 			r.env.Schedule(&simulator.Event{
-				Time:        event.Time.Add(1 * time.Nanosecond),
-				EventName:   sentRequestToReplica,
-				Subject:     r,
+				OccursAt:  event.OccursAt.Add(1 * time.Nanosecond),
+				EventName: sentRequestToReplica,
+				Subject:   r,
 			})
 		} else {
 			r.env.Schedule(&simulator.Event{
-				Time:        event.Time.Add(1 * time.Nanosecond),
-				EventName:   requestBuffered,
-				Subject:     r,
+				OccursAt:  event.OccursAt.Add(1 * time.Nanosecond),
+				EventName: requestBuffered,
+				Subject:   r,
 			})
 		}
 	case requestBuffered:
@@ -68,29 +68,29 @@ func (r *Request) OnAdvance(event *simulator.Event) (result simulator.Transition
 
 		if r.destination.nextEvt.EventName == finishLaunchingReplica {
 			r.env.Schedule(&simulator.Event{
-				Time:        r.destination.nextEvt.Time.Add(10 * time.Millisecond),
-				EventName:   sentRequestToReplica,
-				Subject:     r,
+				OccursAt:  r.destination.nextEvt.OccursAt.Add(10 * time.Millisecond),
+				EventName: sentRequestToReplica,
+				Subject:   r,
 			})
 		}
 	case sentRequestToReplica:
 		r.buffer.DeleteRequest(r.name)
 
 		r.env.Schedule(&simulator.Event{
-			Time:        event.Time.Add(10 * time.Millisecond),
-			EventName:   beginRequestProcessing,
-			Subject:     r,
+			OccursAt:  event.OccursAt.Add(10 * time.Millisecond),
+			EventName: beginRequestProcessing,
+			Subject:   r,
 		})
 	case beginRequestProcessing:
 		rnd := rand.Intn(900) + 100
 
 		r.env.Schedule(&simulator.Event{
-			Time:        event.Time.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
-			EventName:   finishRequestProcessing,
-			Subject:     r,
+			OccursAt:  event.OccursAt.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
+			EventName: finishRequestProcessing,
+			Subject:   r,
 		})
 	case finishRequestProcessing:
-		duration := event.Time.Sub(r.arrivalTime)
+		duration := event.OccursAt.Sub(r.arrivalTime)
 		n = fmt.Sprintf("Request took %dms", duration.Nanoseconds()/1000000)
 	}
 
@@ -110,9 +110,9 @@ func (r *Request) OnAdvance(event *simulator.Event) (result simulator.Transition
 
 func (r *Request) Run() {
 	r.env.Schedule(&simulator.Event{
-		Time:        r.arrivalTime,
-		EventName:   requestArrivedAtIngress,
-		Subject:     r,
+		OccursAt:  r.arrivalTime,
+		EventName: requestArrivedAtIngress,
+		Subject:   r,
 	})
 }
 

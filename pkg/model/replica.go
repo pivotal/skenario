@@ -36,14 +36,14 @@ func (rr *RevisionReplica) Run() {
 	r := rand.Intn(1000)
 
 	rr.nextEvt = &simulator.Event{
-		Time:        rr.env.Time().Add(time.Duration(r) * time.Millisecond),
-		EventName:   launchReplica,
-		Subject:     rr,
+		OccursAt:  rr.env.Time().Add(time.Duration(r) * time.Millisecond),
+		EventName: launchReplica,
+		Subject:   rr,
 	}
 	rr.env.Schedule(rr.nextEvt)
 
 	rr.executable.AddRevisionReplica(rr)
-	rr.executable.Run(rr.env, rr.nextEvt.Time)
+	rr.executable.Run(rr.env, rr.nextEvt.OccursAt)
 }
 
 func (rr *RevisionReplica) Identity() string {
@@ -51,7 +51,7 @@ func (rr *RevisionReplica) Identity() string {
 }
 
 func (rr *RevisionReplica) OnAdvance(event *simulator.Event) (result simulator.TransitionResult) {
-	currEventTime := rr.nextEvt.Time
+	currEventTime := rr.nextEvt.OccursAt
 
 	switch event.EventName {
 	case launchReplica:
@@ -60,13 +60,13 @@ func (rr *RevisionReplica) OnAdvance(event *simulator.Event) (result simulator.T
 		// handled by the Executable
 	case terminateReplica:
 		rr.nextEvt = &simulator.Event{
-			Time:        event.Time.Add(2 * time.Second),
-			EventName:   killProcess,
-			Subject:     rr.executable,
+			OccursAt:  event.OccursAt.Add(2 * time.Second),
+			EventName: killProcess,
+			Subject:   rr.executable,
 		}
 	}
 
-	if rr.nextEvt.Time.After(currEventTime) {
+	if rr.nextEvt.OccursAt.After(currEventTime) {
 		rr.env.Schedule(rr.nextEvt)
 	}
 

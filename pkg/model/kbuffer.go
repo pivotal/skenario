@@ -3,7 +3,7 @@ package model
 import "knative-simulator/pkg/simulator"
 
 type KBuffer struct {
-	env *simulator.Environment
+	env      *simulator.Environment
 	requests map[string]*Request
 }
 

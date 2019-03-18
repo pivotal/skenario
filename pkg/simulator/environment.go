@@ -24,12 +24,12 @@ type Environment struct {
 func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	heap := cache.NewHeap(func(event interface{}) (key string, err error) {
 		evt := event.(*Event)
-		return strconv.FormatInt(evt.Time.UnixNano(), 10), nil
+		return strconv.FormatInt(evt.OccursAt.UnixNano(), 10), nil
 	}, func(leftEvent interface{}, rightEvent interface{}) bool {
 		l := leftEvent.(*Event)
 		r := rightEvent.(*Event)
 
-		return l.Time.Before(r.Time)
+		return l.OccursAt.Before(r.OccursAt)
 	})
 
 	env := &Environment{
@@ -50,15 +50,15 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	)
 
 	startEvent := &Event{
-		Time:        env.startTime,
-		EventName:   "start_simulation",
-		Subject:     env,
+		OccursAt:  env.startTime,
+		EventName: "start_simulation",
+		Subject:   env,
 	}
 
 	termEvent := &Event{
-		Time:        env.endTime,
-		EventName:   "terminate_simulation",
-		Subject:     env,
+		OccursAt:  env.endTime,
+		EventName: "terminate_simulation",
+		Subject:   env,
 	}
 
 	env.Schedule(startEvent)
@@ -77,7 +77,7 @@ func (env *Environment) Run() {
 			for _, e := range env.ignoredEvents {
 				printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 				printer.Println("Ignored events were ignored as they were scheduled after termination:")
-				printer.Printf("%20d    %-18s  %-26s\n", e.Time.UnixNano(), "", e.EventName)
+				printer.Printf("%20d    %-18s  %-26s\n", e.OccursAt.UnixNano(), "", e.EventName)
 			}
 			return
 		} else if err != nil {
@@ -85,14 +85,14 @@ func (env *Environment) Run() {
 		}
 
 		next := nextIface.(*Event)
-		env.simTime = next.Time
+		env.simTime = next.OccursAt
 		result := next.Subject.OnAdvance(next)
-		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.Time.UnixNano(), next.Subject.Identity(), next.EventName, result.FromState, result.ToState, result.Note)
+		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.OccursAt.UnixNano(), next.Subject.Identity(), next.EventName, result.FromState, result.ToState, result.Note)
 	}
 }
 
 func (env *Environment) Schedule(event *Event) {
-	if event.Time.After(env.endTime) {
+	if event.OccursAt.After(env.endTime) {
 		env.ignoredEvents = append(env.ignoredEvents, event)
 
 		return

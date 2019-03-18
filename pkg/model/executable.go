@@ -54,29 +54,29 @@ func (e *Executable) OnAdvance(event *simulator.Event) (result simulator.Transit
 	switch event.EventName {
 	case beginPulling:
 		nextExecEvtName = finishPulling
-		nextExecEvtTime = event.Time.Add(90 * time.Second)
+		nextExecEvtTime = event.OccursAt.Add(90 * time.Second)
 	case finishPulling:
 		nextExecEvtName = launchFromDisk
-		nextExecEvtTime = event.Time.Add(1 * time.Second)
+		nextExecEvtTime = event.OccursAt.Add(1 * time.Second)
 	case launchFromDisk:
 		nextExecEvtName = finishLaunching
-		nextExecEvtTime = event.Time.Add(10 * time.Second)
+		nextExecEvtTime = event.OccursAt.Add(10 * time.Second)
 	case launchFromPageCache:
 		nextExecEvtName = finishLaunching
-		nextExecEvtTime = event.Time.Add(100 * time.Millisecond)
+		nextExecEvtTime = event.OccursAt.Add(100 * time.Millisecond)
 	case finishLaunching:
 		nextReplicaEvtName = finishLaunchingReplica
-		nextReplicaEvtTime = event.Time.Add(10 * time.Millisecond)
+		nextReplicaEvtTime = event.OccursAt.Add(10 * time.Millisecond)
 	case killProcess:
 		nextReplicaEvtName = finishTerminatingReplica
-		nextReplicaEvtTime = event.Time.Add(10 * time.Millisecond)
+		nextReplicaEvtTime = event.OccursAt.Add(10 * time.Millisecond)
 	}
 
 	if event.EventName != killProcess && event.EventName != finishLaunching {
 		execEvt := &simulator.Event{
-			EventName:   nextExecEvtName,
-			Time:        nextExecEvtTime,
-			Subject:     e,
+			EventName: nextExecEvtName,
+			OccursAt:  nextExecEvtTime,
+			Subject:   e,
 		}
 
 		e.env.Schedule(execEvt)
@@ -85,9 +85,9 @@ func (e *Executable) OnAdvance(event *simulator.Event) (result simulator.Transit
 	if nextReplicaEvtName != "" {
 		for _, r := range e.replicas {
 			replicaEvt := &simulator.Event{
-				EventName:   nextReplicaEvtName,
-				Time:        nextReplicaEvtTime,
-				Subject:     r,
+				EventName: nextReplicaEvtName,
+				OccursAt:  nextReplicaEvtTime,
+				Subject:   r,
 			}
 
 			r.nextEvt = replicaEvt
@@ -124,9 +124,9 @@ func (e *Executable) Run(env *simulator.Environment, startingAt time.Time) {
 	}
 
 	env.Schedule(&simulator.Event{
-		Time:        startingAt.Add(time.Duration(r) * time.Millisecond),
-		EventName:   kickoffEventName,
-		Subject:     e,
+		OccursAt:  startingAt.Add(time.Duration(r) * time.Millisecond),
+		EventName: kickoffEventName,
+		Subject:   e,
 	})
 }
 
