@@ -60,7 +60,7 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 
 func (env *Environment) Run() {
 	printer := message.NewPrinter(language.AmericanEnglish)
-	printer.Printf("%20s    %-18s  %-26s    %-22s -->  %-25s  %s\n", "TIME (ns)", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
+	printer.Printf("%20s    %-18s  %-26s    %-25s -->  %-25s    %s\n", "TIME (ns)", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
 	printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
@@ -78,7 +78,7 @@ func (env *Environment) Run() {
 		next := nextIface.(*Event)
 		env.simTime = next.OccursAt
 		result := next.Subject.OnOccurrence(next)
-		printer.Printf("%20d    %-18s  %-26s    %-22s -->  %-25s  %s\n", next.OccursAt.UnixNano(), next.Subject.Identity(), next.Name, result.FromState, result.ToState, result.Note)
+		printer.Printf("%20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt.UnixNano(), next.Subject.Identity(), next.Name, result.FromState, result.ToState, result.Note)
 	}
 }
 

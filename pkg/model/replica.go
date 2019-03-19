@@ -23,11 +23,12 @@ const (
 )
 
 type RevisionReplica struct {
-	name                simulator.ProcessIdentity
-	fsm                 *fsm.FSM
-	env                 *simulator.Environment
-	executable          *Executable
-	nextEvt             *simulator.Event
+	name       simulator.ProcessIdentity
+	fsm        *fsm.FSM
+	env        *simulator.Environment
+	executable *Executable
+	endpoints  *ReplicaEndpoints
+	nextEvt    *simulator.Event
 }
 
 func (rr *RevisionReplica) Run() {
@@ -103,11 +104,12 @@ func (rr *RevisionReplica) OnSchedule(event *simulator.Event) {
 	}
 }
 
-func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *simulator.Environment) *RevisionReplica {
+func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, endpoints *ReplicaEndpoints, env *simulator.Environment) *RevisionReplica {
 	rr := &RevisionReplica{
-		name:               name,
-		env:                env,
-		executable:         exec,
+		name:       name,
+		env:        env,
+		executable: exec,
+		endpoints:  endpoints,
 	}
 
 	rr.fsm = fsm.NewFSM(
@@ -120,6 +122,8 @@ func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *s
 		},
 		fsm.Callbacks{},
 	)
+
+	endpoints.AddRevisionReplica(rr)
 
 	return rr
 }

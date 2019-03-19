@@ -29,7 +29,7 @@ func (tr *Traffic) Run() {
 	t := tr.beginTime
 
 	for {
-		r := rand.Int63n(10000)
+		r := rand.Int63n(100000)
 		t = t.Add(time.Duration(r) * time.Millisecond)
 
 		if t.After(tr.endTime) {

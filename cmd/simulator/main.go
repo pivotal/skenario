@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"knative-simulator/pkg/model"
-
 	"knative-simulator/pkg/simulator"
+
+	fakes "k8s.io/client-go/kubernetes/fake"
 )
 
 func main() {
@@ -18,7 +19,8 @@ func main() {
 	env := simulator.NewEnvironment(begin, tenMinutes)
 
 	exec1 := model.NewExecutable("exec-1", model.StateCold, env)
-	replica1 := model.NewRevisionReplica("revision-1", exec1, env)
+	endpoints1 := model.NewReplicaEndpoints("endpoints-1", env, fakes.NewSimpleClientset())
+	replica1 := model.NewRevisionReplica("revision-1", exec1, endpoints1, env)
 	replica1.Run()
 	buffer := model.NewKBuffer(env)
 	traffic := model.NewTraffic(env, buffer, replica1, begin, tenMinutes)
