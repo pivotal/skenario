@@ -9,16 +9,16 @@ import (
 
 type Traffic struct {
 	env       *simulator.Environment
-	replica   *RevisionReplica
+	endpoints *ReplicaEndpoints
 	buffer    *KBuffer
 	beginTime time.Time
 	endTime   time.Time
 }
 
-func NewTraffic(env *simulator.Environment, buffer *KBuffer, replica *RevisionReplica, begin time.Time, runFor time.Duration) *Traffic {
+func NewTraffic(env *simulator.Environment, buffer *KBuffer, endpoints *ReplicaEndpoints, begin time.Time, runFor time.Duration) *Traffic {
 	return &Traffic{
 		env:       env,
-		replica:   replica,
+		endpoints: endpoints,
 		buffer:    buffer,
 		beginTime: begin,
 		endTime:   begin.Add(runFor),
@@ -36,7 +36,7 @@ func (tr *Traffic) Run() {
 			return
 		}
 
-		req := NewRequest(tr.env, tr.buffer, tr.replica, t)
+		req := NewRequest(tr.env, tr.buffer, tr.endpoints, t)
 		req.Run()
 	}
 }

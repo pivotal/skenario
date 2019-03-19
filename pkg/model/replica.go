@@ -27,7 +27,6 @@ type RevisionReplica struct {
 	fsm        *fsm.FSM
 	env        *simulator.Environment
 	executable *Executable
-	endpoints  *ReplicaEndpoints
 	nextEvt    *simulator.Event
 }
 
@@ -104,12 +103,15 @@ func (rr *RevisionReplica) OnSchedule(event *simulator.Event) {
 	}
 }
 
-func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, endpoints *ReplicaEndpoints, env *simulator.Environment) *RevisionReplica {
+func (rr *RevisionReplica) AddRequest(req *Request) {
+
+}
+
+func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *simulator.Environment) *RevisionReplica {
 	rr := &RevisionReplica{
 		name:       name,
 		env:        env,
 		executable: exec,
-		endpoints:  endpoints,
 	}
 
 	rr.fsm = fsm.NewFSM(
@@ -122,8 +124,6 @@ func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, endpoi
 		},
 		fsm.Callbacks{},
 	)
-
-	endpoints.AddRevisionReplica(rr)
 
 	return rr
 }

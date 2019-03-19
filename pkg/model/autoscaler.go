@@ -78,10 +78,9 @@ func (ka *KnativeAutoscaler) OnOccurrence(event *simulator.Event) (result simula
 					r := NewRevisionReplica(
 						simulator.ProcessIdentity(fmt.Sprintf("replica-%d", i)),
 						ka.exec,
-						ka.endpoints,
 						ka.env,
 					)
-
+					ka.endpoints.AddRevisionReplica(r)
 					ka.replicas = append(ka.replicas, r)
 					r.Run()
 				}

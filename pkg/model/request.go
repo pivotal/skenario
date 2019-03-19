@@ -38,7 +38,6 @@ type Request struct {
 	fsm         *fsm.FSM
 	env         *simulator.Environment
 	buffer      *KBuffer
-	destination *RevisionReplica
 	arrivalTime time.Time
 }
 
@@ -50,29 +49,14 @@ func (r *Request) OnOccurrence(event *simulator.Event) (result simulator.Transit
 	n := ""
 	switch event.Name {
 	case requestArrivedAtIngress:
-		if r.destination.fsm.Is(StateReplicaActive) {
-			r.env.Schedule(&simulator.Event{
-				OccursAt: event.OccursAt.Add(1 * time.Nanosecond),
-				Name:     sentRequestToReplica,
-				Subject:  r,
-			})
-		} else {
-			r.env.Schedule(&simulator.Event{
-				OccursAt: event.OccursAt.Add(1 * time.Nanosecond),
-				Name:     requestBuffered,
-				Subject:  r,
-			})
-		}
+		r.env.Schedule(&simulator.Event{
+			OccursAt: event.OccursAt.Add(1 * time.Nanosecond),
+			Name:     requestBuffered,
+			Subject:  r,
+		})
 	case requestBuffered:
 		r.buffer.AddRequest(r.name, r)
-
-		if r.destination.nextEvt.Name == finishLaunchingReplica {
-			r.env.Schedule(&simulator.Event{
-				OccursAt: r.destination.nextEvt.OccursAt.Add(10 * time.Millisecond),
-				Name:     sentRequestToReplica,
-				Subject:  r,
-			})
-		}
+		// OnSchedule() for replica launched
 	case sentRequestToReplica:
 		r.buffer.DeleteRequest(r.name)
 
@@ -116,12 +100,11 @@ func (r *Request) Run() {
 	})
 }
 
-func NewRequest(env *simulator.Environment, buffer *KBuffer, destination *RevisionReplica, arrivalTime time.Time) *Request {
+func NewRequest(env *simulator.Environment, buffer *KBuffer, arrivalTime time.Time) *Request {
 	req := &Request{
 		name:        simulator.ProcessIdentity(fmt.Sprintf("req-%012d", rand.Int63n(100000000000))),
 		env:         env,
 		buffer:      buffer,
-		destination: destination,
 		arrivalTime: arrivalTime,
 	}
 	req.fsm = fsm.NewFSM(

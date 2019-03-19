@@ -15,15 +15,16 @@ func main() {
 
 	begin := time.Unix(0, 0).UTC()
 	tenMinutes := 10 * time.Minute
+	fakeClient := fakes.NewSimpleClientset()
 
 	env := simulator.NewEnvironment(begin, tenMinutes)
 
 	exec1 := model.NewExecutable("exec-1", model.StateCold, env)
-	endpoints1 := model.NewReplicaEndpoints("endpoints-1", env, fakes.NewSimpleClientset())
-	replica1 := model.NewRevisionReplica("revision-1", exec1, endpoints1, env)
-	replica1.Run()
+	endpoints1 := model.NewReplicaEndpoints("endpoints-1", env, fakeClient)
+	autoscaler1 := model.NewAutoscaler("autoscaler-1", env, exec1, endpoints1, fakeClient)
+
 	buffer := model.NewKBuffer(env)
-	traffic := model.NewTraffic(env, buffer, replica1, begin, tenMinutes)
+	traffic := model.NewTraffic(env, buffer, autoscaler1, begin, tenMinutes)
 	traffic.Run()
 
 	fmt.Println("=== BEGIN TRACE ===============================================================================================================================================")

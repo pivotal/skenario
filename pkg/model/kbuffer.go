@@ -1,26 +1,58 @@
 package model
 
-import "knative-simulator/pkg/simulator"
+import (
+	"math/rand"
+
+	"knative-simulator/pkg/simulator"
+)
 
 type KBuffer struct {
-	env      *simulator.Environment
-	requests map[simulator.ProcessIdentity]*Request
+	env              *simulator.Environment
+	requestsBuffered map[simulator.ProcessIdentity]*Request
+	replicas         map[simulator.ProcessIdentity]*RevisionReplica
 }
 
 func (kb *KBuffer) AddRequest(reqName simulator.ProcessIdentity, req *Request) {
-	kb.requests[reqName] = req
+	replicasAvailable := len(kb.replicas)
+	if replicasAvailable > 0 {
+		stop := rand.Intn(replicasAvailable)
+		i := 0
+
+		for _, r := range kb.replicas {
+			if i == stop {
+				r.AddRequest(req)
+				break
+			}
+			i++
+		}
+
+	} else {
+		kb.requestsBuffered[reqName] = req
+	}
 }
 
 func (kb *KBuffer) DeleteRequest(reqName simulator.ProcessIdentity) *Request {
-	delReq := kb.requests[reqName]
-	delete(kb.requests, reqName)
+	delReq := kb.requestsBuffered[reqName]
+	delete(kb.requestsBuffered, reqName)
 
 	return delReq
 }
 
+func (kb *KBuffer) AddReplica(replica *RevisionReplica) {
+	kb.replicas[replica.Identity()] = replica
+}
+
+func (kb *KBuffer) DeleteReplica(replica *RevisionReplica) *RevisionReplica {
+	delRev := kb.replicas[replica.Identity()]
+	delete(kb.replicas, replica.Identity())
+
+	return delRev
+}
+
 func NewKBuffer(env *simulator.Environment) *KBuffer {
 	return &KBuffer{
-		env:      env,
-		requests: make(map[simulator.ProcessIdentity]*Request),
+		env:              env,
+		requestsBuffered: make(map[simulator.ProcessIdentity]*Request),
+		replicas:         make(map[simulator.ProcessIdentity]*RevisionReplica),
 	}
 }
