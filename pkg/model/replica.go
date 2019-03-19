@@ -27,8 +27,6 @@ type RevisionReplica struct {
 	fsm                 *fsm.FSM
 	env                 *simulator.Environment
 	executable          *Executable
-	numCurrentRequests  int64
-	numBufferedRequests int64
 	nextEvt             *simulator.Event
 }
 
@@ -110,7 +108,6 @@ func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *s
 		name:               name,
 		env:                env,
 		executable:         exec,
-		numCurrentRequests: 0,
 	}
 
 	rr.fsm = fsm.NewFSM(
