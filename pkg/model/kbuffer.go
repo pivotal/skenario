@@ -1,8 +1,6 @@
 package model
 
 import (
-	"math/rand"
-
 	"knative-simulator/pkg/simulator"
 )
 
@@ -13,22 +11,7 @@ type KBuffer struct {
 }
 
 func (kb *KBuffer) AddRequest(reqName simulator.ProcessIdentity, req *Request) {
-	replicasAvailable := len(kb.replicas)
-	if replicasAvailable > 0 {
-		stop := rand.Intn(replicasAvailable)
-		i := 0
 
-		for _, r := range kb.replicas {
-			if i == stop {
-				r.AddRequest(req)
-				break
-			}
-			i++
-		}
-
-	} else {
-		kb.requestsBuffered[reqName] = req
-	}
 }
 
 func (kb *KBuffer) DeleteRequest(reqName simulator.ProcessIdentity) *Request {

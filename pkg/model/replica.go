@@ -27,7 +27,7 @@ type RevisionReplica struct {
 	fsm        *fsm.FSM
 	env        *simulator.Environment
 	executable *Executable
-	nextEvt    *simulator.Event
+	nextEvt    simulator.Event
 }
 
 func (rr *RevisionReplica) Run() {
@@ -35,45 +35,45 @@ func (rr *RevisionReplica) Run() {
 
 	rr.env.ListenForScheduling(rr.executable.name, finishLaunching, rr)
 
-	rr.nextEvt = &simulator.Event{
-		OccursAt: rr.env.Time().Add(time.Duration(r) * time.Millisecond),
-		Name:     launchReplica,
-		Subject:  rr,
-	}
+	rr.nextEvt = simulator.NewGeneralEvent(
+		launchReplica,
+		rr.env.Time().Add(time.Duration(r) * time.Millisecond),
+		rr,
+	)
 	rr.env.Schedule(rr.nextEvt)
 
 	rr.executable.AddRevisionReplica(rr)
-	rr.executable.Run(rr.nextEvt.OccursAt)
+	rr.executable.Run(rr.nextEvt.OccursAt())
 
-	rr.env.Schedule(&simulator.Event{
-		Name:     terminateReplica,
-		OccursAt: rr.env.Time().Add(8 * time.Minute),
-		Subject:  rr,
-	})
+	rr.env.Schedule(simulator.NewGeneralEvent(
+		terminateReplica,
+		rr.env.Time().Add(8 * time.Minute),
+		rr,
+	))
 }
 
 func (rr *RevisionReplica) Identity() simulator.ProcessIdentity {
 	return rr.name
 }
 
-func (rr *RevisionReplica) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
-	currEventTime := rr.nextEvt.OccursAt
+func (rr *RevisionReplica) OnOccurrence(event simulator.Event) (result simulator.TransitionResult) {
+	currEventTime := rr.nextEvt.OccursAt()
 
-	switch event.Name {
+	switch event.Name() {
 	case terminateReplica:
-		rr.nextEvt = &simulator.Event{
-			OccursAt: event.OccursAt.Add(2 * time.Second),
-			Name:     finishTerminatingReplica,
-			Subject:  rr,
-		}
+		rr.nextEvt = simulator.NewGeneralEvent(
+			finishTerminatingReplica,
+			event.OccursAt().Add(2 * time.Second),
+			rr,
+		)
 	}
 
-	if rr.nextEvt.OccursAt.After(currEventTime) {
+	if rr.nextEvt.OccursAt().After(currEventTime) {
 		rr.env.Schedule(rr.nextEvt)
 	}
 
 	current := rr.fsm.Current()
-	err := rr.fsm.Event(string(event.Name))
+	err := rr.fsm.Event(string(event.Name()))
 	if err != nil {
 		switch err.(type) {
 		case fsm.NoTransitionError:
@@ -86,25 +86,21 @@ func (rr *RevisionReplica) OnOccurrence(event *simulator.Event) (result simulato
 	return simulator.TransitionResult{FromState: current, ToState: rr.fsm.Current()}
 }
 
-func (rr *RevisionReplica) OnSchedule(event *simulator.Event) {
-	switch event.Name {
+func (rr *RevisionReplica) OnSchedule(event simulator.Event) {
+	switch event.Name() {
 	case finishLaunching:
-		rr.env.Schedule(&simulator.Event{
-			Name:     finishLaunchingReplica,
-			OccursAt: event.OccursAt.Add(10 * time.Millisecond),
-			Subject:  rr,
-		})
+		rr.env.Schedule(simulator.NewGeneralEvent(
+			finishLaunchingReplica,
+			event.OccursAt().Add(10 * time.Millisecond),
+			rr,
+		))
 	case killProcess:
-		rr.env.Schedule(&simulator.Event{
-			Name:     finishTerminatingReplica,
-			OccursAt: event.OccursAt.Add(10 * time.Millisecond),
-			Subject:  rr,
-		})
+		rr.env.Schedule(simulator.NewGeneralEvent(
+			finishTerminatingReplica,
+			event.OccursAt().Add(10 * time.Millisecond),
+			rr,
+		))
 	}
-}
-
-func (rr *RevisionReplica) AddRequest(req *Request) {
-
 }
 
 func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *simulator.Environment) *RevisionReplica {

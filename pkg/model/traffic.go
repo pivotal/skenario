@@ -36,7 +36,7 @@ func (tr *Traffic) Run() {
 			return
 		}
 
-		req := NewRequest(tr.env, tr.buffer, tr.endpoints, t)
+		req := NewRequest(tr.env, tr.buffer, t)
 		req.Run()
 	}
 }

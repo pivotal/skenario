@@ -31,13 +31,13 @@ func (re *ReplicaEndpoints) Identity() simulator.ProcessIdentity {
 	return re.name
 }
 
-func (re *ReplicaEndpoints) OnSchedule(event *simulator.Event) {
-	switch event.Name {
+func (re *ReplicaEndpoints) OnSchedule(event simulator.Event) {
+	switch event.Name() {
 	case finishLaunchingReplica:
 		re.nextAddress[3]++ // TODO: what happens when this overflows?
 		newAddress := corev1.EndpointAddress{
 			IP:       re.nextAddress.String(),
-			Hostname: string(event.Subject.Identity()),
+			Hostname: string(event.Subject().Identity()),
 		}
 		newSubset := corev1.EndpointSubset{
 			Addresses: []corev1.EndpointAddress{newAddress},
@@ -46,14 +46,14 @@ func (re *ReplicaEndpoints) OnSchedule(event *simulator.Event) {
 			Subsets: []corev1.EndpointSubset{newSubset},
 		}
 
-		re.replicaEndpoints[event.Subject.Identity()] = newEndpoints
+		re.replicaEndpoints[event.Subject().Identity()] = newEndpoints
 
 		re.kubernetesClient.CoreV1().Endpoints(simulatorNamespace).Create(newEndpoints)
 		re.endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 	case terminateReplica:
 		re.nextAddress[3]--
-		endpoint := re.replicaEndpoints[event.Subject.Identity()]
-		delete(re.replicaEndpoints, event.Subject.Identity())
+		endpoint := re.replicaEndpoints[event.Subject().Identity()]
+		delete(re.replicaEndpoints, event.Subject().Identity())
 
 		grace := int64(0)
 		propPolicy := metav1.DeletePropagationForeground

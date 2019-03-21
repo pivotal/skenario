@@ -12,7 +12,7 @@ import (
 
 type Environment struct {
 	futureEvents        *cache.Heap
-	ignoredEvents       []*Event
+	ignoredEvents       []Event
 	registeredListeners map[ProcessIdentity]map[EventName]SchedulingListener
 
 	simTime   time.Time
@@ -22,35 +22,35 @@ type Environment struct {
 
 func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 	heap := cache.NewHeap(func(event interface{}) (key string, err error) {
-		evt := event.(*Event)
-		return strconv.FormatInt(evt.OccursAt.UnixNano(), 10), nil
+		evt := event.(Event)
+		return strconv.FormatInt(evt.OccursAt().UnixNano(), 10), nil
 	}, func(leftEvent interface{}, rightEvent interface{}) bool {
-		l := leftEvent.(*Event)
-		r := rightEvent.(*Event)
+		l := leftEvent.(Event)
+		r := rightEvent.(Event)
 
-		return l.OccursAt.Before(r.OccursAt)
+		return l.OccursAt().Before(r.OccursAt())
 	})
 
 	env := &Environment{
 		futureEvents:        heap,
-		ignoredEvents:       make([]*Event, 0),
+		ignoredEvents:       make([]Event, 0),
 		registeredListeners: make(map[ProcessIdentity]map[EventName]SchedulingListener),
 		simTime:             begin,
 		startTime:           begin,
 		endTime:             begin.Add(runFor),
 	}
 
-	startEvent := &Event{
-		OccursAt: env.startTime,
-		Name:     "start_simulation",
-		Subject:  env,
-	}
+	startEvent := NewGeneralEvent(
+		"start_simulation",
+		env.startTime,
+		env,
+	)
 
-	termEvent := &Event{
-		OccursAt: env.endTime,
-		Name:     "terminate_simulation",
-		Subject:  env,
-	}
+	termEvent := NewGeneralEvent(
+		"terminate_simulation",
+		env.endTime,
+		env,
+	)
 
 	env.Schedule(startEvent)
 	env.Schedule(termEvent)
@@ -68,28 +68,28 @@ func (env *Environment) Run() {
 			for _, e := range env.ignoredEvents {
 				printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 				printer.Println("Ignored events were ignored as they were scheduled after termination:")
-				printer.Printf("%20d    %-18s  %-26s\n", e.OccursAt.UnixNano(), "", e.Name)
+				printer.Printf("%20d    %-18s  %-26s\n", e.OccursAt().UnixNano(), "", e.Name())
 			}
 			return
 		} else if err != nil {
 			panic(err)
 		}
 
-		next := nextIface.(*Event)
-		env.simTime = next.OccursAt
-		result := next.Subject.OnOccurrence(next)
-		printer.Printf("%20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt.UnixNano(), next.Subject.Identity(), next.Name, result.FromState, result.ToState, result.Note)
+		next := nextIface.(Event)
+		env.simTime = next.OccursAt()
+		result := next.Subject().OnOccurrence(next)
+		printer.Printf("%20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt().UnixNano(), next.Subject().Identity(), next.Name(), result.FromState, result.ToState, result.Note)
 	}
 }
 
-func (env *Environment) Schedule(event *Event) {
-	if evtNameMap, ok := env.registeredListeners[event.Subject.Identity()]; ok {
-		if listener, ok := evtNameMap[event.Name]; ok {
+func (env *Environment) Schedule(event Event) {
+	if evtNameMap, ok := env.registeredListeners[event.Subject().Identity()]; ok {
+		if listener, ok := evtNameMap[event.Name()]; ok {
 			listener.OnSchedule(event)
 		}
 	}
 
-	if event.OccursAt.After(env.endTime) {
+	if event.OccursAt().After(env.endTime) {
 		env.ignoredEvents = append(env.ignoredEvents, event)
 
 		return
@@ -105,8 +105,8 @@ func (env *Environment) Identity() ProcessIdentity {
 	return "Environment"
 }
 
-func (env *Environment) OnOccurrence(event *Event) (result TransitionResult) {
-	switch event.Name {
+func (env *Environment) OnOccurrence(event Event) (result TransitionResult) {
+	switch event.Name() {
 	case "start_simulation":
 		return TransitionResult{FromState: "SimulationStarting", ToState: "SimulationRunning", Note: "Started simulation"}
 	case "terminate_simulation":

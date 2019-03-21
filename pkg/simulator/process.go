@@ -8,10 +8,10 @@ type Identifiable interface {
 
 type Process interface {
 	Identifiable
-	OnOccurrence(event *Event) (result TransitionResult)
+	OnOccurrence(event Event) (result TransitionResult)
 }
 
 type SchedulingListener interface {
 	Identifiable
-	OnSchedule(event *Event)
+	OnSchedule(event Event)
 }

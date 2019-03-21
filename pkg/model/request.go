@@ -45,41 +45,41 @@ func (r *Request) Identity() simulator.ProcessIdentity {
 	return r.name
 }
 
-func (r *Request) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
+func (r *Request) OnOccurrence(event simulator.Event) (result simulator.TransitionResult) {
 	n := ""
-	switch event.Name {
+
+	switch event.Name() {
 	case requestArrivedAtIngress:
-		r.env.Schedule(&simulator.Event{
-			OccursAt: event.OccursAt.Add(1 * time.Nanosecond),
-			Name:     requestBuffered,
-			Subject:  r,
-		})
+		r.env.Schedule(simulator.NewGeneralEvent(
+			requestBuffered,
+			event.OccursAt().Add(1 * time.Nanosecond),
+			r,
+		))
 	case requestBuffered:
-		r.buffer.AddRequest(r.name, r)
 		// OnSchedule() for replica launched
 	case sentRequestToReplica:
 		r.buffer.DeleteRequest(r.name)
 
-		r.env.Schedule(&simulator.Event{
-			OccursAt: event.OccursAt.Add(10 * time.Millisecond),
-			Name:     beginRequestProcessing,
-			Subject:  r,
-		})
+		r.env.Schedule(simulator.NewGeneralEvent(
+			beginRequestProcessing,
+			event.OccursAt().Add(10 * time.Millisecond),
+			r,
+		))
 	case beginRequestProcessing:
 		rnd := rand.Intn(900) + 100
 
-		r.env.Schedule(&simulator.Event{
-			OccursAt: event.OccursAt.Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
-			Name:     finishRequestProcessing,
-			Subject:  r,
-		})
+		r.env.Schedule(simulator.NewGeneralEvent(
+			finishRequestProcessing,
+			event.OccursAt().Add(time.Duration(rnd) * time.Millisecond), // TODO: function that respects utilisation
+			r,
+		))
 	case finishRequestProcessing:
-		duration := event.OccursAt.Sub(r.arrivalTime)
+		duration := event.OccursAt().Sub(r.arrivalTime)
 		n = fmt.Sprintf("Request took %dms", duration.Nanoseconds()/1000000)
 	}
 
 	currentState := r.fsm.Current()
-	err := r.fsm.Event(string(event.Name))
+	err := r.fsm.Event(string(event.Name()))
 	if err != nil {
 		switch err.(type) {
 		case fsm.NoTransitionError:
@@ -93,11 +93,11 @@ func (r *Request) OnOccurrence(event *simulator.Event) (result simulator.Transit
 }
 
 func (r *Request) Run() {
-	r.env.Schedule(&simulator.Event{
-		OccursAt: r.arrivalTime,
-		Name:     requestArrivedAtIngress,
-		Subject:  r,
-	})
+	r.env.Schedule(simulator.NewGeneralEvent(
+		requestArrivedAtIngress,
+		r.arrivalTime,
+		r,
+	))
 }
 
 func NewRequest(env *simulator.Environment, buffer *KBuffer, arrivalTime time.Time) *Request {
@@ -118,8 +118,6 @@ func NewRequest(env *simulator.Environment, buffer *KBuffer, arrivalTime time.Ti
 		},
 		fsm.Callbacks{},
 	)
-
-	buffer.AddRequest(req.name, req)
 
 	return req
 }

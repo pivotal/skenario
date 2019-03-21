@@ -47,41 +47,41 @@ func (e *Executable) Identity() simulator.ProcessIdentity {
 	return e.name
 }
 
-func (e *Executable) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
+func (e *Executable) OnOccurrence(event simulator.Event) (result simulator.TransitionResult) {
 	var nextExecEvtName simulator.EventName
 	var nextExecEvtTime time.Time
 
-	switch event.Name {
+	switch event.Name() {
 	case beginPulling:
 		nextExecEvtName = finishPulling
-		nextExecEvtTime = event.OccursAt.Add(90 * time.Second)
+		nextExecEvtTime = event.OccursAt().Add(90 * time.Second)
 	case finishPulling:
 		nextExecEvtName = launchFromDisk
-		nextExecEvtTime = event.OccursAt.Add(1 * time.Second)
+		nextExecEvtTime = event.OccursAt().Add(1 * time.Second)
 	case launchFromDisk:
 		nextExecEvtName = finishLaunching
-		nextExecEvtTime = event.OccursAt.Add(10 * time.Second)
+		nextExecEvtTime = event.OccursAt().Add(10 * time.Second)
 	case launchFromPageCache:
 		nextExecEvtName = finishLaunching
-		nextExecEvtTime = event.OccursAt.Add(100 * time.Millisecond)
+		nextExecEvtTime = event.OccursAt().Add(100 * time.Millisecond)
 	case killProcess:
 		if len(e.replicas) > 1 { // if there will still be running replicas after termination
 			return simulator.TransitionResult{FromState: e.fsm.Current(), ToState: e.fsm.Current()} // do nothing
 		}
 	}
 
-	if event.Name != killProcess && event.Name != finishLaunching {
-		execEvt := &simulator.Event{
-			Name:     nextExecEvtName,
-			OccursAt: nextExecEvtTime,
-			Subject:  e,
-		}
+	if event.Name() != killProcess && event.Name() != finishLaunching {
+		execEvt := simulator.NewGeneralEvent(
+			nextExecEvtName,
+			nextExecEvtTime,
+			e,
+		)
 
 		e.env.Schedule(execEvt)
 	}
 
 	current := e.fsm.Current()
-	err := e.fsm.Event(string(event.Name))
+	err := e.fsm.Event(string(event.Name()))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -89,13 +89,13 @@ func (e *Executable) OnOccurrence(event *simulator.Event) (result simulator.Tran
 	return simulator.TransitionResult{FromState: current, ToState: e.fsm.Current()}
 }
 
-func (e *Executable) OnSchedule(event *simulator.Event) {
-	if event.Name == finishTerminatingReplica {
-		e.env.Schedule(&simulator.Event{
-			Name:     killProcess,
-			OccursAt: event.OccursAt.Add(-100 * time.Millisecond),
-			Subject:  e,
-		})
+func (e *Executable) OnSchedule(event simulator.Event) {
+	if event.Name() == finishTerminatingReplica {
+		e.env.Schedule(simulator.NewGeneralEvent(
+			killProcess,
+			event.OccursAt().Add(-100 * time.Millisecond),
+			e,
+		))
 	}
 }
 
@@ -116,11 +116,11 @@ func (e *Executable) Run(startingAt time.Time) {
 		kickoffEventName = beginPulling
 	}
 
-	e.env.Schedule(&simulator.Event{
-		OccursAt: startingAt.Add(time.Duration(r) * time.Millisecond),
-		Name:     kickoffEventName,
-		Subject:  e,
-	})
+	e.env.Schedule(simulator.NewGeneralEvent(
+		kickoffEventName,
+		startingAt.Add(time.Duration(r) * time.Millisecond),
+		e,
+	))
 }
 
 func (e *Executable) AddRevisionReplica(replica *RevisionReplica) {

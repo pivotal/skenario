@@ -47,21 +47,22 @@ func (ka *KnativeAutoscaler) Identity() simulator.ProcessIdentity {
 	return ka.name
 }
 
-func (ka *KnativeAutoscaler) OnOccurrence(event *simulator.Event) (result simulator.TransitionResult) {
+func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulator.TransitionResult) {
 	n := ""
 
-	switch event.Name {
+	switch event.Name() {
 	case waitForNextCalculation:
 		// could be extracted to setup in a loop
-		ka.env.Schedule(&simulator.Event{
-			Name:     calculateScale,
-			OccursAt: event.OccursAt.Add(tickInterval),
-			Subject:  nil,
-		})
+		ka.env.Schedule(simulator.NewGeneralEvent(
+			calculateScale,
+			event.OccursAt().Add(tickInterval),
+			ka,
+		))
 	case calculateScale:
+		at := event.OccursAt()
 		for _, rr := range ka.replicas {
 			stat := autoscaler.Stat{
-				Time:                      &event.OccursAt,
+				Time:                      &at,
 				PodName:                   string(rr.name),
 				AverageConcurrentRequests: 10,
 				RequestCount:              10,
@@ -70,7 +71,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event *simulator.Event) (result simula
 		}
 
 		currentReplicas := int32(len(ka.replicas))
-		desiredScale, ok := ka.autoscaler.Scale(context.Background(), event.OccursAt)
+		desiredScale, ok := ka.autoscaler.Scale(context.Background(), event.OccursAt())
 		if ok {
 			if desiredScale > currentReplicas {
 				gap := desiredScale - currentReplicas
@@ -90,11 +91,11 @@ func (ka *KnativeAutoscaler) OnOccurrence(event *simulator.Event) (result simula
 				gap := currentReplicas - desiredScale
 				for i := int32(0); i < gap; i++ {
 					r := ka.replicas[i]
-					ka.env.Schedule(&simulator.Event{
-						Name:     terminateReplica,
-						OccursAt: event.OccursAt.Add(10 * time.Millisecond),
-						Subject:  r,
-					})
+					ka.env.Schedule(simulator.NewGeneralEvent(
+						terminateReplica,
+						event.OccursAt().Add(10 * time.Millisecond),
+						r,
+					))
 				}
 
 				ka.replicas = ka.replicas[len(ka.replicas)-int(gap):]
@@ -107,7 +108,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event *simulator.Event) (result simula
 	}
 
 	currentState := ka.fsm.Current()
-	err := ka.fsm.Event(string(event.Name))
+	err := ka.fsm.Event(string(event.Name()))
 	if err != nil {
 		switch err.(type) {
 		case fsm.NoTransitionError:
