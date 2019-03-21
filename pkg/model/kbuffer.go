@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"knative-simulator/pkg/simulator"
 )
 
@@ -10,26 +12,52 @@ type KBuffer struct {
 	replicas         map[simulator.ProcessIdentity]*RevisionReplica
 }
 
-func (kb *KBuffer) AddRequest(reqName simulator.ProcessIdentity, req *Request) {
-
+func (kb *KBuffer) Identity() simulator.ProcessIdentity {
+	return "KBuffer"
 }
 
-func (kb *KBuffer) DeleteRequest(reqName simulator.ProcessIdentity) *Request {
-	delReq := kb.requestsBuffered[reqName]
-	delete(kb.requestsBuffered, reqName)
-
-	return delReq
+func (kb *KBuffer) AddStock(item simulator.Stockable) {
+	req := item.(*Request)
+	kb.requestsBuffered[req.Identity()] = req
 }
 
-func (kb *KBuffer) AddReplica(replica *RevisionReplica) {
-	kb.replicas[replica.Identity()] = replica
+func (kb *KBuffer) RemoveStock(item simulator.Stockable) {
+	req := item.(*Request)
+	delete(kb.requestsBuffered, req.Identity())
 }
 
-func (kb *KBuffer) DeleteReplica(replica *RevisionReplica) *RevisionReplica {
-	delRev := kb.replicas[replica.Identity()]
-	delete(kb.replicas, replica.Identity())
+func (kb *KBuffer) OnSchedule(event simulator.Event) {
+	// lol no generics
+	gevt := event.(simulator.GeneralEvent)
+	rr := gevt.Subject().(*RevisionReplica)
 
-	return delRev
+	switch event.Name() {
+	case finishLaunchingReplica:
+		kb.replicas[event.SubjectIdentity()] = rr
+	case bufferRequest:
+		// if there are replicas, send them
+		// if not, buffer the requests
+	}
+
+	numRequests := len(kb.requestsBuffered)
+	numReplicas := len(kb.replicas)
+
+	if numRequests > 0 && numReplicas > 0 {
+		i := time.Duration(1)
+		for _, v := range kb.requestsBuffered {
+			mv := simulator.NewMovementEvent(
+				"kbuffer_to_replica",
+				event.OccursAt().Add(i*time.Nanosecond),
+				v,
+				kb,
+				rr,
+			)
+
+			kb.env.Schedule(mv)
+			i++
+		}
+	}
+
 }
 
 func NewKBuffer(env *simulator.Environment) *KBuffer {

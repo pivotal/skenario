@@ -75,15 +75,29 @@ func (env *Environment) Run() {
 			panic(err)
 		}
 
-		next := nextIface.(Event)
-		env.simTime = next.OccursAt()
-		result := next.Subject().OnOccurrence(next)
-		printer.Printf("%20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt().UnixNano(), next.Subject().Identity(), next.Name(), result.FromState, result.ToState, result.Note)
+		evt := nextIface.(Event)
+		switch evt.Kind() {
+		case EventGeneral:
+			next := evt.(GeneralEvent)
+			env.simTime = next.OccursAt()
+			subject := next.Subject().(Process)
+			result := subject.OnOccurrence(next)
+			printer.Printf("G %20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt().UnixNano(), next.SubjectIdentity(), next.Name(), result.FromState, result.ToState, result.Note)
+
+		case EventMovement:
+			next := evt.(StockMovementEvent)
+			env.simTime = next.OccursAt()
+			subject := next.Subject().(Stockable)
+			next.From().RemoveStock(subject)
+			next.To().AddStock(subject)
+			result := subject.OnMovement(next)
+			printer.Printf("M %20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt().UnixNano(), next.SubjectIdentity(), next.Name(), result.FromStock.Identity(), result.ToStock.Identity(), result.Note)
+		}
 	}
 }
 
 func (env *Environment) Schedule(event Event) {
-	if evtNameMap, ok := env.registeredListeners[event.Subject().Identity()]; ok {
+	if evtNameMap, ok := env.registeredListeners[event.SubjectIdentity()]; ok {
 		if listener, ok := evtNameMap[event.Name()]; ok {
 			listener.OnSchedule(event)
 		}
@@ -91,7 +105,6 @@ func (env *Environment) Schedule(event Event) {
 
 	if event.OccursAt().After(env.endTime) {
 		env.ignoredEvents = append(env.ignoredEvents, event)
-
 		return
 	}
 
@@ -105,13 +118,13 @@ func (env *Environment) Identity() ProcessIdentity {
 	return "Environment"
 }
 
-func (env *Environment) OnOccurrence(event Event) (result TransitionResult) {
+func (env *Environment) OnOccurrence(event Event) (result StateTransitionResult) {
 	switch event.Name() {
 	case "start_simulation":
-		return TransitionResult{FromState: "SimulationStarting", ToState: "SimulationRunning", Note: "Started simulation"}
+		return StateTransitionResult{FromState: "SimulationStarting", ToState: "SimulationRunning", Note: "Started simulation"}
 	case "terminate_simulation":
 		env.futureEvents.Close()
-		return TransitionResult{FromState: "SimulationRunning", ToState: "SimulationTerminated", Note: "Reached termination event"}
+		return StateTransitionResult{FromState: "SimulationRunning", ToState: "SimulationTerminated", Note: "Reached termination event"}
 	default:
 		panic("Unknown event for Environment")
 	}

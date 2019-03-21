@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -25,6 +26,18 @@ func NewTraffic(env *simulator.Environment, buffer *KBuffer, endpoints *ReplicaE
 	}
 }
 
+func (tr *Traffic) Identity() simulator.ProcessIdentity {
+	return "Traffic"
+}
+
+func (tr *Traffic) AddStock(item simulator.Stockable) {
+	panic("not implemented")
+}
+
+func (tr *Traffic) RemoveStock(item simulator.Stockable) {
+	// do nothing, this is to match the Stock type
+}
+
 func (tr *Traffic) Run() {
 	t := tr.beginTime
 
@@ -37,6 +50,12 @@ func (tr *Traffic) Run() {
 		}
 
 		req := NewRequest(tr.env, tr.buffer, t)
-		req.Run()
+		tr.env.Schedule(simulator.NewMovementEvent(
+			simulator.EventName(fmt.Sprintf("move-%s", req.name)),
+			t,
+			req,
+			tr,
+			tr.buffer,
+		))
 	}
 }

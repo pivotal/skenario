@@ -56,7 +56,7 @@ func (rr *RevisionReplica) Identity() simulator.ProcessIdentity {
 	return rr.name
 }
 
-func (rr *RevisionReplica) OnOccurrence(event simulator.Event) (result simulator.TransitionResult) {
+func (rr *RevisionReplica) OnOccurrence(event simulator.Event) (result simulator.StateTransitionResult) {
 	currEventTime := rr.nextEvt.OccursAt()
 
 	switch event.Name() {
@@ -83,7 +83,7 @@ func (rr *RevisionReplica) OnOccurrence(event simulator.Event) (result simulator
 		}
 	}
 
-	return simulator.TransitionResult{FromState: current, ToState: rr.fsm.Current()}
+	return simulator.StateTransitionResult{FromState: current, ToState: rr.fsm.Current()}
 }
 
 func (rr *RevisionReplica) OnSchedule(event simulator.Event) {
@@ -101,6 +101,14 @@ func (rr *RevisionReplica) OnSchedule(event simulator.Event) {
 			rr,
 		))
 	}
+}
+
+func (rr *RevisionReplica) AddStock(item simulator.Stockable) {
+	// do nothing
+}
+
+func (rr *RevisionReplica) RemoveStock(item simulator.Stockable) {
+	// do nothing
 }
 
 func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *simulator.Environment) *RevisionReplica {

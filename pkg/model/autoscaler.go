@@ -47,7 +47,7 @@ func (ka *KnativeAutoscaler) Identity() simulator.ProcessIdentity {
 	return ka.name
 }
 
-func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulator.TransitionResult) {
+func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulator.StateTransitionResult) {
 	n := ""
 
 	switch event.Name() {
@@ -118,7 +118,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 		}
 	}
 
-	return simulator.TransitionResult{FromState: currentState, ToState: ka.fsm.Current(), Note: n}
+	return simulator.StateTransitionResult{FromState: currentState, ToState: ka.fsm.Current(), Note: n}
 }
 
 func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, exec *Executable, endpoints *ReplicaEndpoints, kubernetesClient kubernetes.Interface) *KnativeAutoscaler {

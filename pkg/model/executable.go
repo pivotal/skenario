@@ -47,7 +47,7 @@ func (e *Executable) Identity() simulator.ProcessIdentity {
 	return e.name
 }
 
-func (e *Executable) OnOccurrence(event simulator.Event) (result simulator.TransitionResult) {
+func (e *Executable) OnOccurrence(event simulator.Event) (result simulator.StateTransitionResult) {
 	var nextExecEvtName simulator.EventName
 	var nextExecEvtTime time.Time
 
@@ -66,7 +66,7 @@ func (e *Executable) OnOccurrence(event simulator.Event) (result simulator.Trans
 		nextExecEvtTime = event.OccursAt().Add(100 * time.Millisecond)
 	case killProcess:
 		if len(e.replicas) > 1 { // if there will still be running replicas after termination
-			return simulator.TransitionResult{FromState: e.fsm.Current(), ToState: e.fsm.Current()} // do nothing
+			return simulator.StateTransitionResult{FromState: e.fsm.Current(), ToState: e.fsm.Current()} // do nothing
 		}
 	}
 
@@ -86,7 +86,7 @@ func (e *Executable) OnOccurrence(event simulator.Event) (result simulator.Trans
 		panic(err.Error())
 	}
 
-	return simulator.TransitionResult{FromState: current, ToState: e.fsm.Current()}
+	return simulator.StateTransitionResult{FromState: current, ToState: e.fsm.Current()}
 }
 
 func (e *Executable) OnSchedule(event simulator.Event) {
