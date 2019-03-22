@@ -26,70 +26,59 @@ const (
 func (kb *KBuffer) Identity() simulator.ProcessIdentity {
 	return "KBuffer"
 }
+
 func (kb *KBuffer) UpdateStock(movement simulator.StockMovementEvent) {
+
 	switch movement.Name() {
-	case bufferRequest:
-	}
-	if kb == movement.To() {
-		numRequests := len(kb.requestsBuffered)
-		numReplicas := len(kb.replicas)
-
-		req := movement.Subject().(*Request)
-		kb.requestsBuffered[req.Identity()] = req
-		numRequests++
-
-		if numRequests > 0 && numReplicas > 0 {
-			var replicaKeys []simulator.ProcessIdentity
-			for k := range kb.replicas {
-				replicaKeys = append(replicaKeys, k)
-			}
-			key := replicaKeys[rand.Intn(numReplicas)]
-
-			i := 1
-			for _, v := range kb.requestsBuffered {
-				mv := simulator.NewMovementEvent(
-					sendToReplica,
-					movement.OccursAt().Add(time.Duration(i)*time.Nanosecond),
-					v,
-					kb,
-					kb.replicas[key],
-				)
-
-				kb.env.Schedule(mv)
-				i++
-			}
-		} else if numRequests > 0 {
-			occurs := movement.OccursAt().Add(1 * time.Nanosecond)
-			kb.autoscaler.autoscaler.Record(context.Background(), autoscaler.Stat{
-				Time:                      &occurs,
-				PodName:                   "KBuffer",
-				AverageConcurrentRequests: float64(numRequests),
-				RequestCount:              int32(numRequests),
-			})
-		}
-
-	} else if kb == movement.From() {
-		delete(kb.requestsBuffered, movement.SubjectIdentity())
-	} else {
-		panic(fmt.Errorf("impossible movement: %+v", movement))
-	}
-}
-
-func (kb *KBuffer) OnOccurrence(event simulator.Event) (result simulator.StateTransitionResult) {
-	switch event.Name() {
 	case addReplicaToKBuffer:
-		// lol no generics
-		gevt := event.(simulator.GeneralEvent)
-		rr := gevt.Subject().(*RevisionReplica)
-
-		kb.replicas[event.SubjectIdentity()] = rr
+		rr := movement.Subject().(*RevisionReplica)
+		kb.replicas[movement.SubjectIdentity()] = rr
 	case removeReplicaFromKBuffer:
-		delete(kb.replicas, event.SubjectIdentity())
-	}
+		delete(kb.replicas, movement.SubjectIdentity())
+	default:
+		if kb == movement.To() {
+			numRequests := len(kb.requestsBuffered)
+			numReplicas := len(kb.replicas)
 
-	return simulator.StateTransitionResult{
-		FromState: "KBufferActive",
-		ToState:   "KBufferActive",
+			req := movement.Subject().(*Request)
+			kb.requestsBuffered[req.Identity()] = req
+			numRequests++
+
+			if numRequests > 0 && numReplicas > 0 {
+				var replicaKeys []simulator.ProcessIdentity
+				for k := range kb.replicas {
+					replicaKeys = append(replicaKeys, k)
+				}
+				key := replicaKeys[rand.Intn(numReplicas)]
+
+				i := 1
+				for _, v := range kb.requestsBuffered {
+					mv := simulator.NewMovementEvent(
+						sendToReplica,
+						movement.OccursAt().Add(time.Duration(i)*time.Nanosecond),
+						v,
+						kb,
+						kb.replicas[key],
+					)
+
+					kb.env.Schedule(mv)
+					i++
+				}
+			} else if numRequests > 0 {
+				occurs := movement.OccursAt().Add(1 * time.Nanosecond)
+				kb.autoscaler.autoscaler.Record(context.Background(), autoscaler.Stat{
+					Time:                      &occurs,
+					PodName:                   "KBuffer",
+					AverageConcurrentRequests: float64(numRequests),
+					RequestCount:              int32(numRequests),
+				})
+			}
+
+		} else if kb == movement.From() {
+			delete(kb.requestsBuffered, movement.SubjectIdentity())
+		} else {
+			panic(fmt.Errorf("impossible movement: %+v", movement))
+		}
 	}
 }
 
@@ -99,30 +88,45 @@ func (kb *KBuffer) OnSchedule(event simulator.Event) {
 		gevt := event.(simulator.GeneralEvent)
 		rr := gevt.Subject().(*RevisionReplica)
 
-		kb.env.Schedule(simulator.NewGeneralEvent(
+		kb.env.Schedule(simulator.NewMovementEvent(
 			addReplicaToKBuffer,
 			event.OccursAt().Add(10*time.Millisecond),
 			rr,
+			&Cluster{},
+			kb,
 		))
 	case terminateReplica:
 		gevt := event.(simulator.GeneralEvent)
 		rr := gevt.Subject().(*RevisionReplica)
 
-		kb.env.Schedule(simulator.NewGeneralEvent(
+		kb.env.Schedule(simulator.NewMovementEvent(
 			removeReplicaFromKBuffer,
 			event.OccursAt().Add(-10*time.Millisecond),
 			rr,
+			kb,
+			&Cluster{},
 		))
 	}
 }
 
-func NewKBuffer(env *simulator.Environment, autoscaler *KnativeAutoscaler) *KBuffer {
+func NewKBuffer(env *simulator.Environment, scaler *KnativeAutoscaler) *KBuffer {
 	kb := &KBuffer{
 		env:              env,
 		requestsBuffered: make(map[simulator.ProcessIdentity]*Request),
 		replicas:         make(map[simulator.ProcessIdentity]*RevisionReplica),
-		autoscaler:       autoscaler,
+		autoscaler:       scaler,
 	}
+
+	kb.autoscaler.buffer = kb
+
+	t := env.Time()
+
+	kb.autoscaler.autoscaler.Record(context.Background(), autoscaler.Stat{
+		Time:                      &t,
+		PodName:                   "KBuffer",
+		AverageConcurrentRequests: 0,
+		RequestCount:              0,
+	})
 
 	return kb
 }

@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/knative/pkg/logging"
@@ -27,7 +28,7 @@ const (
 	stableWindow           = 60 * time.Second
 	panicWindow            = 6 * time.Second
 	scaleToZeroGracePeriod = 30 * time.Second
-	targetConcurrency      = 2.0
+	targetConcurrency      = 1.0
 	maxScaleUpRate         = 10.0
 	testNamespace          = "simulator-namespace"
 	testName               = "revisionService"
@@ -44,7 +45,8 @@ type KnativeAutoscaler struct {
 	exec       *Executable
 	endpoints  *ReplicaEndpoints
 
-	ctx context.Context
+	ctx    context.Context
+	buffer *KBuffer
 }
 
 func (ka *KnativeAutoscaler) Identity() simulator.ProcessIdentity {
@@ -85,18 +87,26 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 			if desiredScale > currentReplicas {
 				gap := desiredScale - currentReplicas
 				for i := int32(0); i < gap; i++ {
+					exec := NewExecutable(
+						simulator.ProcessIdentity(fmt.Sprintf("exec-%d", rand.Intn(999999))),
+						StateCold,
+						ka.env,
+					)
+
 					r := NewRevisionReplica(
-						simulator.ProcessIdentity(fmt.Sprintf("replica-%d", i)),
-						ka.exec,
+						simulator.ProcessIdentity(fmt.Sprintf("replica-%d", rand.Intn(999999))),
+						exec,
 						ka.env,
 						ka,
 					)
 					ka.endpoints.AddRevisionReplica(r)
 					ka.replicas = append(ka.replicas, r)
-					r.Run()
+					ka.env.ListenForScheduling(r.Identity(), finishLaunchingReplica, ka.buffer)
+					ka.env.ListenForScheduling(r.Identity(), terminateReplica, ka.buffer)
+					r.Run(event.OccursAt())
 				}
 
-				n = fmt.Sprintf("Scaling up from %d to %d", desiredScale, currentReplicas)
+				n = fmt.Sprintf("Scaling up from %d to %d", currentReplicas, desiredScale)
 			} else if desiredScale < currentReplicas {
 				gap := currentReplicas - desiredScale
 				for i := int32(0); i < gap; i++ {
@@ -110,7 +120,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 
 				ka.replicas = ka.replicas[len(ka.replicas)-int(gap):]
 
-				n = fmt.Sprintf("Scaling down to %d to %d", desiredScale, currentReplicas)
+				n = fmt.Sprintf("Scaling down to %d to %d", currentReplicas, desiredScale)
 			}
 		} else {
 			n = "There was an error in scaling"
@@ -131,7 +141,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 	return simulator.StateTransitionResult{FromState: currentState, ToState: ka.fsm.Current(), Note: n}
 }
 
-func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, exec *Executable, endpoints *ReplicaEndpoints, kubernetesClient kubernetes.Interface) *KnativeAutoscaler {
+func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, endpoints *ReplicaEndpoints, kubernetesClient kubernetes.Interface) *KnativeAutoscaler {
 	devCfg := zap.NewDevelopmentConfig()
 	devCfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
 	//devCfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
@@ -179,7 +189,6 @@ func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, e
 		name:       name,
 		env:        env,
 		autoscaler: as,
-		exec:       exec,
 		endpoints:  endpoints,
 		replicas:   make([]*RevisionReplica, 0),
 		ctx:        ctx,

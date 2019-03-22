@@ -29,6 +29,9 @@ type ReplicaEndpoints struct {
 }
 
 const (
+	StateEndpointNonexistent = "EndpointNonexistent"
+	StateEndpointActive = "EndpointActive"
+
 	addEndpoint    = "add_endpoint"
 	removeEndpoint = "remove_endpoint"
 )
@@ -59,8 +62,8 @@ func (re *ReplicaEndpoints) OnOccurrence(event simulator.Event) (result simulato
 		re.kubernetesClient.CoreV1().Endpoints(simulatorNamespace).Create(newEndpoints)
 		re.endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
-		from = "EndpointDoesNotExist"
-		to = "EndpointExists"
+		from = StateEndpointNonexistent
+		to = StateEndpointActive
 
 	case removeEndpoint:
 		re.nextAddress[3]--
@@ -82,8 +85,8 @@ func (re *ReplicaEndpoints) OnOccurrence(event simulator.Event) (result simulato
 			panic(err.Error())
 		}
 
-		from = "EndpointExists"
-		to = "EndpointDoesNotExist"
+		from = StateEndpointActive
+		to = StateEndpointNonexistent
 	}
 
 	return simulator.StateTransitionResult{FromState: from, ToState: to}

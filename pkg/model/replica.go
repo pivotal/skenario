@@ -1,7 +1,7 @@
 package model
 
 import (
-	"math/rand"
+	"fmt"
 	"time"
 
 	"github.com/looplab/fsm"
@@ -31,18 +31,14 @@ type RevisionReplica struct {
 	autoscaler *KnativeAutoscaler
 }
 
-func (rr *RevisionReplica) Run() {
-	r := rand.Intn(1000)
-
-	if !rr.executable.fsm.Is(StateReplicaActive) {
-		rr.env.ListenForScheduling(rr.executable.name, finishLaunching, rr)
-		rr.env.ListenForScheduling(rr.autoscaler.name, finishLaunchingReplica, rr)
-		rr.env.ListenForScheduling(rr.autoscaler.name, terminateReplica, rr)
-	}
+func (rr *RevisionReplica) Run(startingAt time.Time) {
+	rr.env.ListenForScheduling(rr.executable.name, finishLaunching, rr)
+	rr.env.ListenForScheduling(rr.autoscaler.name, finishLaunchingReplica, rr)
+	rr.env.ListenForScheduling(rr.autoscaler.name, terminateReplica, rr)
 
 	rr.nextEvt = simulator.NewGeneralEvent(
 		launchReplica,
-		rr.env.Time().Add(time.Duration(r) * time.Millisecond),
+		rr.env.Time().Add(10*time.Millisecond),
 		rr,
 	)
 	rr.env.Schedule(rr.nextEvt)
@@ -52,7 +48,7 @@ func (rr *RevisionReplica) Run() {
 
 	rr.env.Schedule(simulator.NewGeneralEvent(
 		terminateReplica,
-		rr.env.Time().Add(8 * time.Minute),
+		rr.env.Time().Add(8*time.Minute),
 		rr,
 	))
 }
@@ -68,7 +64,7 @@ func (rr *RevisionReplica) OnOccurrence(event simulator.Event) (result simulator
 	case terminateReplica:
 		rr.nextEvt = simulator.NewGeneralEvent(
 			finishTerminatingReplica,
-			event.OccursAt().Add(2 * time.Second),
+			event.OccursAt().Add(2*time.Second),
 			rr,
 		)
 	}
@@ -84,7 +80,7 @@ func (rr *RevisionReplica) OnOccurrence(event simulator.Event) (result simulator
 		case fsm.NoTransitionError:
 		// ignore
 		default:
-			panic(err.Error())
+			fmt.Printf("%d %s\nfrom event: %#v\nwith subject: %s\nfrom state: %s to state: %s\n", event.OccursAt().UnixNano(), err.Error(), event, event.SubjectIdentity(), current, rr.fsm.Current())
 		}
 	}
 
@@ -96,15 +92,22 @@ func (rr *RevisionReplica) OnSchedule(event simulator.Event) {
 	case finishLaunching:
 		rr.env.Schedule(simulator.NewGeneralEvent(
 			finishLaunchingReplica,
-			event.OccursAt().Add(10 * time.Millisecond),
+			event.OccursAt().Add(10*time.Millisecond),
 			rr,
 		))
 	case killProcess:
 		rr.env.Schedule(simulator.NewGeneralEvent(
 			finishTerminatingReplica,
-			event.OccursAt().Add(10 * time.Millisecond),
+			event.OccursAt().Add(10*time.Millisecond),
 			rr,
 		))
+	}
+}
+
+func (rr *RevisionReplica) OnMovement(movement simulator.StockMovementEvent) (result simulator.MovementResult) {
+	return simulator.MovementResult{
+		FromStock: movement.From(),
+		ToStock:   movement.To(),
 	}
 }
 

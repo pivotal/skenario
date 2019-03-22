@@ -64,7 +64,8 @@ func (r *Request) OnOccurrence(event simulator.Event) (result simulator.StateTra
 		case fsm.NoTransitionError:
 		// ignore
 		default:
-			panic(err.Error())
+			//panic(err.Error())
+			fmt.Println(err.Error())
 		}
 	}
 
@@ -75,12 +76,23 @@ func (r *Request) OnMovement(movement simulator.StockMovementEvent) (result simu
 	r.currentStock = movement.To()
 
 	switch movement.Name() {
+	case bufferRequest:
+		//currentState := r.fsm.Current()
 	case sendToReplica:
 		r.env.Schedule(simulator.NewGeneralEvent(
 			beginRequestProcessing,
-			movement.OccursAt().Add(10*time.Microsecond),
+			movement.OccursAt().Add(10*time.Millisecond),
 			r,
 		))
+	}
+	err := r.fsm.Event(string(movement.Name()))
+	if err != nil {
+		switch err.(type) {
+		case fsm.NoTransitionError:
+		// ignore
+		default:
+			fmt.Println(err.Error())
+		}
 	}
 
 	return simulator.MovementResult{FromStock: movement.From(), ToStock: movement.To()}

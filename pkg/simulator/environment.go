@@ -60,15 +60,15 @@ func NewEnvironment(begin time.Time, runFor time.Duration) *Environment {
 
 func (env *Environment) Run() {
 	printer := message.NewPrinter(language.AmericanEnglish)
-	printer.Printf("%20s    %-18s  %-26s    %-25s -->  %-25s    %s\n", "TIME (ns)", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
+	printer.Printf("%22s    %-18s  %-26s    %-25s -->  %-25s    %s\n", "TIME (ns)", "IDENTIFIER", "EVENT", "FROM STATE", "TO STATE", "NOTE")
 	printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
 	for {
 		nextIface, err := env.futureEvents.Pop() // blocks until there is stuff to pop
 		if err != nil && strings.Contains(err.Error(), "heap is closed") {
+			printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
+			printer.Println("Events ignored due to termination:")
 			for _, e := range env.ignoredEvents {
-				printer.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------------")
-				printer.Println("Ignored events were ignored as they were scheduled after termination:")
-				printer.Printf("%20d    %-18s  %-26s\n", e.OccursAt().UnixNano(), "", e.Name())
+				printer.Printf("  %20d    %-18s  %-26s\n", e.OccursAt().UnixNano(), e.SubjectIdentity(), e.Name())
 			}
 			return
 		} else if err != nil {
@@ -79,19 +79,24 @@ func (env *Environment) Run() {
 		switch evt.Kind() {
 		case EventGeneral:
 			next := evt.(GeneralEvent)
+
 			env.simTime = next.OccursAt()
+
 			subject := next.Subject().(Process)
 			result := subject.OnOccurrence(next)
+
 			printer.Printf("G %20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt().UnixNano(), next.SubjectIdentity(), next.Name(), result.FromState, result.ToState, result.Note)
 
 		case EventMovement:
 			next := evt.(StockMovementEvent)
 
 			env.simTime = next.OccursAt()
+
 			subject := next.Subject().(Stockable)
 			next.From().UpdateStock(next)
 			next.To().UpdateStock(next)
 			result := subject.OnMovement(next)
+
 			printer.Printf("M %20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt().UnixNano(), next.SubjectIdentity(), next.Name(), result.FromStock.Identity(), result.ToStock.Identity(), result.Note)
 		}
 	}

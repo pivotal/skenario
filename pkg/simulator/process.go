@@ -24,5 +24,4 @@ type Stock interface {
 type Stockable interface {
 	Identifiable
 	OnMovement(movement StockMovementEvent) (result MovementResult)
-	CurrentlyAt() Stock
 }
