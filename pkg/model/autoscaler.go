@@ -28,7 +28,7 @@ const (
 	stableWindow           = 60 * time.Second
 	panicWindow            = 6 * time.Second
 	scaleToZeroGracePeriod = 30 * time.Second
-	targetConcurrency      = 1.0
+	targetConcurrency      = 2.0
 	maxScaleUpRate         = 10.0
 	testNamespace          = "simulator-namespace"
 	testName               = "revisionService"
@@ -66,7 +66,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 	case calculateScale:
 		ka.env.Schedule(simulator.NewGeneralEvent(
 			waitForNextCalculation,
-			event.OccursAt().Add(10*time.Millisecond),
+			event.OccursAt().Add(1*time.Nanosecond),
 			ka,
 		))
 
