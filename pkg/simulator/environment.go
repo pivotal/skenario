@@ -86,10 +86,11 @@ func (env *Environment) Run() {
 
 		case EventMovement:
 			next := evt.(StockMovementEvent)
+
 			env.simTime = next.OccursAt()
 			subject := next.Subject().(Stockable)
-			next.From().RemoveStock(subject)
-			next.To().AddStock(subject)
+			next.From().UpdateStock(next)
+			next.To().UpdateStock(next)
 			result := subject.OnMovement(next)
 			printer.Printf("M %20d    %-18s  %-26s    %-25s -->  %-25s    %s\n", next.OccursAt().UnixNano(), next.SubjectIdentity(), next.Name(), result.FromStock.Identity(), result.ToStock.Identity(), result.Note)
 		}

@@ -2,6 +2,7 @@ package model
 
 import (
 	"net"
+	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -27,13 +28,20 @@ type ReplicaEndpoints struct {
 	nextAddress net.IP
 }
 
+const (
+	addEndpoint    = "add_endpoint"
+	removeEndpoint = "remove_endpoint"
+)
+
 func (re *ReplicaEndpoints) Identity() simulator.ProcessIdentity {
 	return re.name
 }
 
-func (re *ReplicaEndpoints) OnSchedule(event simulator.Event) {
+func (re *ReplicaEndpoints) OnOccurrence(event simulator.Event) (result simulator.StateTransitionResult) {
+	var from, to string
+
 	switch event.Name() {
-	case finishLaunchingReplica:
+	case addEndpoint:
 		re.nextAddress[3]++ // TODO: what happens when this overflows?
 		newAddress := corev1.EndpointAddress{
 			IP:       re.nextAddress.String(),
@@ -50,18 +58,51 @@ func (re *ReplicaEndpoints) OnSchedule(event simulator.Event) {
 
 		re.kubernetesClient.CoreV1().Endpoints(simulatorNamespace).Create(newEndpoints)
 		re.endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
-	case terminateReplica:
+
+		from = "EndpointDoesNotExist"
+		to = "EndpointExists"
+
+	case removeEndpoint:
 		re.nextAddress[3]--
 		endpoint := re.replicaEndpoints[event.SubjectIdentity()]
 		delete(re.replicaEndpoints, event.SubjectIdentity())
 
 		grace := int64(0)
 		propPolicy := metav1.DeletePropagationForeground
-		re.kubernetesClient.CoreV1().Endpoints(simulatorNamespace).Delete(endpoint.Name, &v1.DeleteOptions{
+		err := re.kubernetesClient.CoreV1().Endpoints(simulatorNamespace).Delete(endpoint.Name, &v1.DeleteOptions{
 			GracePeriodSeconds: &grace,
 			PropagationPolicy:  &propPolicy,
 		})
-		re.endpointsInformer.Informer().GetIndexer().Delete(endpoint)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		err = re.endpointsInformer.Informer().GetIndexer().Delete(endpoint)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		from = "EndpointExists"
+		to = "EndpointDoesNotExist"
+	}
+
+	return simulator.StateTransitionResult{FromState: from, ToState: to}
+}
+
+func (re *ReplicaEndpoints) OnSchedule(event simulator.Event) {
+	switch event.Name() {
+	case finishLaunchingReplica:
+		re.env.Schedule(simulator.NewGeneralEvent(
+			addEndpoint,
+			event.OccursAt().Add(1*time.Nanosecond),
+			re,
+		))
+	case terminateReplica:
+		re.env.Schedule(simulator.NewGeneralEvent(
+			addEndpoint,
+			event.OccursAt().Add(-1*time.Nanosecond),
+			re,
+		))
 	}
 }
 

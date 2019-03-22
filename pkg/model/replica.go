@@ -28,12 +28,17 @@ type RevisionReplica struct {
 	env        *simulator.Environment
 	executable *Executable
 	nextEvt    simulator.Event
+	autoscaler *KnativeAutoscaler
 }
 
 func (rr *RevisionReplica) Run() {
 	r := rand.Intn(1000)
 
-	rr.env.ListenForScheduling(rr.executable.name, finishLaunching, rr)
+	if !rr.executable.fsm.Is(StateReplicaActive) {
+		rr.env.ListenForScheduling(rr.executable.name, finishLaunching, rr)
+		rr.env.ListenForScheduling(rr.autoscaler.name, finishLaunchingReplica, rr)
+		rr.env.ListenForScheduling(rr.autoscaler.name, terminateReplica, rr)
+	}
 
 	rr.nextEvt = simulator.NewGeneralEvent(
 		launchReplica,
@@ -103,19 +108,16 @@ func (rr *RevisionReplica) OnSchedule(event simulator.Event) {
 	}
 }
 
-func (rr *RevisionReplica) AddStock(item simulator.Stockable) {
+func (rr *RevisionReplica) UpdateStock(movement simulator.StockMovementEvent) {
 	// do nothing
 }
 
-func (rr *RevisionReplica) RemoveStock(item simulator.Stockable) {
-	// do nothing
-}
-
-func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *simulator.Environment) *RevisionReplica {
+func NewRevisionReplica(name simulator.ProcessIdentity, exec *Executable, env *simulator.Environment, autoscaler *KnativeAutoscaler) *RevisionReplica {
 	rr := &RevisionReplica{
 		name:       name,
 		env:        env,
 		executable: exec,
+		autoscaler: autoscaler,
 	}
 
 	rr.fsm = fsm.NewFSM(

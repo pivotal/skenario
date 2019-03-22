@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/knative/pkg/logging"
 	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/looplab/fsm"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 
@@ -21,11 +23,11 @@ const (
 	waitForNextCalculation = "wait_for_next_calculation"
 	calculateScale         = "calculate_scale"
 
-	tickInterval           = 2 * time.Second
+	tickInterval           = 60 * time.Second
 	stableWindow           = 60 * time.Second
 	panicWindow            = 6 * time.Second
 	scaleToZeroGracePeriod = 30 * time.Second
-	targetConcurrency      = 5.0
+	targetConcurrency      = 2.0
 	maxScaleUpRate         = 10.0
 	testNamespace          = "simulator-namespace"
 	testName               = "revisionService"
@@ -41,6 +43,8 @@ type KnativeAutoscaler struct {
 	replicas   []*RevisionReplica
 	exec       *Executable
 	endpoints  *ReplicaEndpoints
+
+	ctx context.Context
 }
 
 func (ka *KnativeAutoscaler) Identity() simulator.ProcessIdentity {
@@ -52,13 +56,18 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 
 	switch event.Name() {
 	case waitForNextCalculation:
-		// could be extracted to setup in a loop
 		ka.env.Schedule(simulator.NewGeneralEvent(
 			calculateScale,
 			event.OccursAt().Add(tickInterval),
 			ka,
 		))
 	case calculateScale:
+		ka.env.Schedule(simulator.NewGeneralEvent(
+			waitForNextCalculation,
+			event.OccursAt().Add(10*time.Millisecond),
+			ka,
+		))
+
 		at := event.OccursAt()
 		for _, rr := range ka.replicas {
 			stat := autoscaler.Stat{
@@ -71,7 +80,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 		}
 
 		currentReplicas := int32(len(ka.replicas))
-		desiredScale, ok := ka.autoscaler.Scale(context.Background(), event.OccursAt())
+		desiredScale, ok := ka.autoscaler.Scale(ka.ctx, event.OccursAt())
 		if ok {
 			if desiredScale > currentReplicas {
 				gap := desiredScale - currentReplicas
@@ -80,6 +89,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 						simulator.ProcessIdentity(fmt.Sprintf("replica-%d", i)),
 						ka.exec,
 						ka.env,
+						ka,
 					)
 					ka.endpoints.AddRevisionReplica(r)
 					ka.replicas = append(ka.replicas, r)
@@ -93,7 +103,7 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 					r := ka.replicas[i]
 					ka.env.Schedule(simulator.NewGeneralEvent(
 						terminateReplica,
-						event.OccursAt().Add(10 * time.Millisecond),
+						event.OccursAt().Add(10*time.Millisecond),
 						r,
 					))
 				}
@@ -122,11 +132,19 @@ func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulat
 }
 
 func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, exec *Executable, endpoints *ReplicaEndpoints, kubernetesClient kubernetes.Interface) *KnativeAutoscaler {
-	unsugaredLogger, err := zap.NewDevelopment()
+	devCfg := zap.NewDevelopmentConfig()
+	devCfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	//devCfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	devCfg.OutputPaths = []string{"stdout"}
+	devCfg.ErrorOutputPaths = []string{"stderr"}
+	unsugaredLogger, err := devCfg.Build()
 	if err != nil {
 		panic(err.Error())
 	}
 	logger = unsugaredLogger.Sugar()
+	defer logger.Sync()
+
+	ctx := logging.WithLogger(context.Background(), logger)
 
 	config := &autoscaler.Config{
 		MaxScaleUpRate:         maxScaleUpRate,
@@ -164,6 +182,7 @@ func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, e
 		exec:       exec,
 		endpoints:  endpoints,
 		replicas:   make([]*RevisionReplica, 0),
+		ctx:        ctx,
 	}
 
 	ka.fsm = fsm.NewFSM(
@@ -174,6 +193,12 @@ func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, e
 		},
 		fsm.Callbacks{},
 	)
+
+	ka.env.Schedule(simulator.NewGeneralEvent(
+		calculateScale,
+		env.Time(),
+		ka,
+	))
 
 	return ka
 }

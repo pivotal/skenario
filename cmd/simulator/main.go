@@ -21,11 +21,11 @@ func main() {
 
 	exec1 := model.NewExecutable("exec-1", model.StateCold, env)
 	endpoints1 := model.NewReplicaEndpoints("endpoints-1", env, fakeClient)
-	model.NewAutoscaler("autoscaler-1", env, exec1, endpoints1, fakeClient)
+	autoscaler1 := model.NewAutoscaler("autoscaler-1", env, exec1, endpoints1, fakeClient)
 
-	model.NewRevisionReplica("replica-1", exec1, env).Run()
+	//model.NewRevisionReplica("replica-manual", exec1, env).Run()
 
-	buffer := model.NewKBuffer(env)
+	buffer := model.NewKBuffer(env, autoscaler1)
 	traffic := model.NewTraffic(env, buffer, endpoints1, begin, tenMinutes)
 	traffic.Run()
 

@@ -16,7 +16,7 @@ require (
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/knative/build v0.4.0 // indirect
 	github.com/knative/caching v0.0.0-20190118010831-97110f4e0cee // indirect
-	github.com/knative/pkg v0.0.0-20190225184048-41761b2c813c // indirect
+	github.com/knative/pkg v0.0.0-20190225184048-41761b2c813c
 	github.com/knative/serving v0.4.1-0.20190304203539-5424ed3359ea
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/looplab/fsm v0.1.0

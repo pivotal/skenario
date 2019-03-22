@@ -18,8 +18,7 @@ type SchedulingListener interface {
 
 type Stock interface {
 	Identifiable
-	AddStock(item Stockable)
-	RemoveStock(item Stockable)
+	UpdateStock(movement StockMovementEvent)
 }
 
 type Stockable interface {

@@ -13,17 +13,20 @@ import (
 const (
 	StateRequestArrived            = "RequestArrived"
 	StateRequestBuffered           = "RequestBuffered"
+	StateRequestSendingToReplica   = "RequestSendingToReplica"
 	StateRequestProcessing         = "RequestProcessing"
 	StateRequestProcessingFinished = "RequestFinished"
 
 	bufferRequest           = "buffer_request"
+	sendToReplica           = "send_to_replica"
 	beginRequestProcessing  = "begin_request_processing"
 	finishRequestProcessing = "finish_request_processing"
 )
 
 var (
 	evtRequestedBuffered       = fsm.EventDesc{Name: bufferRequest, Src: []string{StateRequestArrived}, Dst: StateRequestBuffered}
-	evtBeginRequestProcessing  = fsm.EventDesc{Name: beginRequestProcessing, Src: []string{StateRequestBuffered}, Dst: StateRequestProcessing}
+	evtRequestedSentToReplica  = fsm.EventDesc{Name: sendToReplica, Src: []string{StateRequestBuffered}, Dst: StateRequestSendingToReplica}
+	evtBeginRequestProcessing  = fsm.EventDesc{Name: beginRequestProcessing, Src: []string{StateRequestSendingToReplica}, Dst: StateRequestProcessing}
 	evtFinishRequestProcessing = fsm.EventDesc{Name: finishRequestProcessing, Src: []string{StateRequestProcessing}, Dst: StateRequestProcessingFinished}
 )
 
@@ -43,12 +46,12 @@ func (r *Request) OnOccurrence(event simulator.Event) (result simulator.StateTra
 	n := ""
 
 	switch event.Name() {
-	case bufferRequest:
-		n = "bu bu buffer"
-		// do nothing
 	case beginRequestProcessing:
-		n = "lolwut"
-		// do nothing
+		r.env.Schedule(simulator.NewGeneralEvent(
+			finishRequestProcessing,
+			event.OccursAt().Add(500*time.Millisecond),
+			r,
+		))
 	case finishRequestProcessing:
 		duration := event.OccursAt().Sub(r.arrivalTime)
 		n = fmt.Sprintf("Request took %dms", duration.Nanoseconds()/1000000)
@@ -71,19 +74,14 @@ func (r *Request) OnOccurrence(event simulator.Event) (result simulator.StateTra
 func (r *Request) OnMovement(movement simulator.StockMovementEvent) (result simulator.MovementResult) {
 	r.currentStock = movement.To()
 
-	beginProc := simulator.NewGeneralEvent(
-		beginRequestProcessing,
-		movement.OccursAt().Add(10*time.Microsecond),
-		r,
-	)
-	r.env.Schedule(beginProc)
-
-	finishProc := simulator.NewGeneralEvent(
-		finishRequestProcessing,
-		movement.OccursAt().Add(500*time.Millisecond),
-		r,
-	)
-	r.env.Schedule(finishProc)
+	switch movement.Name() {
+	case sendToReplica:
+		r.env.Schedule(simulator.NewGeneralEvent(
+			beginRequestProcessing,
+			movement.OccursAt().Add(10*time.Microsecond),
+			r,
+		))
+	}
 
 	return simulator.MovementResult{FromStock: movement.From(), ToStock: movement.To()}
 }
@@ -104,17 +102,12 @@ func NewRequest(env *simulator.Environment, buffer *KBuffer, arrivalTime time.Ti
 		StateRequestArrived,
 		fsm.Events{
 			evtRequestedBuffered,
+			evtRequestedSentToReplica,
 			evtBeginRequestProcessing,
 			evtFinishRequestProcessing,
 		},
 		fsm.Callbacks{},
 	)
-
-	env.Schedule(simulator.NewGeneralEvent(
-		bufferRequest,
-		arrivalTime.Add(1*time.Nanosecond),
-		req,
-	))
 
 	return req
 }
