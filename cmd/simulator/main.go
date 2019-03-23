@@ -22,8 +22,6 @@ func main() {
 	endpoints1 := model.NewReplicaEndpoints("endpoints-1", env, fakeClient)
 	autoscaler1 := model.NewAutoscaler("autoscaler-1", env, endpoints1, fakeClient)
 
-	//model.NewRevisionReplica("replica-manual", exec1, env).Run()
-
 	buffer := model.NewKBuffer(env, autoscaler1)
 	traffic := model.NewTraffic(env, buffer, endpoints1, begin, tenMinutes)
 	traffic.Run()
