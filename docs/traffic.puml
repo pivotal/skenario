@@ -1,0 +1,67 @@
+@startuml
+
+title Traffic
+
+skinparam BoxPadding 8
+skinparam ParticipantPadding 5
+
+
+box "Traffic"
+    participant RequestGenerator
+    participant RequestsArrived
+end box
+
+box "KnativeBuffer"
+    participant RequestsBuffered
+end box
+
+
+box "Replica"
+    participant RequestsProcessing
+    participant RequestsFinished
+end box
+
+box "Autoscaler"
+    participant Autoscaler
+end box
+
+== When There Are No Replicas ==
+    RequestGenerator --> RequestGenerator: create request
+    RequestGenerator -> RequestsArrived: <<request>>
+activate RequestsArrived
+    RequestsArrived -> RequestsBuffered
+deactivate RequestsArrived
+activate RequestsBuffered
+    RequestsBuffered --> Autoscaler: record stat
+activate Autoscaler
+    Autoscaler --> Autoscaler: create replica process
+    Autoscaler --> RequestsProcessing: create replicas
+activate RequestsProcessing
+    RequestsBuffered -> RequestsProcessing: <<request>>
+deactivate RequestsBuffered
+    RequestsProcessing --> Autoscaler: record stat
+deactivate Autoscaler
+    RequestsProcessing -> RequestsFinished: <<request>>
+deactivate RequestsProcessing
+activate RequestsFinished #Orange
+
+...
+
+== When Replicas Are Active ==
+
+    RequestGenerator --> RequestGenerator: create request
+    RequestGenerator -> RequestsArrived: <<request>>
+activate RequestsArrived
+    RequestsArrived -> RequestsBuffered
+deactivate RequestsArrived
+activate RequestsBuffered
+    RequestsBuffered -> RequestsProcessing: <<request>>
+deactivate RequestsBuffered
+activate RequestsProcessing
+    RequestsProcessing --> Autoscaler: record stat
+activate Autoscaler
+    RequestsProcessing -> RequestsFinished: <<request>>
+deactivate RequestsProcessing
+deactivate Autoscaler
+@enduml
+

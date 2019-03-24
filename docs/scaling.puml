@@ -1,0 +1,155 @@
+@startuml
+
+title Scaling Replicas Up And Down
+
+skinparam BoxPadding 8
+skinparam ParticipantPadding 5
+
+box "Autoscalers"
+    participant Waiting
+    participant Calculating
+end box
+
+box "Revisions"
+    participant Revisions
+end box
+
+box "Replicas"
+    participant ReplicasLaunching
+    participant ReplicasActive
+    participant ReplicasTerminating
+    participant ReplicasTerminated
+end box
+
+box "Endpoints"
+    participant EndpointsAdding
+    participant EndpointsActive
+    participant EndpointsRemoving
+    participant EndpointsRemoved
+end box
+
+box "Registry"
+    participant ExecutablesInRegistry
+end box
+
+box "Node"
+    participant ExecutablesPulling
+    participant ExecutablesOnDisk
+    participant ExecutablesLaunchingFromDisk
+    participant ExecutablesActive
+    participant ExecutablesTerminating
+end box
+
+== Scaling From Zero With Dead Cold Start ==
+
+activate Waiting
+Waiting -> Calculating: <<autoscaler>>
+deactivate Waiting
+activate Calculating
+    Calculating --> Revisions: scale up
+activate Revisions
+    Calculating -> Waiting: << autoscaler >>
+deactivate Calculating
+activate Waiting
+    Revisions --> Revisions: create replica
+    Revisions -> ReplicasLaunching: <<replica>>
+deactivate Revisions
+activate ReplicasLaunching
+    ReplicasLaunching --> ExecutablesInRegistry: Select node placement
+activate ExecutablesInRegistry
+    ExecutablesInRegistry --> ExecutablesInRegistry: create executable
+    ExecutablesInRegistry -> ExecutablesPulling: <<executable>>
+deactivate ExecutablesInRegistry
+activate ExecutablesPulling
+    ExecutablesPulling -> ExecutablesOnDisk: <<executable>>
+deactivate ExecutablesPulling
+activate ExecutablesOnDisk
+    ExecutablesOnDisk -> ExecutablesLaunchingFromDisk: <<executable>>
+deactivate ExecutablesOnDisk
+activate ExecutablesLaunchingFromDisk
+    ExecutablesLaunchingFromDisk -> ExecutablesActive: <<executable>>
+deactivate ExecutablesLaunchingFromDisk
+activate ExecutablesActive #LightBlue
+    ExecutablesActive --> EndpointsAdding: signal executable active
+activate EndpointsAdding
+    EndpointsAdding --> EndpointsAdding: create endpoint
+    EndpointsAdding -> EndpointsActive: <<endpoint>>
+deactivate EndpointsAdding
+activate EndpointsActive #LightBlue
+    EndpointsActive --> ReplicasLaunching: signal active endpoint
+    ReplicasLaunching -> ReplicasActive: <<replica>>
+deactivate ReplicasLaunching
+activate ReplicasActive #LightBlue
+
+...
+== Scaling From Zero With Disk Warm Start ==
+
+    Waiting -> Calculating: <<autoscaler>>
+deactivate Waiting
+activate Calculating
+    Calculating --> Revisions: scale up
+activate Revisions
+    Calculating -> Waiting: << autoscaler >>
+deactivate Calculating
+activate Waiting
+    Revisions --> Revisions: create replica
+    Revisions -> ReplicasLaunching: <<replica>>
+deactivate Revisions
+activate ReplicasLaunching
+    ReplicasLaunching --> ExecutablesOnDisk: Select node placement
+activate ExecutablesOnDisk
+    ExecutablesOnDisk -> ExecutablesLaunchingFromDisk: <<executable>>
+deactivate ExecutablesOnDisk
+activate ExecutablesLaunchingFromDisk
+    ExecutablesLaunchingFromDisk -> ExecutablesActive: <<executable>>
+deactivate ExecutablesLaunchingFromDisk
+    ExecutablesActive --> EndpointsAdding: signal executable active
+activate EndpointsAdding
+    EndpointsAdding --> EndpointsAdding: create endpoint
+    EndpointsAdding -> EndpointsActive: <<endpoint>>
+deactivate EndpointsAdding
+    EndpointsActive --> ReplicasLaunching: signal active endpoint
+    ReplicasLaunching -> ReplicasActive: <<replica>>
+deactivate ReplicasLaunching
+
+
+...
+== Scaling Down ==
+
+    Waiting -> Calculating: <<autoscaler>>
+deactivate Waiting
+activate Calculating
+    Calculating --> Revisions: scale down
+activate Revisions
+    Calculating -> Waiting: << autoscaler >>
+deactivate Calculating
+activate Waiting
+    Revisions --> Revisions: terminate replicas
+    Revisions --> ReplicasActive: terminate replica
+deactivate Revisions
+    ReplicasActive -> ReplicasTerminating: <<replica>>
+deactivate ReplicasActive
+activate ReplicasTerminating
+    ReplicasTerminating --> EndpointsActive: remove endpoints
+    EndpointsActive -> EndpointsRemoving: <<endpoint>>
+deactivate EndpointsActive
+activate EndpointsRemoving
+    EndpointsRemoving -> EndpointsRemoved: <<endpoint>>
+deactivate EndpointsRemoving
+activate EndpointsRemoved #Orange
+    EndpointsRemoved --> ReplicasTerminating: endpoint removed
+    ReplicasTerminating --> ExecutablesActive: terminate process
+    ExecutablesActive -> ExecutablesTerminating: <<executable>>
+deactivate ExecutablesActive
+activate ExecutablesTerminating
+    ExecutablesTerminating -> ExecutablesOnDisk: <<executable>>
+deactivate ExecutablesTerminating
+activate ExecutablesOnDisk #Orange
+    ExecutablesOnDisk --> ReplicasTerminating: executable terminated
+deactivate ReplicasTerminating
+    ReplicasTerminating -> ReplicasTerminated: <<replica>>
+activate ReplicasTerminated #Orange
+
+== ==
+@enduml
+
