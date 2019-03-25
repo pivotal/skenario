@@ -7,7 +7,34 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+type mockStockType struct {
+	mock.Mock
+}
+
+func (mss *mockStockType) Name() StockName {
+	mss.Called()
+	return StockName("mock source")
+}
+
+func (mss *mockStockType) KindStocked() EntityKind {
+	mss.Called()
+	return EntityKind("mock kind")
+}
+func (mss *mockStockType) Count() uint64 {
+	mss.Called()
+	return uint64(0)
+}
+func (mss *mockStockType) Remove() Entity {
+	mss.Called()
+	return NewEntity("test entity", "mock kind")
+}
+func (mss *mockStockType) Add(entity Entity) error {
+	mss.Called(entity)
+	return nil
+}
 
 func TestEnvironment(t *testing.T) {
 	spec.Run(t, "Environment spec", testEnvironment, spec.Report(report.Terminal{}))
@@ -67,8 +94,25 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	describe("Run()", func() {
 		// TODO: the tests below will probably require some manner of mockery and/or filling out stocks and movements
 
-		describe.Pend("taking the next movement from the schedule", func() {
+		describe("taking the next movement from the schedule", func() {
+			it("does something", func() {
+				fromMock := new(mockStockType)
+				toMock := new(mockStockType)
+				e := NewEntity("test entity", "mock kind")
 
+				fromMock.On("Remove").Return(e)
+				toMock.On("Add", e).Return(nil)
+
+				movement = NewMovement(time.Unix(333333,0), fromMock, toMock)
+
+				subject.AddToSchedule(movement)
+
+				_, _, err := subject.Run()
+				assert.NoError(t, err)
+
+				fromMock.AssertCalled(t, "Remove")
+				toMock.AssertCalled(t, "Add", NewEntity("test entity", "mock kind"))
+			})
 		})
 
 		describe.Pend("moving the Entity from the Source to the Sink", func() {
@@ -90,6 +134,8 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 				it.Before(func() {
 					var err error
+
+					subject = NewEnvironment(startTime, 555555*time.Second)
 
 					first = NewMovement(time.Unix(333333, 0), fromStock, toStock)
 					second = NewMovement(time.Unix(444444, 0), fromStock, toStock)

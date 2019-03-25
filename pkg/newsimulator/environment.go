@@ -66,6 +66,9 @@ func (env *environment) Run() (results []CompletedMovement, movements []IgnoredM
 	list := env.futureMovements.List()
 	for _, l := range list {
 		mv := l.(Movement)
+
+		mv.To().Add(mv.From().Remove())
+
 		env.completed = append(env.completed, CompletedMovement{movement: mv})
 	}
 
