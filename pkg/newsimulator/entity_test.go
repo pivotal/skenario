@@ -9,10 +9,7 @@ import (
 )
 
 func TestEntity(t *testing.T) {
-	suite := spec.New("Entity suite", spec.Report(report.Terminal{}))
-	suite("Entity", testEntity)
-
-	suite.Run(t)
+	spec.Run(t, "Entity spec", testEntity, spec.Report(report.Terminal{}))
 }
 
 func testEntity(t *testing.T, describe spec.G, it spec.S) {
@@ -23,7 +20,7 @@ func testEntity(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	it("creates an entity", func() {
-		assert.Equal(t, subject.Name(), "test entity name")
-		assert.Equal(t, subject.Kind(), "test entity kind")
+		assert.Equal(t, subject.Name(), EntityName("test entity name"))
+		assert.Equal(t, subject.Kind(), EntityKind("test entity kind"))
 	})
 }
