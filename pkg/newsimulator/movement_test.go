@@ -2,6 +2,7 @@ package newsimulator
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -16,11 +17,12 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	var fromStock SourceStock
 	var toStock SinkStock
 	var movement Movement
+	theTime := time.Now()
 
 	it.Before(func() {
 		fromStock = NewSourceStock("test from source", "test entity kind")
 		toStock = NewSinkStock("test from source", "test entity kind")
-		movement = NewMovement(fromStock, toStock)
+		movement = NewMovement(theTime, fromStock, toStock)
 	})
 
 	describe("From()", func() {
@@ -32,6 +34,12 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	describe("To()", func() {
 		it("has a Sink stock", func() {
 			assert.Equal(t, movement.To(), toStock)
+		})
+	})
+
+	describe("OccursAt()", func() {
+		it("has a time", func() {
+			assert.Equal(t, movement.OccursAt(), theTime)
 		})
 	})
 }
