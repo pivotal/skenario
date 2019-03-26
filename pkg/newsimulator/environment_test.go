@@ -44,8 +44,8 @@ func TestEnvironment(t *testing.T) {
 // We hand-roll the echo source stock, otherwise the compiler will use ThroughStock,
 // leading to nil errors when we try to .Remove() a non-existent entry.
 type echoSourceStockType struct {
-	name StockName
-	kind EntityKind
+	name   StockName
+	kind   EntityKind
 	series int
 }
 
@@ -83,16 +83,58 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		assert.NotNil(t, subject)
 
 		fromStock = &echoSourceStockType{
-			name:   "from stock",
-			kind:   "test entity kind",
+			name: "from stock",
+			kind: "test entity kind",
 		}
 		toStock = NewSinkStock("to stock", "test entity kind")
+	})
+
+	describe("NewEnvironment()", func() {
+		var completed []CompletedMovement
+		var ignored []IgnoredMovement
+		var err error
+		completedNotes := make([]string, 0)
+		ignoredNotes := make([]string, 0)
+
+		it.Before(func() {
+			completed, ignored, err = subject.Run()
+			assert.NoError(t, err)
+
+			for _, c := range completed {
+				completedNotes = append(completedNotes, c.movement.Note())
+			}
+
+			for _, i := range ignored {
+				ignoredNotes = append(ignoredNotes, i.movement.Note())
+				fmt.Println(i.reason)
+			}
+		})
+
+		it("adds a start scenario movement", func() {
+			assert.Contains(t, completedNotes, "Start scenario")
+		})
+
+		it("adds a halt scenario movement", func() {
+			assert.Contains(t, completedNotes, "Halt scenario")
+		})
+
+		it("doesn't ignore the start or halt scenario movements", func() {
+			assert.NotContains(t, ignoredNotes, "Start scenario")
+			assert.NotContains(t, ignoredNotes, "Halt scenario")
+		})
 	})
 
 	describe("AddToSchedule()", func() {
 		describe("the scheduled movement will occur during the simulation", func() {
 			it("returns true", func() {
 				movement = NewMovement(time.Unix(333333, 0), fromStock, toStock, "during sim test movement")
+				assert.True(t, subject.AddToSchedule(movement))
+			})
+		})
+
+		describe("the scheduled movement will occur at halt", func() {
+			it("returns true", func() {
+				movement = NewMovement(time.Unix(777777, 0), fromStock, toStock, "at halt test movement")
 				assert.True(t, subject.AddToSchedule(movement))
 			})
 		})
@@ -104,12 +146,16 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			})
 		})
 
-		describe("the movement would occur at or before the current simulation time", func() {
+		describe("the movement would occur before the current simulation time", func() {
+			it("returns false", func() {
+				movement = NewMovement(time.Unix(111111, 0), fromStock, toStock, "before simulation time test movement")
+				assert.False(t, subject.AddToSchedule(movement))
+			})
+		})
+
+		describe("the movement would occur at the current simulation time", func() {
 			it("returns false", func() {
 				movement = NewMovement(time.Unix(222222, 0), fromStock, toStock, "at simulation time test movement")
-				assert.False(t, subject.AddToSchedule(movement))
-
-				movement = NewMovement(time.Unix(111111, 0), fromStock, toStock, "before simulation time test movement")
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
@@ -149,14 +195,6 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			})
 		})
 
-		describe.Pend("Start-simulation movement", func() {
-
-		})
-
-		describe.Pend("Halt-simulation movement", func() {
-
-		})
-
 		describe("results", func() {
 			describe("completed movements", func() {
 				var first, second Movement
@@ -178,7 +216,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("contains the correct number of completed movements", func() {
-					assert.Len(t, completed, 2)
+					assert.Len(t, completed, 4) // start scenario, halt scenario, first, second
 				})
 
 				it("contains the completed movements", func() {
