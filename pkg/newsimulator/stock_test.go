@@ -1,4 +1,4 @@
-package newsimulator_test
+package newsimulator
 
 import (
 	"testing"
@@ -7,7 +7,6 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"knative-simulator/pkg/newsimulator"
 )
 
 func TestStock(t *testing.T) {
@@ -21,20 +20,20 @@ func TestStock(t *testing.T) {
 }
 
 func testStock(t *testing.T, describe spec.G, it spec.S) {
-	var subject newsimulator.ThroughStock
+	var subject ThroughStock
 
 	it.Before(func() {
-		subject = newsimulator.NewThroughStock("test name", "test entity kind")
+		subject = NewThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subject)
 	})
 
 	describe("basic Stock functionality", func() {
 		it("has a stock name", func() {
-			assert.Equal(t, subject.Name(), newsimulator.StockName("test name"))
+			assert.Equal(t, subject.Name(), StockName("test name"))
 		})
 
 		it("has a stock kind", func() {
-			assert.Equal(t, subject.KindStocked(), newsimulator.EntityKind("test entity kind"))
+			assert.Equal(t, subject.KindStocked(), EntityKind("test entity kind"))
 		})
 
 		it("has a stock count", func() {
@@ -45,18 +44,18 @@ func testStock(t *testing.T, describe spec.G, it spec.S) {
 }
 
 func testSourceStock(t *testing.T, describe spec.G, it spec.S) {
-	var subject newsimulator.SourceStock
-	var subjectAsThrough newsimulator.ThroughStock
-	var entity newsimulator.Entity
+	var subject SourceStock
+	var subjectAsThrough ThroughStock
+	var entity Entity
 
 	it.Before(func() {
-		subjectAsThrough = newsimulator.NewThroughStock("test name", "test entity kind")
+		subjectAsThrough = NewThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subjectAsThrough)
 
-		subject = subjectAsThrough.(newsimulator.SourceStock)
+		subject = subjectAsThrough.(SourceStock)
 		assert.NotNil(t, subject)
 
-		entity = newsimulator.NewEntity("test entity name", "test entity kind")
+		entity = NewEntity("test entity name", "test entity kind")
 		err := subjectAsThrough.Add(entity)
 		assert.NoError(t, err)
 	})
@@ -74,14 +73,14 @@ func testSourceStock(t *testing.T, describe spec.G, it spec.S) {
 }
 
 func testSinkStock(t *testing.T, describe spec.G, it spec.S) {
-	var subject newsimulator.SinkStock
-	var entity newsimulator.Entity
+	var subject SinkStock
+	var entity Entity
 
 	it.Before(func() {
-		subject = newsimulator.NewSinkStock("test name", "test entity kind")
+		subject = NewSinkStock("test name", "test entity kind")
 		assert.NotNil(t, subject)
 
-		entity = newsimulator.NewEntity("test entity name", "test entity kind")
+		entity = NewEntity("test entity name", "test entity kind")
 	})
 
 	describe("Add()", func() {
@@ -101,29 +100,36 @@ func testSinkStock(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, before+1, after)
 		})
 
-		describe("Wrong stock type added", func() {
-			it("says kaboom", func() {
-				wrongEntity := newsimulator.NewEntity("will explode", "wrong kind")
+		describe("Entity with mismatched kind added", func() {
+			it("rejects the entity", func() {
+				wrongEntity := NewEntity("will explode", "wrong kind")
 
 				err := subject.Add(wrongEntity)
 				assert.Error(t, err)
+			})
+		})
+
+		describe("A nil Entity is added", func() {
+			it("rejects the entity", func() {
+				err := subject.Add(nil)
+				assert.Errorf(t, err, "was nil")
 			})
 		})
 	})
 }
 
 func testThroughStock(t *testing.T, describe spec.G, it spec.S) {
-	var subject newsimulator.ThroughStock
-	var entity newsimulator.Entity
+	var subject ThroughStock
+	var entity Entity
 
 	it.Before(func() {
-		subject = newsimulator.NewThroughStock("test name", "test entity kind")
+		subject = NewThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subject)
 	})
 
 	describe("Add() then Remove()", func() {
 		it("gets back the item was added", func() {
-			entity = newsimulator.NewEntity("test entity name", "test entity kind")
+			entity = NewEntity("test entity name", "test entity kind")
 
 			err := subject.Add(entity)
 			assert.NoError(t, err)
