@@ -102,12 +102,12 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			assert.NoError(t, err)
 
 			for _, c := range completed {
-				completedNotes = append(completedNotes, c.movement.Note())
+				completedNotes = append(completedNotes, c.Movement.Note())
 			}
 
 			for _, i := range ignored {
-				ignoredNotes = append(ignoredNotes, i.movement.Note())
-				fmt.Println(i.reason)
+				ignoredNotes = append(ignoredNotes, i.Movement.Note())
+				fmt.Println(i.Reason)
 			}
 		})
 
@@ -227,8 +227,8 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("contains the completed movements", func() {
-					assert.Contains(t, completed, CompletedMovement{movement: first})
-					assert.Contains(t, completed, CompletedMovement{movement: second})
+					assert.Contains(t, completed, CompletedMovement{Movement: first})
+					assert.Contains(t, completed, CompletedMovement{Movement: second})
 				})
 			})
 
@@ -256,16 +256,16 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("contains movements that were scheduled in the past", func() {
-					assert.Contains(t, ignored, IgnoredMovement{reason: OccursInPast, movement: tooEarly})
+					assert.Contains(t, ignored, IgnoredMovement{Reason: OccursInPast, Movement: tooEarly})
 				})
 
 				it("contains movements that were scheduled after the halt", func() {
-					assert.Contains(t, ignored, IgnoredMovement{reason: OccursAfterHalt, movement: tooLate})
+					assert.Contains(t, ignored, IgnoredMovement{Reason: OccursAfterHalt, Movement: tooLate})
 				})
 
 				it("doesn't contain any events that were scheduled", func() {
-					assert.NotContains(t, ignored, IgnoredMovement{reason: OccursInPast, movement: goldilocks})
-					assert.NotContains(t, ignored, IgnoredMovement{reason: OccursAfterHalt, movement: goldilocks})
+					assert.NotContains(t, ignored, IgnoredMovement{Reason: OccursInPast, Movement: goldilocks})
+					assert.NotContains(t, ignored, IgnoredMovement{Reason: OccursAfterHalt, Movement: goldilocks})
 				})
 			})
 		})

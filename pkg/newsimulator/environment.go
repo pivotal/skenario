@@ -16,12 +16,12 @@ type Environment interface {
 }
 
 type CompletedMovement struct {
-	movement Movement
+	Movement Movement
 }
 
 type IgnoredMovement struct {
-	reason   string
-	movement Movement
+	Reason   string
+	Movement Movement
 }
 
 type environment struct {
@@ -52,13 +52,13 @@ func (env *environment) AddToSchedule(movement Movement) (added bool) {
 		}
 	} else if !occursAfterCurrent || occursBeforeStart {
 		env.ignored = append(env.ignored, IgnoredMovement{
-			reason:   OccursInPast,
-			movement: movement,
+			Reason:   OccursInPast,
+			Movement: movement,
 		})
 	} else if !occursBeforeHalt {
 		env.ignored = append(env.ignored, IgnoredMovement{
-			reason:   OccursAfterHalt,
-			movement: movement,
+			Reason:   OccursAfterHalt,
+			Movement: movement,
 		})
 	}
 
@@ -79,7 +79,7 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 		// TODO: handle nils and errors
 		movement.To().Add(movement.From().Remove())
 
-		env.completed = append(env.completed, CompletedMovement{movement: movement})
+		env.completed = append(env.completed, CompletedMovement{Movement: movement})
 	}
 
 	return env.completed, env.ignored, nil
