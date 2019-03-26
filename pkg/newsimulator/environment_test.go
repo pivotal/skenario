@@ -92,24 +92,24 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	describe("AddToSchedule()", func() {
 		describe("the scheduled movement will occur during the simulation", func() {
 			it("returns true", func() {
-				movement = NewMovement(time.Unix(333333, 0), fromStock, toStock)
+				movement = NewMovement(time.Unix(333333, 0), fromStock, toStock, "during sim test movement")
 				assert.True(t, subject.AddToSchedule(movement))
 			})
 		})
 
-		describe("the scheduled movement would occur after the simulation ends", func() {
+		describe("the scheduled movement would occur after the simulation halts", func() {
 			it("returns false", func() {
-				movement = NewMovement(time.Unix(999999, 0), fromStock, toStock)
+				movement = NewMovement(time.Unix(999999, 0), fromStock, toStock, "after halt test movement")
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the movement would occur at or before the current simulation time", func() {
 			it("returns false", func() {
-				movement = NewMovement(time.Unix(222222, 0), fromStock, toStock)
+				movement = NewMovement(time.Unix(222222, 0), fromStock, toStock, "at simulation time test movement")
 				assert.False(t, subject.AddToSchedule(movement))
 
-				movement = NewMovement(time.Unix(111111, 0), fromStock, toStock)
+				movement = NewMovement(time.Unix(111111, 0), fromStock, toStock, "before simulation time test movement")
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
@@ -133,7 +133,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				fromMock.On("Remove").Return(e)
 				toMock.On("Add", e).Return(nil)
 
-				movement = NewMovement(time.Unix(333333, 0), fromMock, toMock)
+				movement = NewMovement(time.Unix(333333, 0), fromMock, toMock, "test movement")
 
 				subject.AddToSchedule(movement)
 				_, _, err := subject.Run()
@@ -167,8 +167,8 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 					subject = NewEnvironment(startTime, 555555*time.Second)
 
-					first = NewMovement(time.Unix(333333, 0), fromStock, toStock)
-					second = NewMovement(time.Unix(444444, 0), fromStock, toStock)
+					first = NewMovement(time.Unix(333333, 0), fromStock, toStock, "first test movement")
+					second = NewMovement(time.Unix(444444, 0), fromStock, toStock, "second test movement")
 
 					subject.AddToSchedule(first)
 					subject.AddToSchedule(second)
@@ -194,9 +194,9 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					var err error
 
-					tooEarly = NewMovement(time.Unix(111111, 0), fromStock, toStock)
-					goldilocks = NewMovement(time.Unix(333333, 0), fromStock, toStock)
-					tooLate = NewMovement(time.Unix(999999, 0), fromStock, toStock)
+					tooEarly = NewMovement(time.Unix(111111, 0), fromStock, toStock, "too early test movement")
+					goldilocks = NewMovement(time.Unix(333333, 0), fromStock, toStock, "goldilocks test movement")
+					tooLate = NewMovement(time.Unix(999999, 0), fromStock, toStock, "too late test movement")
 
 					subject.AddToSchedule(tooEarly)
 					subject.AddToSchedule(goldilocks)
@@ -234,7 +234,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		describe("helper funcs", func() {
 			describe("occursAtToKey()", func() {
 				it.Before(func() {
-					movement = NewMovement(time.Unix(0, 111000111), fromStock, toStock)
+					movement = NewMovement(time.Unix(0, 111000111), fromStock, toStock, "occurs at test movement")
 				})
 
 				it("returns the OccursAt() as a string", func() {
@@ -248,8 +248,8 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				var earlier, later Movement
 
 				it.Before(func() {
-					earlier = NewMovement(time.Unix(111, 0), fromStock, toStock)
-					later = NewMovement(time.Unix(999, 0), fromStock, toStock)
+					earlier = NewMovement(time.Unix(111, 0), fromStock, toStock, "earlier test movement")
+					later = NewMovement(time.Unix(999, 0), fromStock, toStock, "later test movement")
 				})
 
 				describe("when the first argument is earlier", func() {

@@ -22,7 +22,7 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	it.Before(func() {
 		fromStock = NewSourceStock("test from source", "test entity kind")
 		toStock = NewSinkStock("test from source", "test entity kind")
-		movement = NewMovement(theTime, fromStock, toStock)
+		movement = NewMovement(theTime, fromStock, toStock, "test note")
 	})
 
 	describe("From()", func() {
@@ -40,6 +40,12 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	describe("OccursAt()", func() {
 		it("has a time", func() {
 			assert.Equal(t, movement.OccursAt(), theTime)
+		})
+	})
+
+	describe("Note()", func() {
+		it("has a note", func() {
+			assert.Equal(t, movement.Note(), "test note")
 		})
 	})
 }
