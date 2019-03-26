@@ -1,16 +1,14 @@
 package newsimulator
 
-import "k8s.io/client-go/tools/cache"
-
 // HaltingSink is intended for use by the Environment.
 // It terminates .Run() by closing the future movements list.
 
 type haltingSink struct {
 	delegate        ThroughStock
-	futureMovements *cache.Heap
+	futureMovements MovementPriorityQueue
 }
 
-func NewHaltingSink(name StockName, stocks EntityKind, futureMovements *cache.Heap) *haltingSink {
+func NewHaltingSink(name StockName, stocks EntityKind, futureMovements MovementPriorityQueue) *haltingSink {
 	return &haltingSink{
 		delegate:        NewThroughStock(name, stocks),
 		futureMovements: futureMovements,

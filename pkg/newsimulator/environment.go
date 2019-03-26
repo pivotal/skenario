@@ -2,10 +2,7 @@ package newsimulator
 
 import (
 	"fmt"
-	"strconv"
 	"time"
-
-	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -36,7 +33,7 @@ type environment struct {
 	runningScenario ThroughStock
 	haltedScenario  ThroughStock
 
-	futureMovements *cache.Heap
+	futureMovements MovementPriorityQueue
 	completed       []CompletedMovement
 	ignored         []IgnoredMovement
 }
@@ -49,7 +46,7 @@ func (env *environment) AddToSchedule(movement Movement) (added bool) {
 
 	schedulable := occursAfterCurrent && (occursBeforeHalt || occursAtHalt)
 	if schedulable {
-		err := env.futureMovements.Add(movement)
+		err := env.futureMovements.EnqueueMovement(movement)
 		if err != nil {
 			panic(fmt.Errorf("could not add '%#v' to future movements: %s", movement, err.Error()))
 		}
@@ -68,54 +65,45 @@ func (env *environment) AddToSchedule(movement Movement) (added bool) {
 	return schedulable
 }
 
-func (env *environment) Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error) {
-	// TODO: totally fake while tests get filled out
-	// TODO: as this won't preserve order
-	list := env.futureMovements.List()
-	for _, l := range list {
-		mv := l.(Movement)
+func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
+	for {
+		movement, err, closed := env.futureMovements.DequeueMovement()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if closed {
+			break
+		}
 
 		// TODO: handle nils and errors
-		mv.To().Add(mv.From().Remove())
+		movement.To().Add(movement.From().Remove())
 
-		env.completed = append(env.completed, CompletedMovement{movement: mv})
+		env.completed = append(env.completed, CompletedMovement{movement: movement})
 	}
 
 	return env.completed, env.ignored, nil
 }
 
 func NewEnvironment(startAt time.Time, runFor time.Duration) Environment {
-	heap := cache.NewHeap(occursAtToKey, leftMovementIsEarlier)
-
-	return newEnvironment(startAt, runFor, heap)
+	pqueue := NewMovementPriorityQueue()
+	return newEnvironment(startAt, runFor, pqueue)
 }
 
-func occursAtToKey(movement interface{}) (key string, err error) {
-	mv := movement.(Movement)
-	return strconv.FormatInt(mv.OccursAt().UnixNano(), 10), nil
-}
-
-func leftMovementIsEarlier(left interface{}, right interface{}) bool {
-	l := left.(Movement)
-	r := right.(Movement)
-
-	return l.OccursAt().Before(r.OccursAt())
-}
-
-func newEnvironment(startAt time.Time, runFor time.Duration, heap *cache.Heap) *environment {
+func newEnvironment(startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue) *environment {
 	beforeStock := NewThroughStock("BeforeScenario", "Scenario")
 	runningStock := NewThroughStock("RunningScenario", "Scenario")
-	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", heap)
+	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
 		current: startAt.Add(-1 * time.Nanosecond), // make temporary space for the Start Scenario movement
 		startAt: startAt,
 		haltAt:  startAt.Add(runFor),
 
-		beforeScenario: beforeStock,
+		beforeScenario:  beforeStock,
 		runningScenario: runningStock,
 		haltedScenario:  haltingStock,
-		futureMovements: heap,
+		futureMovements: pqueue,
 		completed:       make([]CompletedMovement, 0),
 		ignored:         make([]IgnoredMovement, 0),
 	}

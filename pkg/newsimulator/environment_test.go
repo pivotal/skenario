@@ -9,7 +9,6 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"k8s.io/client-go/tools/cache"
 )
 
 type mockStockType struct {
@@ -63,7 +62,6 @@ func (es *echoSourceStockType) Remove() Entity {
 	es.series++
 	return NewEntity(name, es.kind)
 }
-
 
 func TestEnvironment(t *testing.T) {
 	spec.Run(t, "Environment spec", testEnvironment, spec.Report(report.Terminal{}))
@@ -271,55 +269,22 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 			})
 		})
+
+		describe("halting", func() {
+			it.Pend("uses the cache's blocking Pop() operation", func() {
+
+			})
+		})
 	}, spec.Nested())
 
 	describe("helper funcs", func() {
-		describe("occursAtToKey()", func() {
-			it.Before(func() {
-				movement = NewMovement(time.Unix(0, 111000111), fromStock, toStock, "occurs at test movement")
-			})
-
-			it("returns the OccursAt() as a string", func() {
-				key, err := occursAtToKey(movement)
-				assert.NoError(t, err)
-				assert.Equal(t, "111000111", key)
-			})
-		})
-
-		describe("leftMovementIsEarlier()", func() {
-			var earlier, later Movement
-
-			it.Before(func() {
-				earlier = NewMovement(time.Unix(111, 0), fromStock, toStock, "earlier test movement")
-				later = NewMovement(time.Unix(999, 0), fromStock, toStock, "later test movement")
-			})
-
-			describe("when the first argument is earlier", func() {
-				it("returns true", func() {
-					assert.True(t, leftMovementIsEarlier(earlier, later))
-				})
-			})
-
-			describe("when the second argument is earlier", func() {
-				it("returns false", func() {
-					assert.False(t, leftMovementIsEarlier(later, earlier))
-				})
-			})
-		})
-
 		describe("newEnvironment()", func() {
-			var heap *cache.Heap
 			var env *environment
+			var mpq MovementPriorityQueue
 
 			it.Before(func() {
-				heap = cache.NewHeap(func(obj interface{}) (s string, e error) {
-					return "key", nil
-
-				}, func(i interface{}, i2 interface{}) bool {
-					return true
-				})
-
-				env = newEnvironment(time.Unix(0,0), time.Minute, heap)
+				mpq = NewMovementPriorityQueue()
+				env = newEnvironment(time.Unix(0, 0), time.Minute, mpq)
 			})
 
 			it("configures the halted scenario stock to use haltingStock", func() {
