@@ -15,7 +15,7 @@ const (
 
 type Environment interface {
 	AddToSchedule(movement Movement) (added bool)
-	Run() (results []CompletedMovement, movements []IgnoredMovement, err error)
+	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 }
 
 type CompletedMovement struct {
@@ -60,7 +60,7 @@ func (env *environment) AddToSchedule(movement Movement) (added bool) {
 	return schedulable
 }
 
-func (env *environment) Run() (results []CompletedMovement, movements []IgnoredMovement, err error) {
+func (env *environment) Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error) {
 	// TODO: totally fake while tests get filled out
 	// TODO: as this won't preserve order
 	list := env.futureMovements.List()
