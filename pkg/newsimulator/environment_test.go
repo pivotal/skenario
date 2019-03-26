@@ -122,31 +122,31 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Run()", func() {
-		// TODO: the tests below will probably require some manner of mockery and/or filling out stocks and movements
-
 		describe("taking the next movement from the schedule", func() {
-			it("does something", func() {
-				fromMock := new(mockStockType)
-				toMock := new(mockStockType)
-				e := NewEntity("test entity", "mock kind")
+			var fromMock, toMock *mockStockType
+			var e Entity
 
+			it.Before(func() {
+				fromMock = new(mockStockType)
+				toMock = new(mockStockType)
+				e = NewEntity("test entity", "mock kind")
 				fromMock.On("Remove").Return(e)
 				toMock.On("Add", e).Return(nil)
 
 				movement = NewMovement(time.Unix(333333, 0), fromMock, toMock)
 
 				subject.AddToSchedule(movement)
-
 				_, _, err := subject.Run()
 				assert.NoError(t, err)
+			})
 
+			it("Remove()s from the 'from' stock", func() {
 				fromMock.AssertCalled(t, "Remove")
+			})
+
+			it("Add()s to the 'to' stock", func() {
 				toMock.AssertCalled(t, "Add", e)
 			})
-		})
-
-		describe.Pend("moving the Entity from the Source to the Sink", func() {
-
 		})
 
 		describe.Pend("Start-simulation movement", func() {
