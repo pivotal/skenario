@@ -42,7 +42,7 @@ var (
 func main() {
 	unsugaredLogger, err := zap.NewDevelopment()
 	if err != nil {
-		log.Fatal("config error!!1!: %s", err.Error())
+		log.Fatalf("config error!!1!: %s", err.Error())
 	}
 	logger = unsugaredLogger.Sugar()
 	as, err := prepareAutoscaler()
