@@ -9,6 +9,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"k8s.io/client-go/tools/cache"
 )
 
 type mockStockType struct {
@@ -77,9 +78,10 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	)
 
 	startTime = time.Unix(222222, 0)
+	runFor := 555555 * time.Second
 
 	it.Before(func() {
-		subject = NewEnvironment(startTime, 555555*time.Second)
+		subject = NewEnvironment(startTime, runFor)
 		assert.NotNil(t, subject)
 
 		fromStock = &echoSourceStockType{
@@ -209,7 +211,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					var err error
 
-					subject = NewEnvironment(startTime, 555555*time.Second)
+					subject = NewEnvironment(startTime, runFor)
 
 					first = NewMovement(time.Unix(333333, 0), fromStock, toStock, "first test movement")
 					second = NewMovement(time.Unix(444444, 0), fromStock, toStock, "second test movement")
@@ -268,7 +270,6 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 			})
 		})
-
 	}, spec.Nested())
 
 	describe("helper funcs", func() {
@@ -302,6 +303,27 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				it("returns false", func() {
 					assert.False(t, leftMovementIsEarlier(later, earlier))
 				})
+			})
+		})
+
+		describe("newEnvironment()", func() {
+			var heap *cache.Heap
+			var env *environment
+
+			it.Before(func() {
+				heap = cache.NewHeap(func(obj interface{}) (s string, e error) {
+					return "key", nil
+
+				}, func(i interface{}, i2 interface{}) bool {
+					return true
+				})
+
+				env = newEnvironment(time.Unix(0,0), time.Minute, heap)
+			})
+
+			it("configures the halted scenario stock to use haltingStock", func() {
+				assert.Equal(t, env.haltedScenario.Name(), StockName("HaltedScenario"))
+				assert.IsType(t, &haltingSink{}, env.haltedScenario)
 			})
 		})
 	}, spec.Nested())

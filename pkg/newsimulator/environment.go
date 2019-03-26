@@ -32,6 +32,7 @@ type environment struct {
 	startAt time.Time
 	haltAt  time.Time
 
+	beforeScenario  ThroughStock
 	runningScenario ThroughStock
 	haltedScenario  ThroughStock
 
@@ -86,22 +87,7 @@ func (env *environment) Run() (completed []CompletedMovement, ignored []IgnoredM
 func NewEnvironment(startAt time.Time, runFor time.Duration) Environment {
 	heap := cache.NewHeap(occursAtToKey, leftMovementIsEarlier)
 
-	env := &environment{
-		current: startAt.Add(-1 * time.Nanosecond), // make temporary space for the Start Scenario movement
-		startAt: startAt,
-		haltAt:  startAt.Add(runFor),
-
-		runningScenario: NewThroughStock("RunningScenario", "Scenario"),
-		haltedScenario:  NewThroughStock("HaltedScenario", "Scenario"),
-		futureMovements: heap,
-		completed:       make([]CompletedMovement, 0),
-		ignored:         make([]IgnoredMovement, 0),
-	}
-
-	env = setupScenarioMovements(env, startAt, env.haltAt, env.runningScenario, env.haltedScenario)
-	env.current = startAt // restore proper starting time
-
-	return env
+	return newEnvironment(startAt, runFor, heap)
 }
 
 func occursAtToKey(movement interface{}) (key string, err error) {
@@ -116,14 +102,38 @@ func leftMovementIsEarlier(left interface{}, right interface{}) bool {
 	return l.OccursAt().Before(r.OccursAt())
 }
 
-func setupScenarioMovements(env *environment, startAt time.Time, haltAt time.Time, runningScenario, haltedScenario ThroughStock) *environment {
+func newEnvironment(startAt time.Time, runFor time.Duration, heap *cache.Heap) *environment {
+	beforeStock := NewThroughStock("BeforeScenario", "Scenario")
+	runningStock := NewThroughStock("RunningScenario", "Scenario")
+	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", heap)
+
+	env := &environment{
+		current: startAt.Add(-1 * time.Nanosecond), // make temporary space for the Start Scenario movement
+		startAt: startAt,
+		haltAt:  startAt.Add(runFor),
+
+		beforeScenario: beforeStock,
+		runningScenario: runningStock,
+		haltedScenario:  haltingStock,
+		futureMovements: heap,
+		completed:       make([]CompletedMovement, 0),
+		ignored:         make([]IgnoredMovement, 0),
+	}
+
+	env = setupScenarioMovements(env, startAt, env.haltAt, env.beforeScenario, env.runningScenario, env.haltedScenario)
+	env.current = startAt // restore proper starting time
+
+	return env
+}
+
+func setupScenarioMovements(env *environment, startAt time.Time, haltAt time.Time, beforeScenario, runningScenario, haltedScenario ThroughStock) *environment {
 	scenarioEntity := NewEntity("Scenario", "Scenario")
-	err := haltedScenario.Add(scenarioEntity)
+	err := beforeScenario.Add(scenarioEntity)
 	if err != nil {
 		panic(fmt.Errorf("could not add Scenario entity to haltedScenario: %s", err.Error()))
 	}
 
-	startMovement := NewMovement(startAt, haltedScenario, runningScenario, "Start scenario")
+	startMovement := NewMovement(startAt, beforeScenario, runningScenario, "Start scenario")
 	haltMovement := NewMovement(haltAt, runningScenario, haltedScenario, "Halt scenario")
 
 	env.AddToSchedule(startMovement)
