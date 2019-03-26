@@ -38,10 +38,6 @@ func (mss *mockStockType) Add(entity Entity) error {
 	return nil
 }
 
-func TestEnvironment(t *testing.T) {
-	spec.Run(t, "Environment spec", testEnvironment, spec.Report(report.Terminal{}))
-}
-
 // We hand-roll the echo source stock, otherwise the compiler will use ThroughStock,
 // leading to nil errors when we try to .Remove() a non-existent entry.
 type echoSourceStockType struct {
@@ -66,6 +62,11 @@ func (es *echoSourceStockType) Remove() Entity {
 	name := EntityName(fmt.Sprintf("entity-%d", es.series))
 	es.series++
 	return NewEntity(name, es.kind)
+}
+
+
+func TestEnvironment(t *testing.T) {
+	spec.Run(t, "Environment spec", testEnvironment, spec.Report(report.Terminal{}))
 }
 
 func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
