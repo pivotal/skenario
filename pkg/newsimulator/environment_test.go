@@ -269,12 +269,6 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 			})
 		})
-
-		describe("halting", func() {
-			it.Pend("uses the cache's blocking Pop() operation", func() {
-
-			})
-		})
 	}, spec.Nested())
 
 	describe("helper funcs", func() {
