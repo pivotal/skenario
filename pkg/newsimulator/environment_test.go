@@ -122,7 +122,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			assert.NotContains(t, ignoredNotes, "Start scenario")
 			assert.NotContains(t, ignoredNotes, "Halt scenario")
 		})
-	})
+	}, spec.Nested())
 
 	describe("AddToSchedule()", func() {
 		describe("the scheduled movement will occur during the simulation", func() {
@@ -165,7 +165,13 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 			})
 		})
-	})
+	}, spec.Nested())
+
+	describe.Pend("AddScheduleListener()", func() {
+		it("adds a registered listener", func() {
+
+		})
+	}, spec.Nested())
 
 	describe("Run()", func() {
 		describe("taking the next movement from the schedule", func() {
@@ -263,45 +269,40 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			})
 		})
 
-		describe.Pend("AddScheduleListener()", func() {
-			it("adds a registered listener", func() {
+	}, spec.Nested())
 
+	describe("helper funcs", func() {
+		describe("occursAtToKey()", func() {
+			it.Before(func() {
+				movement = NewMovement(time.Unix(0, 111000111), fromStock, toStock, "occurs at test movement")
+			})
+
+			it("returns the OccursAt() as a string", func() {
+				key, err := occursAtToKey(movement)
+				assert.NoError(t, err)
+				assert.Equal(t, "111000111", key)
 			})
 		})
 
-		describe("helper funcs", func() {
-			describe("occursAtToKey()", func() {
-				it.Before(func() {
-					movement = NewMovement(time.Unix(0, 111000111), fromStock, toStock, "occurs at test movement")
-				})
+		describe("leftMovementIsEarlier()", func() {
+			var earlier, later Movement
 
-				it("returns the OccursAt() as a string", func() {
-					key, err := occursAtToKey(movement)
-					assert.NoError(t, err)
-					assert.Equal(t, "111000111", key)
+			it.Before(func() {
+				earlier = NewMovement(time.Unix(111, 0), fromStock, toStock, "earlier test movement")
+				later = NewMovement(time.Unix(999, 0), fromStock, toStock, "later test movement")
+			})
+
+			describe("when the first argument is earlier", func() {
+				it("returns true", func() {
+					assert.True(t, leftMovementIsEarlier(earlier, later))
 				})
 			})
 
-			describe("leftMovementIsEarlier()", func() {
-				var earlier, later Movement
-
-				it.Before(func() {
-					earlier = NewMovement(time.Unix(111, 0), fromStock, toStock, "earlier test movement")
-					later = NewMovement(time.Unix(999, 0), fromStock, toStock, "later test movement")
-				})
-
-				describe("when the first argument is earlier", func() {
-					it("returns true", func() {
-						assert.True(t, leftMovementIsEarlier(earlier, later))
-					})
-				})
-
-				describe("when the second argument is earlier", func() {
-					it("returns false", func() {
-						assert.False(t, leftMovementIsEarlier(later, earlier))
-					})
+			describe("when the second argument is earlier", func() {
+				it("returns false", func() {
+					assert.False(t, leftMovementIsEarlier(later, earlier))
 				})
 			})
 		})
-	})
+	}, spec.Nested())
 }
