@@ -1,6 +1,7 @@
 package newsimulator
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -40,6 +41,32 @@ func TestEnvironment(t *testing.T) {
 	spec.Run(t, "Environment spec", testEnvironment, spec.Report(report.Terminal{}))
 }
 
+// We hand-roll the echo source stock, otherwise the compiler will use ThroughStock,
+// leading to nil errors when we try to .Remove() a non-existent entry.
+type echoSourceStockType struct {
+	name StockName
+	kind EntityKind
+	series int
+}
+
+func (es *echoSourceStockType) Name() StockName {
+	return es.name
+}
+
+func (es *echoSourceStockType) KindStocked() EntityKind {
+	return es.kind
+}
+
+func (es *echoSourceStockType) Count() uint64 {
+	return 0
+}
+
+func (es *echoSourceStockType) Remove() Entity {
+	name := EntityName(fmt.Sprintf("entity-%d", es.series))
+	es.series++
+	return NewEntity(name, es.kind)
+}
+
 func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	var (
 		subject   Environment
@@ -55,7 +82,10 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		subject = NewEnvironment(startTime, 555555*time.Second)
 		assert.NotNil(t, subject)
 
-		fromStock = NewSourceStock("from stock", "test entity kind")
+		fromStock = &echoSourceStockType{
+			name:   "from stock",
+			kind:   "test entity kind",
+		}
 		toStock = NewSinkStock("to stock", "test entity kind")
 	})
 
@@ -103,7 +133,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				fromMock.On("Remove").Return(e)
 				toMock.On("Add", e).Return(nil)
 
-				movement = NewMovement(time.Unix(333333,0), fromMock, toMock)
+				movement = NewMovement(time.Unix(333333, 0), fromMock, toMock)
 
 				subject.AddToSchedule(movement)
 
@@ -111,7 +141,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				assert.NoError(t, err)
 
 				fromMock.AssertCalled(t, "Remove")
-				toMock.AssertCalled(t, "Add", NewEntity("test entity", "mock kind"))
+				toMock.AssertCalled(t, "Add", e)
 			})
 		})
 
