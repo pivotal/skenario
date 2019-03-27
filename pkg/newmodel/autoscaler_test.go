@@ -38,7 +38,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	var subject KnativeAutoscaler
 	var envFake *fakeEnvironment
 	startAt := time.Unix(0, 0)
-	// runFor := 1 * time.Minute
 
 	it.Before(func() {
 		envFake = &fakeEnvironment{
