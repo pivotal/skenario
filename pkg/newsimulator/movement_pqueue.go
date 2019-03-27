@@ -1,6 +1,7 @@
 package newsimulator
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -19,6 +20,24 @@ type movementPQ struct {
 }
 
 func (mpq *movementPQ) EnqueueMovement(movement Movement) error {
+	key, err := occursAtToKey(movement)
+	if err != nil {
+		return fmt.Errorf("could not create a heap key for Movement %s: %s", movement.Kind(), err.Error())
+	}
+
+	_, exists, err := mpq.heap.GetByKey(key)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return fmt.Errorf(
+			"could not add Movement '%s' to run at '%d', there is already another movement scheduled at that time",
+			movement.Kind(),
+			movement.OccursAt().UnixNano(),
+		)
+	}
+
 	return mpq.heap.Add(movement)
 }
 

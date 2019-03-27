@@ -16,16 +16,28 @@ func TestMovementPQ(t *testing.T) {
 func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	var subject MovementPriorityQueue
 	var movement Movement
+	var theTime time.Time
 
 	describe("EnqueueMovement()", func() {
 		it.Before(func() {
+			theTime = time.Now()
 			subject = NewMovementPriorityQueue()
-			movement = NewMovement("test movement kind", time.Now(), nil, nil, "test movement")
+			movement = NewMovement("test movement kind", theTime, nil, nil, "test movement")
 		})
 
 		it("adds Movements", func() {
 			err := subject.EnqueueMovement(movement)
 			assert.NoError(t, err)
+		})
+
+		it("returns an error if a movement tries to schedule for the same time as another movement", func() {
+			err := subject.EnqueueMovement(movement)
+			sameTimeMovement := NewMovement("another movement kind", theTime, nil, nil, "different movement, same time")
+
+			err = subject.EnqueueMovement(sameTimeMovement)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "could not add Movement")
+			assert.Contains(t, err.Error(), "there is already another movement scheduled at that time")
 		})
 	})
 
