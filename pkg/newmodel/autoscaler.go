@@ -52,7 +52,7 @@ func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time) Knati
 
 	firstCalculation := newsimulator.NewMovement(
 		"waiting_to_calculating",
-		startAt.Add(2*time.Second),
+		startAt.Add(2001*time.Millisecond),
 		kas.tickTock,
 		kas.tickTock,
 		"Autoscaler calculating",

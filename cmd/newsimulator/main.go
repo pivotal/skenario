@@ -5,11 +5,18 @@ import (
 	"strings"
 	"time"
 
+	"knative-simulator/pkg/newmodel"
+
 	"knative-simulator/pkg/newsimulator"
 )
 
+var startAt = time.Unix(0, 0)
+
 func main() {
 	r := NewRunner()
+
+	newmodel.NewKnativeAutoscaler(r.Env(), startAt)
+
 	report, err := r.RunAndReport()
 	if err != nil {
 		fmt.Printf("there was an error during simulation: %s", err.Error())
