@@ -53,7 +53,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		it("schedules a first calculation", func() {
 			firstCalc := envFake.movements[0]
-			assert.Equal(t, newsimulator.MovementKind("waiting_to_calculating"), firstCalc.Kind())
+			assert.Equal(t, newsimulator.MovementKind(MvWaitingToCalculating), firstCalc.Kind())
 		})
 
 		it("registers itself as a MovementListener", func() {
@@ -69,7 +69,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			subject = NewKnativeAutoscaler(envFake, startAt)
 
 			ttStock = &tickTock{}
-			waitToCalcMovement = newsimulator.NewMovement("waiting_to_calculating", time.Now(), ttStock, ttStock, "test movement note")
+			waitToCalcMovement = newsimulator.NewMovement(MvWaitingToCalculating, time.Now(), ttStock, ttStock, "test movement note")
 
 			err := subject.OnMovement(waitToCalcMovement)
 			assert.NoError(t, err)
@@ -77,13 +77,13 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		it("schedules movements for the next wait/calculate cycle", func() {
 			calcInit := envFake.movements[0]
-			assert.Equal(t, newsimulator.MovementKind("waiting_to_calculating"), calcInit.Kind())
+			assert.Equal(t, newsimulator.MovementKind(MvWaitingToCalculating), calcInit.Kind())
 
 			wait := envFake.movements[1]
-			assert.Equal(t, newsimulator.MovementKind("calculating_to_waiting"), wait.Kind())
+			assert.Equal(t, newsimulator.MovementKind(MvCalculatingToWaiting), wait.Kind())
 
 			calc := envFake.movements[2]
-			assert.Equal(t, newsimulator.MovementKind("waiting_to_calculating"), calc.Kind())
+			assert.Equal(t, newsimulator.MovementKind(MvWaitingToCalculating), calc.Kind())
 		})
 
 		it.Pend("triggers the autoscaler calculation", func() {
@@ -100,7 +100,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("Name()", func() {
 			it("is called 'KnativeAutoscaler Stock'", func() {
-				assert.Equal(t, ttStock.Name(), newsimulator.StockName("KnativeAutoscaler Stock"))
+				assert.Equal(t, ttStock.Name(), newsimulator.StockName("Autoscaler ticktock"))
 			})
 		})
 

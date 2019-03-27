@@ -8,6 +8,11 @@ import (
 	"github.com/knative/serving/pkg/autoscaler"
 )
 
+const (
+	MvWaitingToCalculating newsimulator.MovementKind = "autoscaler_wait"
+	MvCalculatingToWaiting newsimulator.MovementKind = "autoscaler_calc"
+)
+
 type KnativeAutoscaler interface {
 	newsimulator.MovementListener
 }
@@ -19,21 +24,21 @@ type knativeAutoscaler struct {
 }
 
 func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
-	if movement.Kind() == "waiting_to_calculating" {
+	if movement.Kind() == MvWaitingToCalculating {
 		waitingMovement := newsimulator.NewMovement(
-			"calculating_to_waiting",
+			MvCalculatingToWaiting,
 			movement.OccursAt().Add(1*time.Nanosecond),
 			kas.tickTock,
 			kas.tickTock,
-			"Autoscaler calculating",
+			"",
 			)
 
 		calculatingMovement := newsimulator.NewMovement(
-			"waiting_to_calculating",
+			MvWaitingToCalculating,
 			movement.OccursAt().Add(2*time.Second),
 			kas.tickTock,
 			kas.tickTock,
-			"Autoscaler waiting",
+			"",
 			)
 
 		kas.env.AddToSchedule(waitingMovement)
@@ -51,11 +56,11 @@ func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time) Knati
 	}
 
 	firstCalculation := newsimulator.NewMovement(
-		"waiting_to_calculating",
+		MvWaitingToCalculating,
 		startAt.Add(2001*time.Millisecond),
 		kas.tickTock,
 		kas.tickTock,
-		"Autoscaler calculating",
+		"First calculation",
 	)
 
 	env.AddToSchedule(firstCalculation)
@@ -72,7 +77,7 @@ type tickTock struct {
 }
 
 func (tt *tickTock) Name() newsimulator.StockName {
-	return "KnativeAutoscaler Stock"
+	return "Autoscaler ticktock"
 }
 
 func (tt *tickTock) KindStocked() newsimulator.EntityKind {
