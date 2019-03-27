@@ -2,12 +2,14 @@ package newsimulator
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
 const (
-	OccursInPast    = "ScheduledToOccurInPast"
-	OccursAfterHalt = "ScheduledToOccurAfterHalt"
+	OccursInPast                            = "ScheduledToOccurInPast"
+	OccursAfterHalt                         = "ScheduledToOccurAfterHalt"
+	OccursSimultaneouslyWithAnotherMovement = "ScheduleCollidesWithAnotherMovement"
 )
 
 type Environment interface {
@@ -42,22 +44,29 @@ type environment struct {
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
 	occursAfterCurrent := movement.OccursAt().After(env.current)
-	occursBeforeStart := movement.OccursAt().Before(env.startAt)
-	occursBeforeHalt := movement.OccursAt().Before(env.haltAt)
-	occursAtHalt := movement.OccursAt().Equal(env.haltAt)
+	occursAfterHalt := movement.OccursAt().After(env.haltAt)
 
-	schedulable := occursAfterCurrent && (occursBeforeHalt || occursAtHalt)
+	schedulable := occursAfterCurrent && !occursAfterHalt
 	if schedulable {
 		err := env.futureMovements.EnqueueMovement(movement)
 		if err != nil {
-			panic(fmt.Errorf("could not add '%#v' to future movements: %s", movement, err.Error()))
+			if strings.Contains(err.Error(), "there is already another movement scheduled at that time") {
+				env.ignored = append(env.ignored, IgnoredMovement{
+					Reason:   OccursSimultaneouslyWithAnotherMovement,
+					Movement: movement,
+				})
+
+				return false
+			} else {
+				panic(fmt.Errorf("unknown error meant '%#v' was not added future movements: %s", movement, err.Error()))
+			}
 		}
-	} else if !occursAfterCurrent || occursBeforeStart {
+	} else if !occursAfterCurrent {
 		env.ignored = append(env.ignored, IgnoredMovement{
 			Reason:   OccursInPast,
 			Movement: movement,
 		})
-	} else if !occursBeforeHalt {
+	} else if occursAfterHalt {
 		env.ignored = append(env.ignored, IgnoredMovement{
 			Reason:   OccursAfterHalt,
 			Movement: movement,
