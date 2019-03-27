@@ -25,6 +25,12 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 		movement = NewMovement(theTime, fromStock, toStock, "test note")
 	})
 
+	describe("OccursAt()", func() {
+		it("has a time", func() {
+			assert.Equal(t, movement.OccursAt(), theTime)
+		})
+	})
+
 	describe("From()", func() {
 		it("has a Source stock", func() {
 			assert.Equal(t, movement.From(), fromStock)
@@ -34,12 +40,6 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	describe("To()", func() {
 		it("has a Sink stock", func() {
 			assert.Equal(t, movement.To(), toStock)
-		})
-	})
-
-	describe("OccursAt()", func() {
-		it("has a time", func() {
-			assert.Equal(t, movement.OccursAt(), theTime)
 		})
 	})
 
