@@ -20,7 +20,7 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	describe("EnqueueMovement()", func() {
 		it.Before(func() {
 			subject = NewMovementPriorityQueue()
-			movement = NewMovement(time.Now(), nil, nil, "test movement")
+			movement = NewMovement("test movement kind", time.Now(), nil, nil, "test movement")
 		})
 
 		it("adds Movements", func() {
@@ -32,7 +32,7 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	describe("DequeueMovement()", func() {
 		it.Before(func() {
 			subject = NewMovementPriorityQueue()
-			movement = NewMovement(time.Now(), nil, nil, "test movement")
+			movement = NewMovement("test movement kind", time.Now(), nil, nil, "test movement")
 		})
 
 		it("returns Movements", func() {
@@ -66,7 +66,7 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	describe("Close()", func() {
 		it.Before(func() {
 			subject = NewMovementPriorityQueue()
-			movement = NewMovement(time.Now(), nil, nil, "test movement")
+			movement = NewMovement("test movement kind", time.Now(), nil, nil, "test movement")
 		})
 
 		it("closes the heap", func() {
@@ -78,7 +78,7 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	describe("IsClosed()", func() {
 		it.Before(func() {
 			subject = NewMovementPriorityQueue()
-			movement = NewMovement(time.Now(), nil, nil, "test movement")
+			movement = NewMovement("test movement kind", time.Now(), nil, nil, "test movement")
 		})
 
 		it("starts false", func() {
@@ -89,7 +89,7 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	describe("helpers", func() {
 		describe("occursAtToKey()", func() {
 			it.Before(func() {
-				movement = NewMovement(time.Unix(0, 111000111), nil, nil, "occurs at test movement")
+				movement = NewMovement("test movement kind", time.Unix(0, 111000111), nil, nil, "occurs at test movement")
 			})
 
 			it("returns the OccursAt() as a string", func() {
@@ -103,8 +103,8 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 			var earlier, later Movement
 
 			it.Before(func() {
-				earlier = NewMovement(time.Unix(111, 0), nil, nil, "earlier test movement")
-				later = NewMovement(time.Unix(999, 0), nil, nil, "later test movement")
+				earlier = NewMovement("test movement kind", time.Unix(111, 0), nil, nil, "earlier test movement")
+				later = NewMovement("test movement kind", time.Unix(999, 0), nil, nil, "later test movement")
 			})
 
 			describe("when the first argument is earlier", func() {

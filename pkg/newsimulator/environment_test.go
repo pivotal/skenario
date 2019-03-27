@@ -128,35 +128,35 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	describe("AddToSchedule()", func() {
 		describe("the scheduled movement will occur during the simulation", func() {
 			it("returns true", func() {
-				movement = NewMovement(time.Unix(333333, 0), fromStock, toStock, "during sim test movement")
+				movement = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock, "during sim test movement")
 				assert.True(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the scheduled movement will occur at halt", func() {
 			it("returns true", func() {
-				movement = NewMovement(time.Unix(777777, 0), fromStock, toStock, "at halt test movement")
+				movement = NewMovement("test movement kind", time.Unix(777777, 0), fromStock, toStock, "at halt test movement")
 				assert.True(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the scheduled movement would occur after the simulation halts", func() {
 			it("returns false", func() {
-				movement = NewMovement(time.Unix(999999, 0), fromStock, toStock, "after halt test movement")
+				movement = NewMovement("test movement kind", time.Unix(999999, 0), fromStock, toStock, "after halt test movement")
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the movement would occur before the current simulation time", func() {
 			it("returns false", func() {
-				movement = NewMovement(time.Unix(111111, 0), fromStock, toStock, "before simulation time test movement")
+				movement = NewMovement("test movement kind", time.Unix(111111, 0), fromStock, toStock, "before simulation time test movement")
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the movement would occur at the current simulation time", func() {
 			it("returns false", func() {
-				movement = NewMovement(time.Unix(222222, 0), fromStock, toStock, "at simulation time test movement")
+				movement = NewMovement("test movement kind", time.Unix(222222, 0), fromStock, toStock, "at simulation time test movement")
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
@@ -186,7 +186,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				fromMock.On("Remove").Return(e)
 				toMock.On("Add", e).Return(nil)
 
-				movement = NewMovement(time.Unix(333333, 0), fromMock, toMock, "test movement")
+				movement = NewMovement("test movement kind", time.Unix(333333, 0), fromMock, toMock, "test movement")
 
 				subject.AddToSchedule(movement)
 				_, _, err := subject.Run()
@@ -212,8 +212,8 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 					subject = NewEnvironment(startTime, runFor)
 
-					first = NewMovement(time.Unix(333333, 0), fromStock, toStock, "first test movement")
-					second = NewMovement(time.Unix(444444, 0), fromStock, toStock, "second test movement")
+					first = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock, "first test movement")
+					second = NewMovement("test movement kind", time.Unix(444444, 0), fromStock, toStock, "second test movement")
 
 					subject.AddToSchedule(first)
 					subject.AddToSchedule(second)
@@ -239,9 +239,9 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					var err error
 
-					tooEarly = NewMovement(time.Unix(111111, 0), fromStock, toStock, "too early test movement")
-					goldilocks = NewMovement(time.Unix(333333, 0), fromStock, toStock, "goldilocks test movement")
-					tooLate = NewMovement(time.Unix(999999, 0), fromStock, toStock, "too late test movement")
+					tooEarly = NewMovement("test movement kind", time.Unix(111111, 0), fromStock, toStock, "too early test movement")
+					goldilocks = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock, "goldilocks test movement")
+					tooLate = NewMovement("test movement kind", time.Unix(999999, 0), fromStock, toStock, "too late test movement")
 
 					subject.AddToSchedule(tooEarly)
 					subject.AddToSchedule(goldilocks)

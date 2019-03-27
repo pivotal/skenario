@@ -107,6 +107,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				assert.NoError(t, err)
 
 				mockEnv.AssertCalled(t, "AddToSchedule", newsimulator.NewMovement(
+					"waiting_to_calculating",
 					startAt.Add(2*time.Second),
 					ttStock,
 					ttStock,
