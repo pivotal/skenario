@@ -35,6 +35,7 @@ func (fe *fakeEnvironment) Run() (completed []newsimulator.CompletedMovement, ig
 }
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
+	var subject KnativeAutoscaler
 	var envFake *fakeEnvironment
 	startAt := time.Unix(0, 0)
 	// runFor := 1 * time.Minute
@@ -48,7 +49,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
-			_ = NewKnativeAutoscaler(envFake, startAt)
+			subject = NewKnativeAutoscaler(envFake, startAt)
 		})
 
 		it("schedules a first calculation", func() {
@@ -56,13 +57,12 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, newsimulator.MovementKind("waiting_to_calculating"), firstCalc.Kind())
 		})
 
-		it.Pend("registers itself as a MovementListener", func() {
-
+		it("registers itself as a MovementListener", func() {
+			assert.Equal(t, subject, envFake.listeners[0])
 		})
 	})
 
 	describe("OnMovement()", func() {
-		var subject KnativeAutoscaler
 		var waitToCalcMovement newsimulator.Movement
 		var ttStock *tickTock
 
