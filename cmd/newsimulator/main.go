@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+
 	"knative-simulator/pkg/newmodel"
 
 	"knative-simulator/pkg/newsimulator"
@@ -40,19 +43,44 @@ func (r *runner) RunAndReport() (string, error) {
 		return "", err
 	}
 
-	var sb strings.Builder
+	printer := message.NewPrinter(language.AmericanEnglish)
+	sb := new(strings.Builder)
 
-	sb.WriteString("completed:\n")
+	sb.WriteString("=== BEGIN TRACE ================================================================================================================================================\n")
+	sb.WriteString("---------------------------------------------------------------------[ completed movements ]--------------------------------------------------------------------\n")
+	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %s\n", "TIME (ns)", "MOVEMENT NAME", "FROM STOCK", "TO STOCK", "NOTE"))
+	sb.WriteString("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
+
 	for _, c := range completed {
 		mv := c.Movement
-		sb.WriteString(fmt.Sprintf("%d %s %s %s\n", mv.OccursAt().UnixNano(), mv.From().Name(), mv.To().Name(), mv.Note()))
+		sb.WriteString(printer.Sprintf(
+			"%20d  %-24s %-24s ⟶   %-24s  %s\n",
+			mv.OccursAt().UnixNano(),
+			mv.Kind(),
+			mv.From().Name(),
+			mv.To().Name(),
+			mv.Note(),
+		))
 	}
 
-	sb.WriteString("ignored:\n")
+	sb.WriteString("\n")
+	sb.WriteString("----------------------------------------------------------------------[ ignored movements ]---------------------------------------------------------------------\n")
+	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-35s\n", "TIME (ns)", "MOVEMENT NAME", "FROM STOCK", "TO STOCK", "NOTE", "REASON IGNORED"))
+	sb.WriteString("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 	for _, i := range ignored {
 		mv := i.Movement
-		sb.WriteString(fmt.Sprintf("%s %d %s %s %s\n", i.Reason, mv.OccursAt().UnixNano(), mv.From().Name(), mv.To().Name(), mv.Note()))
+		sb.WriteString(printer.Sprintf(
+			"%20d  %-24s %-24s ⟶   %-24s  %-28s %-35s\n",
+			mv.OccursAt().UnixNano(),
+			mv.Kind(),
+			mv.From().Name(),
+			mv.To().Name(),
+			mv.Note(),
+			i.Reason,
+		))
 	}
+
+	sb.WriteString("=== END TRACE ==================================================================================================================================================\n")
 
 	return sb.String(), nil
 }
