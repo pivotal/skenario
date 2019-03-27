@@ -7,7 +7,6 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"knative-simulator/pkg/newsimulator"
 )
@@ -16,45 +15,89 @@ func TestAutoscaler(t *testing.T) {
 	spec.Run(t, "KnativeAutoscaler model", testAutoscaler, spec.Report(report.Terminal{}))
 }
 
-type mockEnvironment struct {
-	mock.Mock
+type fakeEnvironment struct {
+	movements []newsimulator.Movement
+	listeners []newsimulator.MovementListener
 }
 
-func (me *mockEnvironment) AddToSchedule(movement newsimulator.Movement) (added bool) {
-	me.Called(movement)
+func (fe *fakeEnvironment) AddToSchedule(movement newsimulator.Movement) (added bool) {
+	fe.movements = append(fe.movements, movement)
 	return true
 }
 
-func (me *mockEnvironment) Run() (completed []newsimulator.CompletedMovement, ignored []newsimulator.IgnoredMovement, err error) {
+func (fe *fakeEnvironment) AddMovementListener(listener newsimulator.MovementListener) error {
+	fe.listeners = append(fe.listeners, listener)
+	return nil
+}
+
+func (fe *fakeEnvironment) Run() (completed []newsimulator.CompletedMovement, ignored []newsimulator.IgnoredMovement, err error) {
 	return nil, nil, nil
 }
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
-	// var subject KnativeAutoscaler
-	var mockEnv *mockEnvironment
+	var envFake *fakeEnvironment
 	startAt := time.Unix(0, 0)
 	// runFor := 1 * time.Minute
 
 	it.Before(func() {
-		mockEnv = new(mockEnvironment)
-		mockEnv.On("AddToSchedule", mock.Anything).Return(true) // TODO: I'd rather not use mock.Anything
+		envFake = &fakeEnvironment{
+			movements: make([]newsimulator.Movement, 0),
+			listeners: make([]newsimulator.MovementListener, 0),
+		}
 	})
 
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
-			_ = NewKnativeAutoscaler(mockEnv, startAt)
+			_ = NewKnativeAutoscaler(envFake, startAt)
 		})
 
 		it("schedules a first calculation", func() {
-			mockEnv.AssertExpectations(t)
+			firstCalc := envFake.movements[0]
+			assert.Equal(t, newsimulator.MovementKind("waiting_to_calculating"), firstCalc.Kind())
+		})
+
+		it.Pend("registers itself as a MovementListener", func() {
+
+		})
+	})
+
+	describe("OnMovement()", func() {
+		var subject KnativeAutoscaler
+		var waitToCalcMovement newsimulator.Movement
+		var ttStock *tickTock
+
+		it.Before(func() {
+			subject = NewKnativeAutoscaler(envFake, startAt)
+
+			ttStock = &tickTock{}
+			waitToCalcMovement = newsimulator.NewMovement("waiting_to_calculating", time.Now(), ttStock, ttStock, "test movement note")
+
+			err := subject.OnMovement(waitToCalcMovement)
+			assert.NoError(t, err)
+		})
+
+		it("schedules movements for the next wait/calculate cycle", func() {
+			calcInit := envFake.movements[0]
+			assert.Equal(t, newsimulator.MovementKind("waiting_to_calculating"), calcInit.Kind())
+
+			wait := envFake.movements[1]
+			assert.Equal(t, newsimulator.MovementKind("calculating_to_waiting"), wait.Kind())
+
+			calc := envFake.movements[2]
+			assert.Equal(t, newsimulator.MovementKind("waiting_to_calculating"), calc.Kind())
+		})
+
+		it.Pend("triggers the autoscaler calculation", func() {
+
 		})
 	})
 
 	describe("tickTock stock", func() {
-		it.Before(func() {
-			_ = NewKnativeAutoscaler(mockEnv, startAt)
-		})
 		ttStock := &tickTock{}
+
+		it.Before(func() {
+			_ = NewKnativeAutoscaler(envFake, startAt)
+		})
 
 		describe("Name()", func() {
 			it("is called 'KnativeAutoscaler Stock'", func() {
@@ -63,7 +106,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		describe("KindStocked()", func() {
-			it("accepts Autoscalers", func() {
+			it("accepts Knative Autoscalers", func() {
 				assert.Equal(t, ttStock.KindStocked(), newsimulator.EntityKind("KnativeAutoscaler"))
 			})
 		})
@@ -98,27 +141,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				assert.NoError(t, err)
 
 				assert.Equal(t, ttStock.asEntity, entity)
-			})
-
-			it("schedules an event for the next calculation", func() {
-				mockEnv.On("AddToSchedule", mock.Anything).Return(true) // TODO: I'd rather not use mock.Anything
-
-				err := ttStock.Add(ttStock.asEntity)
-				assert.NoError(t, err)
-
-				mockEnv.AssertCalled(t, "AddToSchedule", newsimulator.NewMovement(
-					"waiting_to_calculating",
-					startAt.Add(2*time.Second),
-					ttStock,
-					ttStock,
-					"Autoscaler calculating",
-				))
-
-				mockEnv.AssertNumberOfCalls(t, "AddToSchedule", 2)
-			})
-
-			it.Pend("triggers the autoscaler calculation", func() {
-
 			})
 		})
 	})

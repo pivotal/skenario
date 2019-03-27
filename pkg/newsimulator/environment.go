@@ -12,6 +12,7 @@ const (
 
 type Environment interface {
 	AddToSchedule(movement Movement) (added bool)
+	AddMovementListener(listener MovementListener) error
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 }
 
@@ -33,9 +34,10 @@ type environment struct {
 	runningScenario ThroughStock
 	haltedScenario  ThroughStock
 
-	futureMovements MovementPriorityQueue
-	completed       []CompletedMovement
-	ignored         []IgnoredMovement
+	futureMovements   MovementPriorityQueue
+	completed         []CompletedMovement
+	ignored           []IgnoredMovement
+	movementListeners []MovementListener
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -65,8 +67,15 @@ func (env *environment) AddToSchedule(movement Movement) (added bool) {
 	return schedulable
 }
 
+func (env *environment) AddMovementListener(listener MovementListener) error {
+	env.movementListeners = append(env.movementListeners, listener)
+	return nil
+}
+
 func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 	for {
+		var err error
+
 		movement, err, closed := env.futureMovements.DequeueMovement()
 		if err != nil {
 			return nil, nil, err
@@ -74,6 +83,14 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 
 		if closed {
 			break
+		}
+
+		for _, ml := range env.movementListeners {
+			err = ml.OnMovement(movement)
+			if err != nil {
+				// TODO: panic might be overkill
+				panic(err.Error())
+			}
 		}
 
 		// TODO: handle nils and errors
@@ -100,12 +117,13 @@ func newEnvironment(startAt time.Time, runFor time.Duration, pqueue MovementPrio
 		startAt: startAt,
 		haltAt:  startAt.Add(runFor),
 
-		beforeScenario:  beforeStock,
-		runningScenario: runningStock,
-		haltedScenario:  haltingStock,
-		futureMovements: pqueue,
-		completed:       make([]CompletedMovement, 0),
-		ignored:         make([]IgnoredMovement, 0),
+		beforeScenario:    beforeStock,
+		runningScenario:   runningStock,
+		haltedScenario:    haltingStock,
+		futureMovements:   pqueue,
+		completed:         make([]CompletedMovement, 0),
+		ignored:           make([]IgnoredMovement, 0),
+		movementListeners: make([]MovementListener, 0),
 	}
 
 	env = setupScenarioMovements(env, startAt, env.haltAt, env.beforeScenario, env.runningScenario, env.haltedScenario)

@@ -63,6 +63,15 @@ func (es *echoSourceStockType) Remove() Entity {
 	return NewEntity(name, es.kind)
 }
 
+type fakeMovementListener struct {
+	movements []Movement
+}
+
+func (fml *fakeMovementListener) OnMovement(movement Movement) error {
+	fml.movements = append(fml.movements, movement)
+	return nil
+}
+
 func TestEnvironment(t *testing.T) {
 	spec.Run(t, "Environment spec", testEnvironment, spec.Report(report.Terminal{}))
 }
@@ -174,22 +183,44 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		})
 	}, spec.Nested())
 
+	describe("AddMovementListener()", func() {
+		var env *environment
+		var listenerFake MovementListener
+
+		it.Before(func() {
+			env = newEnvironment(startTime, runFor, NewMovementPriorityQueue())
+			listenerFake = new(fakeMovementListener)
+		})
+
+		it("adds a MovementListener", func() {
+			err := env.AddMovementListener(listenerFake)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, env.movementListeners, []MovementListener{listenerFake})
+		})
+	})
+
 	describe("Run()", func() {
 		describe("taking the next movement from the schedule", func() {
 			var fromMock, toMock *mockStockType
+			var listenerFake *fakeMovementListener
 			var e Entity
+			var err error
 
 			it.Before(func() {
 				fromMock = new(mockStockType)
 				toMock = new(mockStockType)
+				listenerFake = new(fakeMovementListener)
 				e = NewEntity("test entity", "mock kind")
 				fromMock.On("Remove").Return(e)
 				toMock.On("Add", e).Return(nil)
 
 				movement = NewMovement("test movement kind", time.Unix(333333, 0), fromMock, toMock, "test movement")
 
+				err = subject.AddMovementListener(listenerFake)
+				assert.NoError(t, err)
+
 				subject.AddToSchedule(movement)
-				_, _, err := subject.Run()
+				_, _, err = subject.Run()
 				assert.NoError(t, err)
 			})
 
@@ -199,6 +230,14 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 			it("Add()s to the 'to' stock", func() {
 				toMock.AssertCalled(t, "Add", e)
+			})
+
+			it("notifies movement listeners using OnMovement()", func() {
+				assert.Equal(t, movement, listenerFake.movements[1])
+			})
+
+			it.Pend("updates the simulation time", func() {
+
 			})
 		})
 
