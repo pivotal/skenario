@@ -167,7 +167,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt)
 				ttStock = &tickTock{}
-				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 
 				err := subject.OnMovement(asMovement)
 				assert.NoError(t, err)
@@ -183,7 +183,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt)
 				ttStock = &tickTock{}
-				asMovement = newsimulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock, "test movement note")
+				asMovement = newsimulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
 
 				err := subject.OnMovement(asMovement)
 				assert.NoError(t, err)
@@ -211,7 +211,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("controlling time", func() {
 				it.Before(func() {
-					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 					err := kpa.OnMovement(asMovement)
 					assert.NoError(t, err)
 				})
@@ -225,7 +225,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				describe("when the desired scale increases", func() {
 					it.Before(func() {
 						kpa.lastDesired = 10
-						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 						err := kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
@@ -235,20 +235,20 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 					})
 
 					it("adds a note", func() {
-						assert.Equal(t, "10 ⇑ 55", asMovement.Notes()[1])
+						assert.Equal(t, "10 ⇑ 55", asMovement.Notes()[0])
 					})
 				})
 
 				describe("when the desired scale increases", func() {
 					it.Before(func() {
 						kpa.lastDesired = 99
-						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 						err := kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
 
 					it("adds a note", func() {
-						assert.Equal(t, "99 ⥥ 55", asMovement.Notes()[1])
+						assert.Equal(t, "99 ⥥ 55", asMovement.Notes()[0])
 					})
 				})
 			})
@@ -257,13 +257,13 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					autoscalerFake.cantDecide = true
 
-					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 					err := kpa.OnMovement(asMovement)
 					assert.NoError(t, err)
 				})
 
 				it("notes that there was a problem", func() {
-					assert.Equal(t, "autoscaler.Scale() was unsuccessful", asMovement.Notes()[1])
+					assert.Equal(t, "autoscaler.Scale() was unsuccessful", asMovement.Notes()[0])
 				})
 
 				it("ignores the 'desired' return value, as it is set to zero", func() {

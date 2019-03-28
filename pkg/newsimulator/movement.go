@@ -45,12 +45,12 @@ func (mv *move) AddNote(note string) {
 	mv.notes = append(mv.notes, note)
 }
 
-func NewMovement(kind MovementKind, occursAt time.Time, from SourceStock, to SinkStock, note string) Movement {
+func NewMovement(kind MovementKind, occursAt time.Time, from SourceStock, to SinkStock) Movement {
 	return &move{
 		kind:     kind,
 		occursAt: occursAt,
 		to:       to,
 		from:     from,
-		notes:    []string{note},
+		notes:    make([]string, 0),
 	}
 }

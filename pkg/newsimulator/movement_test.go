@@ -22,7 +22,7 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	it.Before(func() {
 		fromStock = NewSourceStock("test from source", "test entity kind")
 		toStock = NewSinkStock("test from source", "test entity kind")
-		movement = NewMovement("test movement kind", theTime, fromStock, toStock, "test note")
+		movement = NewMovement("test movement kind", theTime, fromStock, toStock)
 	})
 
 	describe("Kind()", func() {
@@ -50,15 +50,15 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Notes()", func() {
-		it("has notes", func() {
-			assert.Equal(t, movement.Notes(), []string{"test note"})
+		it("starts without any notes", func() {
+			assert.Equal(t, movement.Notes(), []string{})
 		})
 	})
 
 	describe("AddNote()", func() {
 		it("adds a note", func() {
 			movement.AddNote("added note")
-			assert.Equal(t, movement.Notes()[1], "added note")
+			assert.Equal(t, movement.Notes()[0], "added note")
 		})
 	})
 }

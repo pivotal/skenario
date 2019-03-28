@@ -25,7 +25,8 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 		subject = NewRunner()
 		from = newsimulator.NewThroughStock("test from stock", "test kind")
 		to = newsimulator.NewThroughStock("test to stock", "test kind")
-		ignoredMovement = newsimulator.NewMovement("test movement kind", time.Now(), from, to, "ignored movement")
+		ignoredMovement = newsimulator.NewMovement("test movement kind", time.Now(), from, to)
+		ignoredMovement.AddNote("ignored movement")
 
 		subject.Env().AddToSchedule(ignoredMovement)
 	})

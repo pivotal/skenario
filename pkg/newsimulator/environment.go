@@ -148,8 +148,10 @@ func setupScenarioMovements(env *environment, startAt time.Time, haltAt time.Tim
 		panic(fmt.Errorf("could not add Scenario entity to haltedScenario: %s", err.Error()))
 	}
 
-	startMovement := NewMovement("start_to_running", startAt, beforeScenario, runningScenario, "Start scenario")
-	haltMovement := NewMovement("running_to_halted", haltAt, runningScenario, haltedScenario, "Halt scenario")
+	startMovement := NewMovement("start_to_running", startAt, beforeScenario, runningScenario)
+	startMovement.AddNote("Start scenario")
+	haltMovement := NewMovement("running_to_halted", haltAt, runningScenario, haltedScenario)
+	haltMovement.AddNote("Halt scenario")
 
 	env.AddToSchedule(startMovement)
 	env.AddToSchedule(haltMovement)

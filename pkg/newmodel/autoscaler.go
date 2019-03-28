@@ -58,21 +58,9 @@ func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 			kas.lastDesired = desired
 		}
 
-		kas.env.AddToSchedule(newsimulator.NewMovement(
-			MvCalculatingToWaiting,
-			movement.OccursAt().Add(1*time.Nanosecond),
-			kas.tickTock,
-			kas.tickTock,
-			"",
-		))
+		kas.env.AddToSchedule(newsimulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock, ))
 	case MvCalculatingToWaiting:
-		kas.env.AddToSchedule(newsimulator.NewMovement(
-			MvWaitingToCalculating,
-			movement.OccursAt().Add(2*time.Second),
-			kas.tickTock,
-			kas.tickTock,
-			"",
-		))
+		kas.env.AddToSchedule(newsimulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock, ))
 	}
 
 	return nil
@@ -90,13 +78,8 @@ func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time) Knati
 		ctx:        ctx,
 	}
 
-	firstCalculation := newsimulator.NewMovement(
-		MvWaitingToCalculating,
-		startAt.Add(2001*time.Millisecond),
-		kas.tickTock,
-		kas.tickTock,
-		"First calculation",
-	)
+	firstCalculation := newsimulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock, )
+	firstCalculation.AddNote("First calculation")
 
 	env.AddToSchedule(firstCalculation)
 	err := env.AddMovementListener(kas)
