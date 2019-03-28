@@ -74,7 +74,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 			mv.Kind(),
 			mv.From().Name(),
 			mv.To().Name(),
-			strings.Join(mv.Notes(), "\n"),
+			strings.Join(mv.Notes(), "\n                                                                                                      "),
 		))
 	}
 
@@ -99,7 +99,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 			mv.Kind(),
 			mv.From().Name(),
 			mv.To().Name(),
-			strings.Join(mv.Notes(), "\n"),
+			strings.Join(mv.Notes(), "\n                                                                                                      "),
 			coloredReason,
 		))
 	}
