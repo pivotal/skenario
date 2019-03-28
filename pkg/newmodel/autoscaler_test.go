@@ -78,7 +78,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("sets PanicWindow", func() {
-				assert.Equal(t, 6 * time.Second, conf.PanicWindow)
+				assert.Equal(t, 6*time.Second, conf.PanicWindow)
 			})
 
 			it("sets MaxScaleUpRate", func() {
@@ -105,28 +105,39 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("OnMovement()", func() {
-		var waitToCalcMovement newsimulator.Movement
+		var asMovement newsimulator.Movement
 		var ttStock *tickTock
 
-		it.Before(func() {
-			subject = NewKnativeAutoscaler(envFake, startAt)
+		describe("When moving from waiting to calculating", func() {
+			it.Before(func() {
+				subject = NewKnativeAutoscaler(envFake, startAt)
+				ttStock = &tickTock{}
+				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, time.Now(), ttStock, ttStock, "test movement note")
 
-			ttStock = &tickTock{}
-			waitToCalcMovement = newsimulator.NewMovement(MvWaitingToCalculating, time.Now(), ttStock, ttStock, "test movement note")
+				err := subject.OnMovement(asMovement)
+				assert.NoError(t, err)
+			})
 
-			err := subject.OnMovement(waitToCalcMovement)
-			assert.NoError(t, err)
+			it("schedules a calculating -> waiting movement", func() {
+				next := envFake.movements[1]
+				assert.Equal(t, MvCalculatingToWaiting, next.Kind())
+			})
 		})
 
-		it("schedules movements for the next wait/calculate cycle", func() {
-			calcInit := envFake.movements[0]
-			assert.Equal(t, newsimulator.MovementKind(MvWaitingToCalculating), calcInit.Kind())
+		describe("When moving from calculating to waiting", func() {
+			it.Before(func() {
+				subject = NewKnativeAutoscaler(envFake, startAt)
+				ttStock = &tickTock{}
+				asMovement = newsimulator.NewMovement(MvCalculatingToWaiting, time.Now(), ttStock, ttStock, "test movement note")
 
-			wait := envFake.movements[1]
-			assert.Equal(t, newsimulator.MovementKind(MvCalculatingToWaiting), wait.Kind())
+				err := subject.OnMovement(asMovement)
+				assert.NoError(t, err)
+			})
 
-			calc := envFake.movements[2]
-			assert.Equal(t, newsimulator.MovementKind(MvWaitingToCalculating), calc.Kind())
+			it("schedules a waiting -> calculating movement", func() {
+				next := envFake.movements[1]
+				assert.Equal(t, MvWaitingToCalculating, next.Kind())
+			})
 		})
 
 		it.Pend("triggers the autoscaler calculation", func() {

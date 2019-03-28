@@ -38,25 +38,23 @@ type knativeAutoscaler struct {
 }
 
 func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
-	if movement.Kind() == MvWaitingToCalculating {
-		waitingMovement := newsimulator.NewMovement(
+	switch movement.Kind() {
+	case MvWaitingToCalculating:
+		kas.env.AddToSchedule(newsimulator.NewMovement(
 			MvCalculatingToWaiting,
 			movement.OccursAt().Add(1*time.Nanosecond),
 			kas.tickTock,
 			kas.tickTock,
 			"",
-		)
-
-		calculatingMovement := newsimulator.NewMovement(
+		))
+	case MvCalculatingToWaiting:
+		kas.env.AddToSchedule(newsimulator.NewMovement(
 			MvWaitingToCalculating,
 			movement.OccursAt().Add(2*time.Second),
 			kas.tickTock,
 			kas.tickTock,
 			"",
-		)
-
-		kas.env.AddToSchedule(waitingMovement)
-		kas.env.AddToSchedule(calculatingMovement)
+		))
 	}
 
 	return nil
