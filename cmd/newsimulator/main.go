@@ -46,9 +46,8 @@ func (r *runner) RunAndReport() (string, error) {
 	printer := message.NewPrinter(language.AmericanEnglish)
 	sb := new(strings.Builder)
 
-	sb.WriteString("=== BEGIN TRACE ================================================================================================================================================\n")
-	sb.WriteString("---------------------------------------------------------------------[ completed movements ]--------------------------------------------------------------------\n")
-	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %s\n", "TIME (ns)", "MOVEMENT NAME", "FROM STOCK", "TO STOCK", "NOTE"))
+	sb.WriteString("-- COMPLETED MOVEMENTS -----------------------------------------------------------------------------------------------------------------------------------------\n")
+	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %s\n", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note"))
 	sb.WriteString("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
 	for _, c := range completed {
@@ -64,8 +63,8 @@ func (r *runner) RunAndReport() (string, error) {
 	}
 
 	sb.WriteString("\n")
-	sb.WriteString("----------------------------------------------------------------------[ ignored movements ]---------------------------------------------------------------------\n")
-	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-35s\n", "TIME (ns)", "MOVEMENT NAME", "FROM STOCK", "TO STOCK", "NOTE", "REASON IGNORED"))
+	sb.WriteString("-- IGNORED MOVEMENTS -------------------------------------------------------------------------------------------------------------------------------------------\n")
+	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-35s\n", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note", "Reason Ignored"))
 	sb.WriteString("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 	for _, i := range ignored {
 		mv := i.Movement
@@ -79,8 +78,6 @@ func (r *runner) RunAndReport() (string, error) {
 			i.Reason,
 		))
 	}
-
-	sb.WriteString("=== END TRACE ==================================================================================================================================================\n")
 
 	return sb.String(), nil
 }
