@@ -63,7 +63,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 	)
 
 	printer := message.NewPrinter(language.AmericanEnglish)
-	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-58s","Time (ns)", "Movement Name", "From Stock", "To Stock", "Note")))
+	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-58s","Time (ns)", "Movement Name", "From Stock", "To Stock", "Note")).Bold())
 
 	for _, c := range completed {
 		mv := c.Movement
@@ -78,8 +78,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 	}
 
 	fmt.Fprint(writer, "\n")
-	fmt.Fprintf(writer, "%s\n", au.Bold("Ignored Movements"))
-	fmt.Fprintln(writer, au.BgBrown(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-29s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note", "Reason Ignored")))
+	fmt.Fprintln(writer, au.BgBrown(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-29s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note", "Reason Ignored")).Bold())
 	for _, i := range ignored {
 		mv := i.Movement
 
