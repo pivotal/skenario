@@ -49,9 +49,16 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("Note()", func() {
-		it("has a note", func() {
-			assert.Equal(t, movement.Note(), "test note")
+	describe("Notes()", func() {
+		it("has notes", func() {
+			assert.Equal(t, movement.Notes(), []string{"test note"})
+		})
+	})
+
+	describe("AddNote()", func() {
+		it("adds a note", func() {
+			movement.AddNote("added note")
+			assert.Equal(t, movement.Notes()[1], "added note")
 		})
 	})
 }

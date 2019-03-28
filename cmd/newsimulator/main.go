@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/logrusorgru/aurora"
@@ -63,7 +64,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 	)
 
 	printer := message.NewPrinter(language.AmericanEnglish)
-	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-58s","Time (ns)", "Movement Name", "From Stock", "To Stock", "Note")).Bold())
+	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-58s","Time (ns)", "Movement Name", "From Stock", "To Stock", "Notes")).Bold())
 
 	for _, c := range completed {
 		mv := c.Movement
@@ -73,12 +74,12 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 			mv.Kind(),
 			mv.From().Name(),
 			mv.To().Name(),
-			mv.Note(),
+			strings.Join(mv.Notes(), "\n"),
 		))
 	}
 
 	fmt.Fprint(writer, "\n")
-	fmt.Fprintln(writer, au.BgBrown(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-29s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note", "Reason Ignored")).Bold())
+	fmt.Fprintln(writer, au.BgBrown(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-29s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Notes", "Reason Ignored")).Bold())
 	for _, i := range ignored {
 		mv := i.Movement
 
@@ -98,7 +99,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 			mv.Kind(),
 			mv.From().Name(),
 			mv.To().Name(),
-			mv.Note(),
+			strings.Join(mv.Notes(), "\n"),
 			coloredReason,
 		))
 	}

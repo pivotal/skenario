@@ -111,12 +111,16 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			assert.NoError(t, err)
 
 			for _, c := range completed {
-				completedNotes = append(completedNotes, c.Movement.Note())
+				for _, n := range c.Movement.Notes() {
+					completedNotes = append(completedNotes, n)
+				}
 			}
 
 			for _, i := range ignored {
-				ignoredNotes = append(ignoredNotes, i.Movement.Note())
-				fmt.Println(i.Reason)
+				for _, n := range i.Movement.Notes() {
+					ignoredNotes = append(ignoredNotes, n)
+					fmt.Println(i.Reason)
+				}
 			}
 		})
 
