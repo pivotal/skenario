@@ -1,6 +1,7 @@
 package newmodel
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -33,6 +34,24 @@ func (fe *fakeEnvironment) AddMovementListener(listener newsimulator.MovementLis
 
 func (fe *fakeEnvironment) Run() (completed []newsimulator.CompletedMovement, ignored []newsimulator.IgnoredMovement, err error) {
 	return nil, nil, nil
+}
+
+type fakeAutoscaler struct {
+	scaleTimes []time.Time
+}
+
+func (fa *fakeAutoscaler) Record(ctx context.Context, stat autoscaler.Stat) {
+	panic("implement me")
+}
+
+func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, bool) {
+	fa.scaleTimes = append(fa.scaleTimes, time)
+
+	return 0, true
+}
+
+func (fa *fakeAutoscaler) Update(autoscaler.MetricSpec) error {
+	panic("implement me")
 }
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
@@ -107,12 +126,13 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	describe("OnMovement()", func() {
 		var asMovement newsimulator.Movement
 		var ttStock *tickTock
+		var theTime = time.Now()
 
 		describe("When moving from waiting to calculating", func() {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt)
 				ttStock = &tickTock{}
-				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, time.Now(), ttStock, ttStock, "test movement note")
+				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
 
 				err := subject.OnMovement(asMovement)
 				assert.NoError(t, err)
@@ -128,7 +148,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt)
 				ttStock = &tickTock{}
-				asMovement = newsimulator.NewMovement(MvCalculatingToWaiting, time.Now(), ttStock, ttStock, "test movement note")
+				asMovement = newsimulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock, "test movement note")
 
 				err := subject.OnMovement(asMovement)
 				assert.NoError(t, err)
@@ -140,8 +160,26 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			})
 		})
 
-		it.Pend("triggers the autoscaler calculation", func() {
+		describe("driving the actual Autoscaler", func() {
+			var autoscalerFake *fakeAutoscaler
+			var kpa *knativeAutoscaler
 
+			it.Before(func() {
+				autoscalerFake = new(fakeAutoscaler)
+				kpa = &knativeAutoscaler{
+					env:        envFake,
+					tickTock:   ttStock,
+					autoscaler: autoscalerFake,
+				}
+				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+				err := kpa.OnMovement(asMovement)
+				assert.NoError(t, err)
+			})
+
+			it("triggers the autoscaler calculation", func() {
+
+				assert.Equal(t, theTime, autoscalerFake.scaleTimes[0])
+			})
 		})
 	})
 

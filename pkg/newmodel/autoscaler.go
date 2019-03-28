@@ -1,6 +1,7 @@
 package newmodel
 
 import (
+	"context"
 	"time"
 
 	"go.uber.org/zap"
@@ -34,12 +35,14 @@ type KnativeAutoscaler interface {
 type knativeAutoscaler struct {
 	env        newsimulator.Environment
 	tickTock   *tickTock
-	autoscaler *autoscaler.Autoscaler
+	autoscaler autoscaler.UniScaler
 }
 
 func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 	switch movement.Kind() {
 	case MvWaitingToCalculating:
+		kas.autoscaler.Scale(context.Background(), movement.OccursAt())
+
 		kas.env.AddToSchedule(newsimulator.NewMovement(
 			MvCalculatingToWaiting,
 			movement.OccursAt().Add(1*time.Nanosecond),
