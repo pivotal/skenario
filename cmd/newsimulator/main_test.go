@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -30,11 +31,14 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("RunAndReport()", func() {
+		var w bytes.Buffer
 		var rpt string
 		var err error
 
 		it.Before(func() {
-			rpt, err = subject.RunAndReport()
+			w = bytes.Buffer{}
+			err = subject.RunAndReport(&w)
+			rpt = w.String()
 			assert.NoError(t, err)
 		})
 		it("prints completed", func() {

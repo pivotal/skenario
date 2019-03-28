@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"io"
+	"os"
 	"time"
 
+	"github.com/logrusorgru/aurora"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -14,46 +16,59 @@ import (
 )
 
 var startAt = time.Unix(0, 0)
+//var runFor = 10000*time.Hour
+var runFor = 10 * time.Second
+var startRunning = time.Now()
+var au = aurora.NewAurora(true)
 
 func main() {
 	r := NewRunner()
 
 	newmodel.NewKnativeAutoscaler(r.Env(), startAt)
 
-	report, err := r.RunAndReport()
+	err := r.RunAndReport(os.Stdout)
 	if err != nil {
 		fmt.Printf("there was an error during simulation: %s", err.Error())
 	}
-
-	fmt.Printf("%s\n", report)
 }
 
 type Runner interface {
 	Env() newsimulator.Environment
-	RunAndReport() (string, error)
+	RunAndReport(writer io.Writer) error
 }
 
 type runner struct {
 	env newsimulator.Environment
 }
 
-func (r *runner) RunAndReport() (string, error) {
+func (r *runner) RunAndReport(writer io.Writer) error {
+	fmt.Fprint(writer, "Running simulation ... ")
+
 	completed, ignored, err := r.env.Run()
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	printer := message.NewPrinter(language.AmericanEnglish)
-	sb := new(strings.Builder)
+	fmt.Fprintf(writer,
+		"%5s      %19s %-8d  %17s %-8d  %20s %-10s    %20s %-12s\n\n",
+		au.Bold("Done."),
+		au.BgGreen("Completed movements"),
+		au.Bold(len(completed)),
+		au.BgBrown("Ignored movements"),
+		au.Bold(len(ignored)),
+		au.Cyan("Running time:"),
+		time.Now().Sub(startRunning).String(),
+		au.Cyan("Simulated time:"),
+		runFor.String(),
+	)
 
-	sb.WriteString("-- COMPLETED MOVEMENTS -----------------------------------------------------------------------------------------------------------------------------------------\n")
-	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %s\n", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note"))
-	sb.WriteString("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
+	printer := message.NewPrinter(language.AmericanEnglish)
+	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-58s","Time (ns)", "Movement Name", "From Stock", "To Stock", "Note")))
 
 	for _, c := range completed {
 		mv := c.Movement
-		sb.WriteString(printer.Sprintf(
-			"%20d  %-24s %-24s ⟶   %-24s  %s\n",
+		fmt.Fprintln(writer, printer.Sprintf(
+			"%20d  %-24s %-24s ⟶   %-24s  %s",
 			mv.OccursAt().UnixNano(),
 			mv.Kind(),
 			mv.From().Name(),
@@ -62,24 +77,35 @@ func (r *runner) RunAndReport() (string, error) {
 		))
 	}
 
-	sb.WriteString("\n")
-	sb.WriteString("-- IGNORED MOVEMENTS -------------------------------------------------------------------------------------------------------------------------------------------\n")
-	sb.WriteString(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-35s\n", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note", "Reason Ignored"))
-	sb.WriteString("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
+	fmt.Fprint(writer, "\n")
+	fmt.Fprintf(writer, "%s\n", au.Bold("Ignored Movements"))
+	fmt.Fprintln(writer, au.BgBrown(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-28s %-29s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Note", "Reason Ignored")))
 	for _, i := range ignored {
 		mv := i.Movement
-		sb.WriteString(printer.Sprintf(
-			"%20d  %-24s %-24s ⟶   %-24s  %-28s %-35s\n",
+
+		coloredReason := ""
+		switch i.Reason {
+		case newsimulator.OccursInPast:
+			coloredReason = au.Red(i.Reason).String()
+		case newsimulator.OccursAfterHalt:
+			coloredReason = au.Magenta(i.Reason).String()
+		case newsimulator.OccursSimultaneouslyWithAnotherMovement:
+			coloredReason = au.Cyan(i.Reason).String()
+		}
+
+		fmt.Fprintln(writer, printer.Sprintf(
+			"%20d  %-24s %-24s ⟶   %-24s  %-28s %-29s",
 			mv.OccursAt().UnixNano(),
 			mv.Kind(),
 			mv.From().Name(),
 			mv.To().Name(),
 			mv.Note(),
-			i.Reason,
+			coloredReason,
 		))
 	}
+	fmt.Fprint(writer, "\n")
 
-	return sb.String(), nil
+	return nil
 }
 
 func (r *runner) Env() newsimulator.Environment {
@@ -88,6 +114,6 @@ func (r *runner) Env() newsimulator.Environment {
 
 func NewRunner() Runner {
 	return &runner{
-		env: newsimulator.NewEnvironment(time.Unix(0,0), 10*time.Minute),
+		env: newsimulator.NewEnvironment(startAt, runFor),
 	}
 }
