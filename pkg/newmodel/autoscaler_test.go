@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -58,6 +59,48 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		it("registers itself as a MovementListener", func() {
 			assert.Equal(t, subject, envFake.listeners[0])
+		})
+
+		describe("newKpa() helper", func() {
+			var as *autoscaler.Autoscaler
+			var conf *autoscaler.Config
+
+			it.Before(func() {
+				as = newKpa()
+				assert.NotNil(t, as)
+
+				conf = as.Current()
+				assert.NotNil(t, conf)
+			})
+
+			it("sets StableWindow", func() {
+				assert.Equal(t, 60*time.Second, conf.StableWindow)
+			})
+
+			it("sets PanicWindow", func() {
+				assert.Equal(t, 6 * time.Second, conf.PanicWindow)
+			})
+
+			it("sets MaxScaleUpRate", func() {
+				assert.Equal(t, 10.0, conf.MaxScaleUpRate)
+			})
+
+			it("sets ScaleToZeroGracePeriod", func() {
+				assert.Equal(t, 30*time.Second, conf.ScaleToZeroGracePeriod)
+			})
+
+			it("sets ContainerCurrencyTargetDefault", func() {
+				assert.Equal(t, 2.0, conf.ContainerConcurrencyTargetDefault)
+			})
+
+			it("sets ContainerCurrencyTargetPercentage", func() {
+				assert.Equal(t, 0.5, conf.ContainerConcurrencyTargetPercentage)
+			})
+
+			it.Pend("sets the target concurrency at creation", func() {
+				// TODO: How to test? This is a private variable.
+				// It can be updated through autoscaler.Update() but doesn't have an obvious getter
+			})
 		})
 	})
 
