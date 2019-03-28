@@ -5,10 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/knative/pkg/logging"
 	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"knative-simulator/pkg/newsimulator"
 )
@@ -80,12 +83,40 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, subject, envFake.listeners[0])
 		})
 
+		describe("newLogger()", func() {
+			var logger *zap.SugaredLogger
+
+			it.Before(func() {
+				logger = newLogger()
+				assert.NotNil(t, logger)
+			})
+
+			it("sets the log level to Info", func() {
+				dsl := logger.Desugar()
+				assert.True(t, dsl.Core().Enabled(zapcore.InfoLevel))
+			})
+		})
+
+		describe("newLoggedCtx()", func() {
+			var ctx context.Context
+			var lg *zap.SugaredLogger
+
+			it.Before(func() {
+				lg = newLogger()
+				ctx = newLoggedCtx(lg)
+			})
+
+			it("has stored the logger in the context", func() {
+				assert.Equal(t, lg, logging.FromContext(ctx))
+			})
+		})
+
 		describe("newKpa() helper", func() {
 			var as *autoscaler.Autoscaler
 			var conf *autoscaler.Config
 
 			it.Before(func() {
-				as = newKpa()
+				as = newKpa(newLogger())
 				assert.NotNil(t, as)
 
 				conf = as.Current()

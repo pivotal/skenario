@@ -3,7 +3,7 @@ module knative-simulator
 go 1.12
 
 require (
-	github.com/blend/go-sdk v1.1.1 // indirect
+	github.com/blend/go-sdk v1.1.1
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect

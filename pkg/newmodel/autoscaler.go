@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/informers"
@@ -36,12 +37,13 @@ type knativeAutoscaler struct {
 	env        newsimulator.Environment
 	tickTock   *tickTock
 	autoscaler autoscaler.UniScaler
+	ctx        context.Context
 }
 
 func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 	switch movement.Kind() {
 	case MvWaitingToCalculating:
-		kas.autoscaler.Scale(context.Background(), movement.OccursAt())
+		kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
 
 		kas.env.AddToSchedule(newsimulator.NewMovement(
 			MvCalculatingToWaiting,
@@ -64,10 +66,15 @@ func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 }
 
 func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time) KnativeAutoscaler {
+	logger := newLogger()
+	ctx := newLoggedCtx(logger)
+	kpa := newKpa(logger)
+
 	kas := &knativeAutoscaler{
 		env:        env,
 		tickTock:   &tickTock{},
-		autoscaler: newKpa(),
+		autoscaler: kpa,
+		ctx:        ctx,
 	}
 
 	firstCalculation := newsimulator.NewMovement(
@@ -87,7 +94,7 @@ func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time) Knati
 	return kas
 }
 
-func newKpa() *autoscaler.Autoscaler {
+func newLogger() *zap.SugaredLogger {
 	devCfg := zap.NewDevelopmentConfig()
 	devCfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
 	devCfg.OutputPaths = []string{"stdout"}
@@ -96,11 +103,14 @@ func newKpa() *autoscaler.Autoscaler {
 	if err != nil {
 		panic(err.Error())
 	}
-	logger := unsugaredLogger.Sugar()
-	defer logger.Sync()
+	return unsugaredLogger.Sugar()
+}
 
-	//ctx := logging.WithLogger(context.Background(), logger)
+func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
+	return logging.WithLogger(context.Background(), logger)
+}
 
+func newKpa(logger *zap.SugaredLogger) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{
 		MaxScaleUpRate:                       maxScaleUpRate,
 		StableWindow:                         stableWindow,
