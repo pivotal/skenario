@@ -2,6 +2,7 @@ package newmodel
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/knative/pkg/logging"
@@ -34,16 +35,28 @@ type KnativeAutoscaler interface {
 }
 
 type knativeAutoscaler struct {
-	env        newsimulator.Environment
-	tickTock   *tickTock
-	autoscaler autoscaler.UniScaler
-	ctx        context.Context
+	env         newsimulator.Environment
+	tickTock    *tickTock
+	autoscaler  autoscaler.UniScaler
+	ctx         context.Context
+	lastDesired int32
 }
 
 func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 	switch movement.Kind() {
 	case MvWaitingToCalculating:
-		kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
+		desired, ok := kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
+		if !ok {
+			movement.AddNote("autoscaler.Scale() was unsuccessful")
+		} else {
+			if desired > kas.lastDesired {
+				movement.AddNote(fmt.Sprintf("%d ⇑ %d", kas.lastDesired, desired))
+			} else if desired < kas.lastDesired {
+				movement.AddNote(fmt.Sprintf("%d ⥥ %d", kas.lastDesired, desired))
+			}
+
+			kas.lastDesired = desired
+		}
 
 		kas.env.AddToSchedule(newsimulator.NewMovement(
 			MvCalculatingToWaiting,

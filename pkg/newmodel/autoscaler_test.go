@@ -41,6 +41,7 @@ func (fe *fakeEnvironment) Run() (completed []newsimulator.CompletedMovement, ig
 
 type fakeAutoscaler struct {
 	scaleTimes []time.Time
+	cantDecide bool
 }
 
 func (fa *fakeAutoscaler) Record(ctx context.Context, stat autoscaler.Stat) {
@@ -48,9 +49,12 @@ func (fa *fakeAutoscaler) Record(ctx context.Context, stat autoscaler.Stat) {
 }
 
 func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, bool) {
-	fa.scaleTimes = append(fa.scaleTimes, time)
+	if fa.cantDecide {
+		return 0, false
+	}
 
-	return 0, true
+	fa.scaleTimes = append(fa.scaleTimes, time)
+	return 55, true
 }
 
 func (fa *fakeAutoscaler) Update(autoscaler.MetricSpec) error {
@@ -201,15 +205,70 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 					env:        envFake,
 					tickTock:   ttStock,
 					autoscaler: autoscalerFake,
+					lastDesired: 100,
 				}
-				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
-				err := kpa.OnMovement(asMovement)
-				assert.NoError(t, err)
 			})
 
-			it("triggers the autoscaler calculation", func() {
+			describe("controlling time", func() {
+				it.Before(func() {
+					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+					err := kpa.OnMovement(asMovement)
+					assert.NoError(t, err)
+				})
 
-				assert.Equal(t, theTime, autoscalerFake.scaleTimes[0])
+				it("triggers the autoscaler calculation with the movement's OccursAt time", func() {
+					assert.Equal(t, theTime, autoscalerFake.scaleTimes[0])
+				})
+			})
+
+			describe("the autoscaler was able to make a recommendation", func() {
+				describe("when the desired scale increases", func() {
+					it.Before(func() {
+						kpa.lastDesired = 10
+						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+						err := kpa.OnMovement(asMovement)
+						assert.NoError(t, err)
+					})
+
+					it("updates the last desired record", func() {
+						assert.Equal(t, int32(55), kpa.lastDesired)
+					})
+
+					it("adds a note", func() {
+						assert.Equal(t, "10 ⇑ 55", asMovement.Notes()[1])
+					})
+				})
+
+				describe("when the desired scale increases", func() {
+					it.Before(func() {
+						kpa.lastDesired = 99
+						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+						err := kpa.OnMovement(asMovement)
+						assert.NoError(t, err)
+					})
+
+					it("adds a note", func() {
+						assert.Equal(t, "99 ⥥ 55", asMovement.Notes()[1])
+					})
+				})
+			})
+
+			describe("the autoscaler failed to make a recommendation", func() {
+				it.Before(func() {
+					autoscalerFake.cantDecide = true
+
+					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock, "test movement note")
+					err := kpa.OnMovement(asMovement)
+					assert.NoError(t, err)
+				})
+
+				it("notes that there was a problem", func() {
+					assert.Equal(t, "autoscaler.Scale() was unsuccessful", asMovement.Notes()[1])
+				})
+
+				it("ignores the 'desired' return value, as it is set to zero", func() {
+					assert.Equal(t, int32(100), kpa.lastDesired)
+				})
 			})
 		})
 	})
