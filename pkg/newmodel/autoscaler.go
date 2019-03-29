@@ -38,7 +38,6 @@ type KnativeAutoscaler interface {
 type knativeAutoscaler struct {
 	env             newsimulator.Environment
 	tickTock        *tickTock
-	replicasDesired newsimulator.ThroughStock
 	cluster         ClusterModel
 	autoscaler      autoscaler.UniScaler
 	ctx             context.Context
@@ -82,7 +81,6 @@ func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time, clust
 	kas := &knativeAutoscaler{
 		env:             env,
 		tickTock:        &tickTock{},
-		replicasDesired: newsimulator.NewThroughStock("ReplicasDesired", newsimulator.EntityKind("Replica")),
 		cluster:         cluster,
 		autoscaler:      kpa,
 		ctx:             ctx,

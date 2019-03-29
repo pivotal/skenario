@@ -101,6 +101,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		it.Before(func() {
 			subject.SetDesired(7)
 		})
+
 		it("gives the .Count() of replicas launching", func() {
 			assert.Equal(t, uint64(7), subject.CurrentLaunching())
 		})
