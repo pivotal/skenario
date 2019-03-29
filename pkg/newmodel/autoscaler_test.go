@@ -23,6 +23,7 @@ func TestAutoscaler(t *testing.T) {
 type fakeEnvironment struct {
 	movements []newsimulator.Movement
 	listeners []newsimulator.MovementListener
+	theTime   time.Time
 }
 
 func (fe *fakeEnvironment) AddToSchedule(movement newsimulator.Movement) (added bool) {
@@ -37,6 +38,10 @@ func (fe *fakeEnvironment) AddMovementListener(listener newsimulator.MovementLis
 
 func (fe *fakeEnvironment) Run() (completed []newsimulator.CompletedMovement, ignored []newsimulator.IgnoredMovement, err error) {
 	return nil, nil, nil
+}
+
+func (fe *fakeEnvironment) CurrentMovementTime() time.Time {
+	return fe.theTime
 }
 
 type fakeAutoscaler struct {
@@ -70,6 +75,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		envFake = &fakeEnvironment{
 			movements: make([]newsimulator.Movement, 0),
 			listeners: make([]newsimulator.MovementListener, 0),
+			theTime:   startAt,
 		}
 	})
 

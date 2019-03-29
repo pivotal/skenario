@@ -16,6 +16,7 @@ type Environment interface {
 	AddToSchedule(movement Movement) (added bool)
 	AddMovementListener(listener MovementListener) error
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
+	CurrentMovementTime() time.Time
 }
 
 type CompletedMovement struct {
@@ -94,6 +95,8 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 			break
 		}
 
+		env.current = movement.OccursAt()
+
 		for _, ml := range env.movementListeners {
 			err = ml.OnMovement(movement)
 			if err != nil {
@@ -109,6 +112,10 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 	}
 
 	return env.completed, env.ignored, nil
+}
+
+func (env *environment) CurrentMovementTime() time.Time {
+	return env.current
 }
 
 func NewEnvironment(startAt time.Time, runFor time.Duration) Environment {

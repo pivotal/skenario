@@ -83,12 +83,12 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		fromStock SourceStock
 		toStock   SinkStock
 		startTime time.Time
+		runFor    time.Duration
 	)
 
-	startTime = time.Unix(222222, 0)
-	runFor := 555555 * time.Second
-
 	it.Before(func() {
+		startTime = time.Unix(222222, 0)
+		runFor = 555555 * time.Second
 		fromStock = &echoSourceStockType{
 			name: "from stock",
 			kind: "test entity kind",
@@ -331,6 +331,19 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			})
 		})
 	}, spec.Nested())
+
+	describe("CurrentMovementTime()", func() {
+		it.Before(func() {
+			subject = NewEnvironment(startTime, runFor)
+			assert.NotNil(t, subject)
+		})
+
+		it("gives the time of the movement currently in progress", func() {
+			assert.Equal(t, startTime, subject.CurrentMovementTime())
+			subject.Run()
+			assert.Equal(t, startTime.Add(runFor), subject.CurrentMovementTime())
+		})
+	})
 
 	describe("helper funcs", func() {
 		describe("newEnvironment()", func() {
