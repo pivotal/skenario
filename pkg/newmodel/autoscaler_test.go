@@ -214,12 +214,11 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				autoscalerFake = new(fakeAutoscaler)
 				kpa = &knativeAutoscaler{
-					env:             envFake,
-					tickTock:        ttStock,
-					replicasDesired: newsimulator.NewThroughStock("ReplicasDesired", newsimulator.EntityKind("Replica")),
-					cluster:         cluster,
-					autoscaler:      autoscalerFake,
-					lastDesired:     100,
+					env:         envFake,
+					tickTock:    ttStock,
+					cluster:     cluster,
+					autoscaler:  autoscalerFake,
+					lastDesired: 100,
 				}
 			})
 

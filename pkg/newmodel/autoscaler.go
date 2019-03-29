@@ -36,12 +36,12 @@ type KnativeAutoscaler interface {
 }
 
 type knativeAutoscaler struct {
-	env             newsimulator.Environment
-	tickTock        *tickTock
-	cluster         ClusterModel
-	autoscaler      autoscaler.UniScaler
-	ctx             context.Context
-	lastDesired     int32
+	env         newsimulator.Environment
+	tickTock    *tickTock
+	cluster     ClusterModel
+	autoscaler  autoscaler.UniScaler
+	ctx         context.Context
+	lastDesired int32
 }
 
 func (kas *knativeAutoscaler) Env() newsimulator.Environment {
@@ -79,11 +79,11 @@ func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time, clust
 	kpa := newKpa(logger)
 
 	kas := &knativeAutoscaler{
-		env:             env,
-		tickTock:        &tickTock{},
-		cluster:         cluster,
-		autoscaler:      kpa,
-		ctx:             ctx,
+		env:        env,
+		tickTock:   &tickTock{},
+		cluster:    cluster,
+		autoscaler: kpa,
+		ctx:        ctx,
 	}
 
 	firstCalculation := newsimulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock)
