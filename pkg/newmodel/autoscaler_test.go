@@ -87,6 +87,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, subject, envFake.listeners[0])
 		})
 
+		it("sets an Environment", func() {
+			assert.Equal(t, envFake, subject.Env())
+		})
+
 		describe("newLogger()", func() {
 			var logger *zap.SugaredLogger
 

@@ -31,6 +31,7 @@ const (
 )
 
 type KnativeAutoscaler interface {
+	Model
 	newsimulator.MovementListener
 }
 
@@ -40,6 +41,10 @@ type knativeAutoscaler struct {
 	autoscaler  autoscaler.UniScaler
 	ctx         context.Context
 	lastDesired int32
+}
+
+func (kas *knativeAutoscaler) Env() newsimulator.Environment {
+	return kas.env
 }
 
 func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
