@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -17,15 +18,16 @@ import (
 )
 
 var startAt = time.Unix(0, 0)
-//var runFor = 10000*time.Hour
-var runFor = 10 * time.Second
 var startRunning = time.Now()
 var au = aurora.NewAurora(true)
+var simDuration = flag.Duration("duration", 10*time.Minute, "Duration of time to simulate.")
 
 func main() {
+	flag.Parse()
 	r := NewRunner()
 
 	cluster := newmodel.NewCluster(r.Env())
+	cluster.SetDesired(10)
 	newmodel.NewKnativeAutoscaler(r.Env(), startAt, cluster)
 
 	err := r.RunAndReport(os.Stdout)
@@ -61,7 +63,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 		au.Cyan("Running time:"),
 		time.Now().Sub(startRunning).String(),
 		au.Cyan("Simulated time:"),
-		runFor.String(),
+		simDuration.String(),
 	)
 
 	printer := message.NewPrinter(language.AmericanEnglish)
@@ -115,6 +117,6 @@ func (r *runner) Env() newsimulator.Environment {
 
 func NewRunner() Runner {
 	return &runner{
-		env: newsimulator.NewEnvironment(startAt, runFor),
+		env: newsimulator.NewEnvironment(startAt, *simDuration),
 	}
 }
