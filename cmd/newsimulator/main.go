@@ -25,7 +25,8 @@ var au = aurora.NewAurora(true)
 func main() {
 	r := NewRunner()
 
-	newmodel.NewKnativeAutoscaler(r.Env(), startAt)
+	cluster := newmodel.NewCluster(r.Env())
+	newmodel.NewKnativeAutoscaler(r.Env(), startAt, cluster)
 
 	err := r.RunAndReport(os.Stdout)
 	if err != nil {

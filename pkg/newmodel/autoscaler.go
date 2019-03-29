@@ -36,11 +36,13 @@ type KnativeAutoscaler interface {
 }
 
 type knativeAutoscaler struct {
-	env         newsimulator.Environment
-	tickTock    *tickTock
-	autoscaler  autoscaler.UniScaler
-	ctx         context.Context
-	lastDesired int32
+	env             newsimulator.Environment
+	tickTock        *tickTock
+	replicasDesired newsimulator.ThroughStock
+	cluster         ClusterModel
+	autoscaler      autoscaler.UniScaler
+	ctx             context.Context
+	lastDesired     int32
 }
 
 func (kas *knativeAutoscaler) Env() newsimulator.Environment {
@@ -61,29 +63,32 @@ func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 			}
 
 			kas.lastDesired = desired
+			kas.cluster.SetDesired(desired)
 		}
 
-		kas.env.AddToSchedule(newsimulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock, ))
+		kas.env.AddToSchedule(newsimulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock))
 	case MvCalculatingToWaiting:
-		kas.env.AddToSchedule(newsimulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock, ))
+		kas.env.AddToSchedule(newsimulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock))
 	}
 
 	return nil
 }
 
-func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time) KnativeAutoscaler {
+func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time, cluster ClusterModel) KnativeAutoscaler {
 	logger := newLogger()
 	ctx := newLoggedCtx(logger)
 	kpa := newKpa(logger)
 
 	kas := &knativeAutoscaler{
-		env:        env,
-		tickTock:   &tickTock{},
-		autoscaler: kpa,
-		ctx:        ctx,
+		env:             env,
+		tickTock:        &tickTock{},
+		replicasDesired: newsimulator.NewThroughStock("ReplicasDesired", newsimulator.EntityKind("Replica")),
+		cluster:         cluster,
+		autoscaler:      kpa,
+		ctx:             ctx,
 	}
 
-	firstCalculation := newsimulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock, )
+	firstCalculation := newsimulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock)
 	firstCalculation.AddNote("First calculation")
 
 	env.AddToSchedule(firstCalculation)

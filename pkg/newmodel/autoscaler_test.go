@@ -69,6 +69,7 @@ func (fa *fakeAutoscaler) Update(autoscaler.MetricSpec) error {
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	var subject KnativeAutoscaler
 	var envFake *fakeEnvironment
+	var cluster ClusterModel
 	startAt := time.Unix(0, 0)
 
 	it.Before(func() {
@@ -77,11 +78,12 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			listeners: make([]newsimulator.MovementListener, 0),
 			theTime:   startAt,
 		}
+		cluster = NewCluster(envFake)
 	})
 
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
-			subject = NewKnativeAutoscaler(envFake, startAt)
+			subject = NewKnativeAutoscaler(envFake, startAt, cluster)
 		})
 
 		it("schedules a first calculation", func() {
@@ -175,7 +177,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("When moving from waiting to calculating", func() {
 			it.Before(func() {
-				subject = NewKnativeAutoscaler(envFake, startAt)
+				subject = NewKnativeAutoscaler(envFake, startAt, cluster)
 				ttStock = &tickTock{}
 				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 
@@ -191,7 +193,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("When moving from calculating to waiting", func() {
 			it.Before(func() {
-				subject = NewKnativeAutoscaler(envFake, startAt)
+				subject = NewKnativeAutoscaler(envFake, startAt, cluster)
 				ttStock = &tickTock{}
 				asMovement = newsimulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
 
@@ -212,10 +214,12 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				autoscalerFake = new(fakeAutoscaler)
 				kpa = &knativeAutoscaler{
-					env:        envFake,
-					tickTock:   ttStock,
-					autoscaler: autoscalerFake,
-					lastDesired: 100,
+					env:             envFake,
+					tickTock:        ttStock,
+					replicasDesired: newsimulator.NewThroughStock("ReplicasDesired", newsimulator.EntityKind("Replica")),
+					cluster:         cluster,
+					autoscaler:      autoscalerFake,
+					lastDesired:     100,
 				}
 			})
 
@@ -244,6 +248,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						assert.Equal(t, int32(55), kpa.lastDesired)
 					})
 
+					it("sets the current desired on the cluster", func() {
+						assert.Equal(t, int32(55), kpa.cluster.CurrentDesired())
+					})
+
 					it("adds a note", func() {
 						assert.Equal(t, "10 ⇑ 55", asMovement.Notes()[0])
 					})
@@ -255,6 +263,14 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 						err := kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
+					})
+
+					it("updates the last desired record", func() {
+						assert.Equal(t, int32(55), kpa.lastDesired)
+					})
+
+					it("sets the current desired on the cluster", func() {
+						assert.Equal(t, int32(55), kpa.cluster.CurrentDesired())
 					})
 
 					it("adds a note", func() {
@@ -287,7 +303,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		ttStock := &tickTock{}
 
 		it.Before(func() {
-			_ = NewKnativeAutoscaler(envFake, startAt)
+			_ = NewKnativeAutoscaler(envFake, startAt, cluster)
 		})
 
 		describe("Name()", func() {
