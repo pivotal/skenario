@@ -15,6 +15,7 @@ type ClusterModel interface {
 	CurrentDesired() int32
 	SetDesired(int32)
 	CurrentLaunching() uint64
+	CurrentActive() uint64
 	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context)
 }
 
@@ -66,6 +67,10 @@ func (cm *clusterModel) SetDesired(desired int32) {
 
 func (cm *clusterModel) CurrentLaunching() uint64 {
 	return cm.replicasLaunching.Count()
+}
+
+func (cm *clusterModel) CurrentActive() uint64 {
+	return cm.replicasActive.Count()
 }
 
 func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context) {

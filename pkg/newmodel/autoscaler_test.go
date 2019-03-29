@@ -278,7 +278,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 					})
 				})
 
-				describe("when the desired scale increases", func() {
+				describe("when the desired scale decreases", func() {
 					it.Before(func() {
 						kpa.lastDesired = 99
 						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
@@ -296,6 +296,27 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 					it("adds a note", func() {
 						assert.Equal(t, "99 ⥥ 55", asMovement.Notes()[0])
+					})
+				})
+
+				describe("when the desired scale is unchanged", func() {
+					var launchingBefore uint64
+					var rawCluster *clusterModel
+
+					it.Before(func() {
+						rawCluster = cluster.(*clusterModel)
+						rawCluster.currentDesired = 55
+						kpa.lastDesired = 55
+
+						launchingBefore = kpa.cluster.CurrentLaunching()
+						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+						err := kpa.OnMovement(asMovement)
+						assert.NoError(t, err)
+					})
+
+					it("does not change the current desired on the cluster", func() {
+						assert.Equal(t, launchingBefore, kpa.cluster.CurrentLaunching())
+						assert.Equal(t, int32(55), kpa.cluster.CurrentDesired())
 					})
 				})
 			})

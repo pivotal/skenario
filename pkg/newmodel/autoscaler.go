@@ -60,12 +60,15 @@ func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 		} else {
 			if desired > kas.lastDesired {
 				movement.AddNote(fmt.Sprintf("%d ⇑ %d", kas.lastDesired, desired))
+
+				kas.cluster.SetDesired(desired)
 			} else if desired < kas.lastDesired {
 				movement.AddNote(fmt.Sprintf("%d ⥥ %d", kas.lastDesired, desired))
+
+				kas.cluster.SetDesired(desired)
 			}
 
 			kas.lastDesired = desired
-			kas.cluster.SetDesired(desired)
 		}
 
 		kas.env.AddToSchedule(newsimulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock))

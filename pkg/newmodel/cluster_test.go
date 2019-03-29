@@ -110,6 +110,20 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
+	describe("CurrentActive()", func() {
+		var rawSubject *clusterModel
+
+		it.Before(func() {
+			rawSubject = subject.(*clusterModel)
+			rawSubject.replicasActive.Add(newsimulator.NewEntity("first entity", "Replica"))
+			rawSubject.replicasActive.Add(newsimulator.NewEntity("second entity", "Replica"))
+		})
+
+		it("gives the .Count() of replicas active", func() {
+			assert.Equal(t, uint64(2), subject.CurrentActive())
+		})
+	})
+
 	describe("RecordToAutoscaler()", func() {
 		var autoscalerFake *fakeAutoscaler
 		var rawSubject *clusterModel
