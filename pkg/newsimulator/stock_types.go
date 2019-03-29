@@ -6,6 +6,7 @@ type baseStock interface {
 	Name() StockName
 	KindStocked() EntityKind
 	Count() uint64
+	EntitiesInStock() []Entity
 }
 
 type removable interface {

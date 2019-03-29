@@ -21,10 +21,15 @@ func TestStock(t *testing.T) {
 
 func testStock(t *testing.T, describe spec.G, it spec.S) {
 	var subject ThroughStock
+	var entity Entity
 
 	it.Before(func() {
 		subject = NewThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subject)
+
+		entity = NewEntity("test entity name", "test entity kind")
+		err := subject.Add(entity)
+		assert.NoError(t, err)
 	})
 
 	describe("basic Stock functionality", func() {
@@ -37,10 +42,15 @@ func testStock(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		it("has a stock count", func() {
-			assert.Equal(t, subject.Count(), uint64(0))
+			assert.Equal(t, subject.Count(), uint64(1))
 		})
 	})
 
+	describe("EntitiesInStock()", func() {
+		it("returns an Entity slice for the current contents of the stock", func() {
+			assert.ElementsMatch(t, []Entity{entity}, subject.EntitiesInStock())
+		})
+	})
 }
 
 func testSourceStock(t *testing.T, describe spec.G, it spec.S) {

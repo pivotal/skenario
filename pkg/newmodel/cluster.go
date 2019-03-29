@@ -1,8 +1,11 @@
 package newmodel
 
 import (
+	"context"
 	"fmt"
 	"time"
+
+	"github.com/knative/serving/pkg/autoscaler"
 
 	"knative-simulator/pkg/newsimulator"
 )
@@ -12,6 +15,7 @@ type ClusterModel interface {
 	CurrentDesired() int32
 	SetDesired(int32)
 	CurrentLaunching() uint64
+	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
 }
 
 type clusterModel struct {
@@ -62,6 +66,17 @@ func (cm *clusterModel) SetDesired(desired int32) {
 
 func (cm *clusterModel) CurrentLaunching() uint64 {
 	return cm.replicasLaunching.Count()
+}
+
+func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
+	for _, e := range cm.replicasActive.EntitiesInStock() {
+		scaler.Record(context.Background(), autoscaler.Stat{
+			Time:                      atTime,
+			PodName:                   string(e.Name()),
+			AverageConcurrentRequests: 1,
+			RequestCount:              1,
+		})
+	}
 }
 
 func NewCluster(env newsimulator.Environment) ClusterModel {

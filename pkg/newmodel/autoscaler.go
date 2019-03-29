@@ -51,6 +51,9 @@ func (kas *knativeAutoscaler) Env() newsimulator.Environment {
 func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 	switch movement.Kind() {
 	case MvWaitingToCalculating:
+		occursAt := movement.OccursAt()
+		kas.cluster.RecordToAutoscaler(kas.autoscaler, &occursAt)
+
 		desired, ok := kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
 		if !ok {
 			movement.AddNote("autoscaler.Scale() was unsuccessful")
@@ -164,6 +167,10 @@ func (tt *tickTock) KindStocked() newsimulator.EntityKind {
 
 func (tt *tickTock) Count() uint64 {
 	return 1
+}
+
+func (tt *tickTock) EntitiesInStock() []newsimulator.Entity {
+	return []newsimulator.Entity{tt.asEntity}
 }
 
 func (tt *tickTock) Remove() newsimulator.Entity {

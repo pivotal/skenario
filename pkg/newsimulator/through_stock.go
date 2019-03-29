@@ -21,6 +21,10 @@ func (s *stock) Count() uint64 {
 	return uint64(len(s.stock))
 }
 
+func (s *stock) EntitiesInStock() []Entity {
+	return s.stock
+}
+
 func (s *stock) Add(entity Entity) error {
 	if entity == nil {
 		return fmt.Errorf("could not add Entity, as it was nil")

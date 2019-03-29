@@ -45,12 +45,13 @@ func (fe *fakeEnvironment) CurrentMovementTime() time.Time {
 }
 
 type fakeAutoscaler struct {
+	recorded   []autoscaler.Stat
 	scaleTimes []time.Time
 	cantDecide bool
 }
 
 func (fa *fakeAutoscaler) Record(ctx context.Context, stat autoscaler.Stat) {
-	panic("implement me")
+	fa.recorded = append(fa.recorded, stat)
 }
 
 func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, bool) {
@@ -212,7 +213,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			var kpa *knativeAutoscaler
 
 			it.Before(func() {
-				autoscalerFake = new(fakeAutoscaler)
+				autoscalerFake = &fakeAutoscaler{
+					recorded:   make([]autoscaler.Stat, 0),
+					scaleTimes: make([]time.Time, 0),
+				}
 				kpa = &knativeAutoscaler{
 					env:         envFake,
 					tickTock:    ttStock,
@@ -231,6 +235,24 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 				it("triggers the autoscaler calculation with the movement's OccursAt time", func() {
 					assert.Equal(t, theTime, autoscalerFake.scaleTimes[0])
+				})
+			})
+
+			describe("updating statistics", func() {
+				var rawCluster *clusterModel
+
+				it.Before(func() {
+					rawCluster = cluster.(*clusterModel)
+					err := rawCluster.replicasActive.Add(newsimulator.NewEntity("active replica", "Replica"))
+					assert.NoError(t, err)
+
+					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+					err = kpa.OnMovement(asMovement)
+					assert.NoError(t, err)
+				})
+
+				it("delegates statistics updating to ClusterModel", func() {
+					assert.Len(t, autoscalerFake.recorded, 1)
 				})
 			})
 

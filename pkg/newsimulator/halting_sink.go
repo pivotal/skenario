@@ -35,3 +35,7 @@ func (hs *haltingSink) Add(entity Entity) error {
 func (hs *haltingSink) Remove() Entity {
 	return hs.delegate.Remove()
 }
+
+func (hs *haltingSink) EntitiesInStock() []Entity {
+	return hs.delegate.EntitiesInStock()
+}

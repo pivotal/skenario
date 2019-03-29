@@ -24,14 +24,22 @@ func (mss *mockStockType) KindStocked() EntityKind {
 	mss.Called()
 	return EntityKind("mock kind")
 }
+
 func (mss *mockStockType) Count() uint64 {
 	mss.Called()
 	return uint64(0)
 }
+
+func (mss *mockStockType) EntitiesInStock() []Entity {
+	mss.Called()
+	return []Entity{}
+}
+
 func (mss *mockStockType) Remove() Entity {
 	mss.Called()
 	return NewEntity("test entity", "mock kind")
 }
+
 func (mss *mockStockType) Add(entity Entity) error {
 	mss.Called(entity)
 	return nil
@@ -55,6 +63,10 @@ func (es *echoSourceStockType) KindStocked() EntityKind {
 
 func (es *echoSourceStockType) Count() uint64 {
 	return 0
+}
+
+func (es *echoSourceStockType) EntitiesInStock() []Entity {
+	return []Entity{}
 }
 
 func (es *echoSourceStockType) Remove() Entity {

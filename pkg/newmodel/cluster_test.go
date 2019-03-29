@@ -2,7 +2,9 @@ package newmodel
 
 import (
 	"testing"
+	"time"
 
+	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -104,6 +106,51 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it("gives the .Count() of replicas launching", func() {
 			assert.Equal(t, uint64(7), subject.CurrentLaunching())
+		})
+	})
+
+	describe("RecordToAutoscaler()", func() {
+		var autoscalerFake *fakeAutoscaler
+		var rawSubject *clusterModel
+		var firstRecorded autoscaler.Stat
+		var theTime = time.Now()
+
+		it.Before(func() {
+			rawSubject = subject.(*clusterModel)
+
+			autoscalerFake = &fakeAutoscaler{
+				recorded:   make([]autoscaler.Stat, 0),
+				scaleTimes: make([]time.Time, 0),
+			}
+
+			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 1", newsimulator.EntityKind("Replica")))
+			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 2", newsimulator.EntityKind("Replica")))
+			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 3", newsimulator.EntityKind("Replica")))
+
+			subject.RecordToAutoscaler(autoscalerFake, &theTime)
+			firstRecorded = autoscalerFake.recorded[0]
+		})
+
+		describe("Records added to the Autoscaler", func() {
+			it("records once for each replica in ReplicasActive", func() {
+				assert.Len(t, autoscalerFake.recorded, 3)
+			})
+
+			it("sets time to the movement OccursAt", func() {
+				assert.Equal(t, &theTime, firstRecorded.Time)
+			})
+
+			it("sets the PodName to Replica name", func() {
+				assert.Equal(t, "Test Replica 1", firstRecorded.PodName)
+			})
+
+			it("sets AverageConcurrentRequests to 1", func() {
+				assert.Equal(t, float64(1.0), firstRecorded.AverageConcurrentRequests)
+			})
+
+			it("sets RequestCount to 1", func() {
+				assert.Equal(t, int32(1), firstRecorded.RequestCount)
+			})
 		})
 	})
 }
