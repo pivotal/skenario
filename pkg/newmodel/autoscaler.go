@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	MvWaitingToCalculating newsimulator.MovementKind = "autoscaler_wait"
-	MvCalculatingToWaiting newsimulator.MovementKind = "autoscaler_calc"
+	MvWaitingToCalculating newsimulator.MovementKind = "autoscaler_calc"
+	MvCalculatingToWaiting newsimulator.MovementKind = "autoscaler_wait"
 
 	stableWindow                = 60 * time.Second
 	panicWindow                 = 6 * time.Second
