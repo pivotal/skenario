@@ -48,6 +48,7 @@ type fakeAutoscaler struct {
 	recorded   []autoscaler.Stat
 	scaleTimes []time.Time
 	cantDecide bool
+	scaleTo    int32
 }
 
 func (fa *fakeAutoscaler) Record(ctx context.Context, stat autoscaler.Stat) {
@@ -60,7 +61,7 @@ func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, boo
 	}
 
 	fa.scaleTimes = append(fa.scaleTimes, time)
-	return 55, true
+	return fa.scaleTo, true
 }
 
 func (fa *fakeAutoscaler) Update(autoscaler.MetricSpec) error {
@@ -218,11 +219,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 					scaleTimes: make([]time.Time, 0),
 				}
 				kpa = &knativeAutoscaler{
-					env:         envFake,
-					tickTock:    ttStock,
-					cluster:     cluster,
-					autoscaler:  autoscalerFake,
-					lastDesired: 100,
+					env:        envFake,
+					tickTock:   ttStock,
+					cluster:    cluster,
+					autoscaler: autoscalerFake,
 				}
 			})
 
@@ -257,66 +257,74 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			describe("the autoscaler was able to make a recommendation", func() {
+				var rawCluster *clusterModel
+
 				describe("when the desired scale increases", func() {
 					it.Before(func() {
-						kpa.lastDesired = 10
+						autoscalerFake.scaleTo = 2
+
+						rawCluster = cluster.(*clusterModel)
+						err := rawCluster.replicasActive.Add(newsimulator.NewEntity("active replica", "Replica"))
+						assert.NoError(t, err)
+
 						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
-						err := kpa.OnMovement(asMovement)
+						err = kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
 
-					it("updates the last desired record", func() {
-						assert.Equal(t, int32(55), kpa.lastDesired)
-					})
-
 					it("sets the current desired on the cluster", func() {
-						assert.Equal(t, int32(55), kpa.cluster.CurrentDesired())
+						assert.Equal(t, int32(2), kpa.cluster.CurrentDesired())
 					})
 
 					it("adds a note", func() {
-						assert.Equal(t, "10 ⇑ 55", asMovement.Notes()[0])
+						assert.Equal(t, "1 ⇑ 2", asMovement.Notes()[0])
 					})
 				})
 
 				describe("when the desired scale decreases", func() {
 					it.Before(func() {
-						kpa.lastDesired = 99
+						autoscalerFake.scaleTo = 1
+
+						rawCluster = cluster.(*clusterModel)
+						err := rawCluster.replicasActive.Add(newsimulator.NewEntity("first active replica", "Replica"))
+						assert.NoError(t, err)
+						err = rawCluster.replicasActive.Add(newsimulator.NewEntity("second active replica", "Replica"))
+						assert.NoError(t, err)
+
 						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
-						err := kpa.OnMovement(asMovement)
+						err = kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
 
-					it("updates the last desired record", func() {
-						assert.Equal(t, int32(55), kpa.lastDesired)
-					})
-
 					it("sets the current desired on the cluster", func() {
-						assert.Equal(t, int32(55), kpa.cluster.CurrentDesired())
+						assert.Equal(t, int32(1), kpa.cluster.CurrentDesired())
 					})
 
 					it("adds a note", func() {
-						assert.Equal(t, "99 ⥥ 55", asMovement.Notes()[0])
+						assert.Equal(t, "2 ⥥ 1", asMovement.Notes()[0])
 					})
 				})
 
 				describe("when the desired scale is unchanged", func() {
-					var launchingBefore uint64
-					var rawCluster *clusterModel
+					var activeBefore uint64
 
 					it.Before(func() {
-						rawCluster = cluster.(*clusterModel)
-						rawCluster.currentDesired = 55
-						kpa.lastDesired = 55
+						autoscalerFake.scaleTo = 1
 
-						launchingBefore = kpa.cluster.CurrentLaunching()
+						rawCluster = cluster.(*clusterModel)
+						rawCluster.currentDesired = 1
+						err := rawCluster.replicasActive.Add(newsimulator.NewEntity("first active replica", "Replica"))
+						assert.NoError(t, err)
+
+						activeBefore = kpa.cluster.CurrentActive()
 						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
-						err := kpa.OnMovement(asMovement)
+						err = kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
 
 					it("does not change the current desired on the cluster", func() {
-						assert.Equal(t, launchingBefore, kpa.cluster.CurrentLaunching())
-						assert.Equal(t, int32(55), kpa.cluster.CurrentDesired())
+						assert.Equal(t, activeBefore, kpa.cluster.CurrentActive())
+						assert.Equal(t, int32(1), kpa.cluster.CurrentDesired())
 					})
 				})
 			})
@@ -332,10 +340,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 				it("notes that there was a problem", func() {
 					assert.Equal(t, "autoscaler.Scale() was unsuccessful", asMovement.Notes()[0])
-				})
-
-				it("ignores the 'desired' return value, as it is set to zero", func() {
-					assert.Equal(t, int32(100), kpa.lastDesired)
 				})
 			})
 		})

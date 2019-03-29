@@ -31,6 +31,7 @@ func (cm *clusterModel) Env() newsimulator.Environment {
 	return cm.env
 }
 
+//TODO: can we get rid of this and the variable?
 func (cm *clusterModel) CurrentDesired() int32 {
 	return cm.currentDesired
 }

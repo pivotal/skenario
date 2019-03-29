@@ -41,7 +41,6 @@ type knativeAutoscaler struct {
 	cluster     ClusterModel
 	autoscaler  autoscaler.UniScaler
 	ctx         context.Context
-	lastDesired int32
 }
 
 func (kas *knativeAutoscaler) Env() newsimulator.Environment {
@@ -54,21 +53,21 @@ func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 		occursAt := movement.OccursAt()
 		kas.cluster.RecordToAutoscaler(kas.autoscaler, &occursAt, kas.ctx)
 
+		currentlyActive := int32(kas.cluster.CurrentActive())
+
 		desired, ok := kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
 		if !ok {
 			movement.AddNote("autoscaler.Scale() was unsuccessful")
 		} else {
-			if desired > kas.lastDesired {
-				movement.AddNote(fmt.Sprintf("%d ⇑ %d", kas.lastDesired, desired))
+			if desired > currentlyActive {
+				movement.AddNote(fmt.Sprintf("%d ⇑ %d", currentlyActive, desired))
 
 				kas.cluster.SetDesired(desired)
-			} else if desired < kas.lastDesired {
-				movement.AddNote(fmt.Sprintf("%d ⥥ %d", kas.lastDesired, desired))
+			} else if desired < currentlyActive {
+				movement.AddNote(fmt.Sprintf("%d ⥥ %d", currentlyActive, desired))
 
 				kas.cluster.SetDesired(desired)
 			}
-
-			kas.lastDesired = desired
 		}
 
 		kas.env.AddToSchedule(newsimulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock))
