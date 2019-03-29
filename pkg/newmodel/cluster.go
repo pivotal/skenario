@@ -15,7 +15,7 @@ type ClusterModel interface {
 	CurrentDesired() int32
 	SetDesired(int32)
 	CurrentLaunching() uint64
-	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
+	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context)
 }
 
 type clusterModel struct {
@@ -68,9 +68,9 @@ func (cm *clusterModel) CurrentLaunching() uint64 {
 	return cm.replicasLaunching.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
+func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context) {
 	for _, e := range cm.replicasActive.EntitiesInStock() {
-		scaler.Record(context.Background(), autoscaler.Stat{
+		scaler.Record(ctx, autoscaler.Stat{
 			Time:                      atTime,
 			PodName:                   string(e.Name()),
 			AverageConcurrentRequests: 1,

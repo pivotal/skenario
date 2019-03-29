@@ -52,7 +52,7 @@ func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 	switch movement.Kind() {
 	case MvWaitingToCalculating:
 		occursAt := movement.OccursAt()
-		kas.cluster.RecordToAutoscaler(kas.autoscaler, &occursAt)
+		kas.cluster.RecordToAutoscaler(kas.autoscaler, &occursAt, kas.ctx)
 
 		desired, ok := kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
 		if !ok {

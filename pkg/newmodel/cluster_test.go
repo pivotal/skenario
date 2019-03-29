@@ -1,6 +1,7 @@
 package newmodel
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -114,6 +115,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		var rawSubject *clusterModel
 		var firstRecorded autoscaler.Stat
 		var theTime = time.Now()
+		var ctx = context.Background()
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -127,7 +129,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 2", newsimulator.EntityKind("Replica")))
 			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 3", newsimulator.EntityKind("Replica")))
 
-			subject.RecordToAutoscaler(autoscalerFake, &theTime)
+			subject.RecordToAutoscaler(autoscalerFake, &theTime, ctx)
 			firstRecorded = autoscalerFake.recorded[0]
 		})
 
