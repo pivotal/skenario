@@ -13,7 +13,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newmodel
+package model
 
 import (
 	"context"
@@ -25,15 +25,15 @@ import (
 	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/informers"
 
-	"knative-simulator/pkg/newsimulator"
+	"knative-simulator/pkg/simulator"
 
 	"github.com/knative/serving/pkg/autoscaler"
 	fakes "k8s.io/client-go/kubernetes/fake"
 )
 
 const (
-	MvWaitingToCalculating newsimulator.MovementKind = "autoscaler_calc"
-	MvCalculatingToWaiting newsimulator.MovementKind = "autoscaler_wait"
+	MvWaitingToCalculating simulator.MovementKind = "autoscaler_calc"
+	MvCalculatingToWaiting simulator.MovementKind = "autoscaler_wait"
 
 	stableWindow                = 60 * time.Second
 	panicWindow                 = 6 * time.Second
@@ -47,22 +47,22 @@ const (
 
 type KnativeAutoscaler interface {
 	Model
-	newsimulator.MovementListener
+	simulator.MovementListener
 }
 
 type knativeAutoscaler struct {
-	env         newsimulator.Environment
-	tickTock    *tickTock
-	cluster     ClusterModel
-	autoscaler  autoscaler.UniScaler
-	ctx         context.Context
+	env        simulator.Environment
+	tickTock   *tickTock
+	cluster    ClusterModel
+	autoscaler autoscaler.UniScaler
+	ctx        context.Context
 }
 
-func (kas *knativeAutoscaler) Env() newsimulator.Environment {
+func (kas *knativeAutoscaler) Env() simulator.Environment {
 	return kas.env
 }
 
-func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
+func (kas *knativeAutoscaler) OnMovement(movement simulator.Movement) error {
 	switch movement.Kind() {
 	case MvWaitingToCalculating:
 		occursAt := movement.OccursAt()
@@ -85,15 +85,15 @@ func (kas *knativeAutoscaler) OnMovement(movement newsimulator.Movement) error {
 			}
 		}
 
-		kas.env.AddToSchedule(newsimulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock))
+		kas.env.AddToSchedule(simulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock))
 	case MvCalculatingToWaiting:
-		kas.env.AddToSchedule(newsimulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock))
+		kas.env.AddToSchedule(simulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock))
 	}
 
 	return nil
 }
 
-func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time, cluster ClusterModel) KnativeAutoscaler {
+func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel) KnativeAutoscaler {
 	logger := newLogger()
 	ctx := newLoggedCtx(logger)
 	kpa := newKpa(logger)
@@ -106,7 +106,7 @@ func NewKnativeAutoscaler(env newsimulator.Environment, startAt time.Time, clust
 		ctx:        ctx,
 	}
 
-	firstCalculation := newsimulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock)
+	firstCalculation := simulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock)
 	firstCalculation.AddNote("First calculation")
 
 	env.AddToSchedule(firstCalculation)
@@ -171,30 +171,30 @@ func newKpa(logger *zap.SugaredLogger) *autoscaler.Autoscaler {
 }
 
 type tickTock struct {
-	asEntity newsimulator.Entity
+	asEntity simulator.Entity
 }
 
-func (tt *tickTock) Name() newsimulator.StockName {
+func (tt *tickTock) Name() simulator.StockName {
 	return "Autoscaler ticktock"
 }
 
-func (tt *tickTock) KindStocked() newsimulator.EntityKind {
-	return newsimulator.EntityKind("KnativeAutoscaler")
+func (tt *tickTock) KindStocked() simulator.EntityKind {
+	return simulator.EntityKind("KnativeAutoscaler")
 }
 
 func (tt *tickTock) Count() uint64 {
 	return 1
 }
 
-func (tt *tickTock) EntitiesInStock() []newsimulator.Entity {
-	return []newsimulator.Entity{tt.asEntity}
+func (tt *tickTock) EntitiesInStock() []simulator.Entity {
+	return []simulator.Entity{tt.asEntity}
 }
 
-func (tt *tickTock) Remove() newsimulator.Entity {
+func (tt *tickTock) Remove() simulator.Entity {
 	return tt.asEntity
 }
 
-func (tt *tickTock) Add(entity newsimulator.Entity) error {
+func (tt *tickTock) Add(entity simulator.Entity) error {
 	tt.asEntity = entity
 
 	return nil

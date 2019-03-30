@@ -13,33 +13,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newsimulator
+package simulator
 
+type StockName string
 
-type EntityName string
-type EntityKind string
-
-type Entity interface {
-	Name() EntityName
-	Kind() EntityKind
+type baseStock interface {
+	Name() StockName
+	KindStocked() EntityKind
+	Count() uint64
+	EntitiesInStock() []Entity
 }
 
-type entity struct {
-	name EntityName
-	kind EntityKind
+type removable interface {
+	Remove() Entity
 }
 
-func (e *entity) Name() EntityName {
-	return e.name
+type addable interface {
+	Add(entity Entity) error
 }
 
-func (e *entity) Kind() EntityKind {
-	return e.kind
+type SourceStock interface {
+	baseStock
+	removable
 }
 
-func NewEntity(name EntityName, kind EntityKind) Entity {
-	return &entity{
-		name: name,
-		kind: kind,
-	}
+type SinkStock interface {
+	baseStock
+	addable
+}
+
+type ThroughStock interface {
+	baseStock
+	removable
+	addable
 }

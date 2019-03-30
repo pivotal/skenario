@@ -13,7 +13,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newsimulator
+package simulator
 
 // HaltingSink is intended for use by the Environment.
 // It terminates .Run() by closing the future movements list.

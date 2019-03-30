@@ -24,7 +24,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"knative-simulator/pkg/newsimulator"
+	"knative-simulator/pkg/simulator"
 )
 
 func TestCmdMain(t *testing.T) {
@@ -33,14 +33,14 @@ func TestCmdMain(t *testing.T) {
 
 func testMain(t *testing.T, describe spec.G, it spec.S) {
 	var subject Runner
-	var ignoredMovement newsimulator.Movement
-	var from, to newsimulator.ThroughStock
+	var ignoredMovement simulator.Movement
+	var from, to simulator.ThroughStock
 
 	it.Before(func() {
 		subject = NewRunner()
-		from = newsimulator.NewThroughStock("test from stock", "test kind")
-		to = newsimulator.NewThroughStock("test to stock", "test kind")
-		ignoredMovement = newsimulator.NewMovement("test movement kind", time.Now(), from, to)
+		from = simulator.NewThroughStock("test from stock", "test kind")
+		to = simulator.NewThroughStock("test to stock", "test kind")
+		ignoredMovement = simulator.NewMovement("test movement kind", time.Now(), from, to)
 		ignoredMovement.AddNote("ignored movement")
 
 		subject.Env().AddToSchedule(ignoredMovement)

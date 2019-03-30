@@ -13,7 +13,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newmodel
+package model
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 
 	"github.com/knative/serving/pkg/autoscaler"
 
-	"knative-simulator/pkg/newsimulator"
+	"knative-simulator/pkg/simulator"
 )
 
 type ClusterModel interface {
@@ -35,14 +35,14 @@ type ClusterModel interface {
 }
 
 type clusterModel struct {
-	env                newsimulator.Environment
+	env                simulator.Environment
 	currentDesired     int32
-	replicasLaunching  newsimulator.ThroughStock
-	replicasActive     newsimulator.ThroughStock
-	replicasTerminated newsimulator.SinkStock
+	replicasLaunching  simulator.ThroughStock
+	replicasActive     simulator.ThroughStock
+	replicasTerminated simulator.SinkStock
 }
 
-func (cm *clusterModel) Env() newsimulator.Environment {
+func (cm *clusterModel) Env() simulator.Environment {
 	return cm.env
 }
 
@@ -61,12 +61,12 @@ func (cm *clusterModel) SetDesired(desired int32) {
 	if desireDelta > 0 {
 		for ; desireDelta > 0; desireDelta-- {
 			// TODO: better replica names, please
-			err := cm.replicasLaunching.Add(newsimulator.NewEntity("a replica", newsimulator.EntityKind("Replica")))
+			err := cm.replicasLaunching.Add(simulator.NewEntity("a replica", simulator.EntityKind("Replica")))
 			if err != nil {
 				panic(fmt.Sprintf("could not scale up in ClusterModel: %s", err.Error()))
 			}
 
-			cm.env.AddToSchedule(newsimulator.NewMovement(
+			cm.env.AddToSchedule(simulator.NewMovement(
 				"launching -> active",
 				cm.env.CurrentMovementTime().Add(delay),
 				cm.replicasLaunching,
@@ -79,7 +79,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 		// for now I assume launching replicas are terminated before active replicas
 		desireDelta = desireDelta + launching
 		for ; launching > 0; launching-- {
-			cm.env.AddToSchedule(newsimulator.NewMovement(
+			cm.env.AddToSchedule(simulator.NewMovement(
 				"launching -> terminated",
 				cm.env.CurrentMovementTime().Add(delay),
 				cm.replicasLaunching,
@@ -89,7 +89,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 		}
 
 		for ; desireDelta < 0; desireDelta++ {
-			cm.env.AddToSchedule(newsimulator.NewMovement(
+			cm.env.AddToSchedule(simulator.NewMovement(
 				"active -> terminated",
 				cm.env.CurrentMovementTime().Add(delay),
 				cm.replicasActive,
@@ -123,11 +123,11 @@ func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *
 	}
 }
 
-func NewCluster(env newsimulator.Environment) ClusterModel {
+func NewCluster(env simulator.Environment) ClusterModel {
 	return &clusterModel{
 		env:                env,
-		replicasLaunching:  newsimulator.NewThroughStock("ReplicasLaunching", newsimulator.EntityKind("Replica")),
-		replicasActive:     newsimulator.NewThroughStock("ReplicasActive", newsimulator.EntityKind("Replica")),
-		replicasTerminated: newsimulator.NewSinkStock("ReplicasTerminated", newsimulator.EntityKind("Replica")),
+		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
+		replicasActive:     simulator.NewThroughStock("ReplicasActive", simulator.EntityKind("Replica")),
+		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),
 	}
 }

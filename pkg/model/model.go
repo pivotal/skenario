@@ -13,37 +13,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newsimulator
+package model
 
-type StockName string
+import "knative-simulator/pkg/simulator"
 
-type baseStock interface {
-	Name() StockName
-	KindStocked() EntityKind
-	Count() uint64
-	EntitiesInStock() []Entity
-}
-
-type removable interface {
-	Remove() Entity
-}
-
-type addable interface {
-	Add(entity Entity) error
-}
-
-type SourceStock interface {
-	baseStock
-	removable
-}
-
-type SinkStock interface {
-	baseStock
-	addable
-}
-
-type ThroughStock interface {
-	baseStock
-	removable
-	addable
+type Model interface {
+	Env() simulator.Environment
 }

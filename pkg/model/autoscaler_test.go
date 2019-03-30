@@ -13,7 +13,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newmodel
+package model
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"knative-simulator/pkg/newsimulator"
+	"knative-simulator/pkg/simulator"
 )
 
 func TestAutoscaler(t *testing.T) {
@@ -36,22 +36,22 @@ func TestAutoscaler(t *testing.T) {
 }
 
 type fakeEnvironment struct {
-	movements []newsimulator.Movement
-	listeners []newsimulator.MovementListener
+	movements []simulator.Movement
+	listeners []simulator.MovementListener
 	theTime   time.Time
 }
 
-func (fe *fakeEnvironment) AddToSchedule(movement newsimulator.Movement) (added bool) {
+func (fe *fakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
 	fe.movements = append(fe.movements, movement)
 	return true
 }
 
-func (fe *fakeEnvironment) AddMovementListener(listener newsimulator.MovementListener) error {
+func (fe *fakeEnvironment) AddMovementListener(listener simulator.MovementListener) error {
 	fe.listeners = append(fe.listeners, listener)
 	return nil
 }
 
-func (fe *fakeEnvironment) Run() (completed []newsimulator.CompletedMovement, ignored []newsimulator.IgnoredMovement, err error) {
+func (fe *fakeEnvironment) Run() (completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, err error) {
 	return nil, nil, nil
 }
 
@@ -91,8 +91,8 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = &fakeEnvironment{
-			movements: make([]newsimulator.Movement, 0),
-			listeners: make([]newsimulator.MovementListener, 0),
+			movements: make([]simulator.Movement, 0),
+			listeners: make([]simulator.MovementListener, 0),
 			theTime:   startAt,
 		}
 		cluster = NewCluster(envFake)
@@ -105,7 +105,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		it("schedules a first calculation", func() {
 			firstCalc := envFake.movements[0]
-			assert.Equal(t, newsimulator.MovementKind(MvWaitingToCalculating), firstCalc.Kind())
+			assert.Equal(t, simulator.MovementKind(MvWaitingToCalculating), firstCalc.Kind())
 		})
 
 		it("registers itself as a MovementListener", func() {
@@ -188,7 +188,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("OnMovement()", func() {
-		var asMovement newsimulator.Movement
+		var asMovement simulator.Movement
 		var ttStock *tickTock
 		var theTime = time.Now()
 
@@ -196,7 +196,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt, cluster)
 				ttStock = &tickTock{}
-				asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+				asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 
 				err := subject.OnMovement(asMovement)
 				assert.NoError(t, err)
@@ -212,7 +212,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt, cluster)
 				ttStock = &tickTock{}
-				asMovement = newsimulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
+				asMovement = simulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
 
 				err := subject.OnMovement(asMovement)
 				assert.NoError(t, err)
@@ -243,7 +243,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("controlling time", func() {
 				it.Before(func() {
-					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+					asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 					err := kpa.OnMovement(asMovement)
 					assert.NoError(t, err)
 				})
@@ -258,10 +258,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
-					err := rawCluster.replicasActive.Add(newsimulator.NewEntity("active replica", "Replica"))
+					err := rawCluster.replicasActive.Add(simulator.NewEntity("active replica", "Replica"))
 					assert.NoError(t, err)
 
-					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+					asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 					err = kpa.OnMovement(asMovement)
 					assert.NoError(t, err)
 				})
@@ -279,10 +279,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						autoscalerFake.scaleTo = 2
 
 						rawCluster = cluster.(*clusterModel)
-						err := rawCluster.replicasActive.Add(newsimulator.NewEntity("active replica", "Replica"))
+						err := rawCluster.replicasActive.Add(simulator.NewEntity("active replica", "Replica"))
 						assert.NoError(t, err)
 
-						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+						asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 						err = kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
@@ -301,12 +301,12 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						autoscalerFake.scaleTo = 1
 
 						rawCluster = cluster.(*clusterModel)
-						err := rawCluster.replicasActive.Add(newsimulator.NewEntity("first active replica", "Replica"))
+						err := rawCluster.replicasActive.Add(simulator.NewEntity("first active replica", "Replica"))
 						assert.NoError(t, err)
-						err = rawCluster.replicasActive.Add(newsimulator.NewEntity("second active replica", "Replica"))
+						err = rawCluster.replicasActive.Add(simulator.NewEntity("second active replica", "Replica"))
 						assert.NoError(t, err)
 
-						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+						asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 						err = kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
@@ -328,11 +328,11 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 						rawCluster = cluster.(*clusterModel)
 						rawCluster.currentDesired = 1
-						err := rawCluster.replicasActive.Add(newsimulator.NewEntity("first active replica", "Replica"))
+						err := rawCluster.replicasActive.Add(simulator.NewEntity("first active replica", "Replica"))
 						assert.NoError(t, err)
 
 						activeBefore = kpa.cluster.CurrentActive()
-						asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+						asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 						err = kpa.OnMovement(asMovement)
 						assert.NoError(t, err)
 					})
@@ -348,7 +348,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					autoscalerFake.cantDecide = true
 
-					asMovement = newsimulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
+					asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 					err := kpa.OnMovement(asMovement)
 					assert.NoError(t, err)
 				})
@@ -369,13 +369,13 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("Name()", func() {
 			it("is called 'KnativeAutoscaler Stock'", func() {
-				assert.Equal(t, ttStock.Name(), newsimulator.StockName("Autoscaler ticktock"))
+				assert.Equal(t, ttStock.Name(), simulator.StockName("Autoscaler ticktock"))
 			})
 		})
 
 		describe("KindStocked()", func() {
 			it("accepts Knative Autoscalers", func() {
-				assert.Equal(t, ttStock.KindStocked(), newsimulator.EntityKind("KnativeAutoscaler"))
+				assert.Equal(t, ttStock.KindStocked(), simulator.EntityKind("KnativeAutoscaler"))
 			})
 		})
 
@@ -383,7 +383,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it("always has 1 entity stocked", func() {
 				assert.Equal(t, ttStock.Count(), uint64(1))
 
-				err := ttStock.Add(newsimulator.NewEntity("test entity", newsimulator.EntityKind("KnativeAutoscaler")))
+				err := ttStock.Add(simulator.NewEntity("test entity", simulator.EntityKind("KnativeAutoscaler")))
 				assert.NoError(t, err)
 
 				assert.Equal(t, ttStock.Count(), uint64(1))
@@ -392,7 +392,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("Remove()", func() {
 			it("gives back the one KnativeAutoscaler", func() {
-				entity := newsimulator.NewEntity("test entity", newsimulator.EntityKind("KnativeAutoscaler"))
+				entity := simulator.NewEntity("test entity", simulator.EntityKind("KnativeAutoscaler"))
 				err := ttStock.Add(entity)
 				assert.NoError(t, err)
 
@@ -404,7 +404,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it("adds the entity if it's not already set", func() {
 				assert.Nil(t, ttStock.asEntity)
 
-				entity := newsimulator.NewEntity("test entity", newsimulator.EntityKind("KnativeAutoscaler"))
+				entity := simulator.NewEntity("test entity", simulator.EntityKind("KnativeAutoscaler"))
 				err := ttStock.Add(entity)
 				assert.NoError(t, err)
 

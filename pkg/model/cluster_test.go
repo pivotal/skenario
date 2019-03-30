@@ -13,7 +13,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newmodel
+package model
 
 import (
 	"context"
@@ -25,7 +25,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"knative-simulator/pkg/newsimulator"
+	"knative-simulator/pkg/simulator"
 )
 
 func TestCluster(t *testing.T) {
@@ -63,9 +63,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]newsimulator.Movement, 0)
+					envFake.movements = make([]simulator.Movement, 0)
 
-					err := rawSubject.replicasLaunching.Add(newsimulator.NewEntity("already launching", newsimulator.EntityKind("Replica")))
+					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
 
 					subject.SetDesired(9)
@@ -81,7 +81,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
 					assert.Len(t, envFake.movements, 8)
-					assert.Equal(t, newsimulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
 				})
 			})
 
@@ -91,9 +91,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]newsimulator.Movement, 0)
+					envFake.movements = make([]simulator.Movement, 0)
 
-					err := rawSubject.replicasLaunching.Add(newsimulator.NewEntity("already launching", newsimulator.EntityKind("Replica")))
+					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
 
 					subject.SetDesired(0)
@@ -105,7 +105,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements from ReplicasLaunching to ReplicasTerminating", func() {
 					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, newsimulator.MovementKind("launching -> terminated"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("launching -> terminated"), envFake.movements[0].Kind())
 				})
 			})
 
@@ -115,11 +115,11 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]newsimulator.Movement, 0)
+					envFake.movements = make([]simulator.Movement, 0)
 
-					err := rawSubject.replicasLaunching.Add(newsimulator.NewEntity("already launching 1", newsimulator.EntityKind("Replica")))
+					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching 1", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
-					err = rawSubject.replicasLaunching.Add(newsimulator.NewEntity("already launching 2", newsimulator.EntityKind("Replica")))
+					err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching 2", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
 
 					subject.SetDesired(2)
@@ -139,9 +139,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.NotNil(t, subject)
 
 				rawSubject = subject.(*clusterModel)
-				envFake.movements = make([]newsimulator.Movement, 0)
+				envFake.movements = make([]simulator.Movement, 0)
 
-				err := rawSubject.replicasActive.Add(newsimulator.NewEntity("already active", newsimulator.EntityKind("Replica")))
+				err := rawSubject.replicasActive.Add(simulator.NewEntity("already active", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
 			})
 
@@ -160,7 +160,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
 					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, newsimulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
 				})
 			})
 
@@ -175,7 +175,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
 					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, newsimulator.MovementKind("active -> terminated"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("active -> terminated"), envFake.movements[0].Kind())
 				})
 			})
 
@@ -198,11 +198,11 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.NotNil(t, subject)
 
 				rawSubject = subject.(*clusterModel)
-				envFake.movements = make([]newsimulator.Movement, 0)
+				envFake.movements = make([]simulator.Movement, 0)
 
-				err := rawSubject.replicasActive.Add(newsimulator.NewEntity("already active", newsimulator.EntityKind("Replica")))
+				err := rawSubject.replicasActive.Add(simulator.NewEntity("already active", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
-				err = rawSubject.replicasLaunching.Add(newsimulator.NewEntity("already launching", newsimulator.EntityKind("Replica")))
+				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
 			})
 
@@ -221,7 +221,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("adds another movement from ReplicasLaunching to ReplicasActive", func() {
 					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, newsimulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
 				})
 			})
 
@@ -262,7 +262,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]newsimulator.Movement, 0)
+					envFake.movements = make([]simulator.Movement, 0)
 
 					subject.SetDesired(1)
 				})
@@ -277,7 +277,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
 					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, newsimulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[0].Kind())
 				})
 
 			})
@@ -299,8 +299,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			rawSubject.replicasActive.Add(newsimulator.NewEntity("first entity", "Replica"))
-			rawSubject.replicasActive.Add(newsimulator.NewEntity("second entity", "Replica"))
+			rawSubject.replicasActive.Add(simulator.NewEntity("first entity", "Replica"))
+			rawSubject.replicasActive.Add(simulator.NewEntity("second entity", "Replica"))
 		})
 
 		it("gives the .Count() of replicas active", func() {
@@ -323,9 +323,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				scaleTimes: make([]time.Time, 0),
 			}
 
-			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 1", newsimulator.EntityKind("Replica")))
-			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 2", newsimulator.EntityKind("Replica")))
-			rawSubject.replicasActive.Add(newsimulator.NewEntity("Test Replica 3", newsimulator.EntityKind("Replica")))
+			rawSubject.replicasActive.Add(simulator.NewEntity("Test Replica 1", simulator.EntityKind("Replica")))
+			rawSubject.replicasActive.Add(simulator.NewEntity("Test Replica 2", simulator.EntityKind("Replica")))
+			rawSubject.replicasActive.Add(simulator.NewEntity("Test Replica 3", simulator.EntityKind("Replica")))
 
 			subject.RecordToAutoscaler(autoscalerFake, &theTime, ctx)
 			firstRecorded = autoscalerFake.recorded[0]

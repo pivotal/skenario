@@ -13,29 +13,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newsimulator
+package simulator
 
-import (
-	"testing"
 
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
-	"github.com/stretchr/testify/assert"
-)
+type EntityName string
+type EntityKind string
 
-func TestEntity(t *testing.T) {
-	spec.Run(t, "Entity spec", testEntity, spec.Report(report.Terminal{}))
+type Entity interface {
+	Name() EntityName
+	Kind() EntityKind
 }
 
-func testEntity(t *testing.T, describe spec.G, it spec.S) {
-	var subject Entity
+type entity struct {
+	name EntityName
+	kind EntityKind
+}
 
-	it.Before(func() {
-		subject = NewEntity("test entity name", "test entity kind")
-	})
+func (e *entity) Name() EntityName {
+	return e.name
+}
 
-	it("creates an entity", func() {
-		assert.Equal(t, subject.Name(), EntityName("test entity name"))
-		assert.Equal(t, subject.Kind(), EntityKind("test entity kind"))
-	})
+func (e *entity) Kind() EntityKind {
+	return e.kind
+}
+
+func NewEntity(name EntityName, kind EntityKind) Entity {
+	return &entity{
+		name: name,
+		kind: kind,
+	}
 }

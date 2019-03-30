@@ -27,9 +27,9 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"knative-simulator/pkg/newmodel"
+	"knative-simulator/pkg/model"
 
-	"knative-simulator/pkg/newsimulator"
+	"knative-simulator/pkg/simulator"
 )
 
 var startAt = time.Unix(0, 0)
@@ -41,9 +41,9 @@ func main() {
 	flag.Parse()
 	r := NewRunner()
 
-	cluster := newmodel.NewCluster(r.Env())
+	cluster := model.NewCluster(r.Env())
 	cluster.SetDesired(10)
-	newmodel.NewKnativeAutoscaler(r.Env(), startAt, cluster)
+	model.NewKnativeAutoscaler(r.Env(), startAt, cluster)
 
 	err := r.RunAndReport(os.Stdout)
 	if err != nil {
@@ -52,12 +52,12 @@ func main() {
 }
 
 type Runner interface {
-	Env() newsimulator.Environment
+	Env() simulator.Environment
 	RunAndReport(writer io.Writer) error
 }
 
 type runner struct {
-	env newsimulator.Environment
+	env simulator.Environment
 }
 
 func (r *runner) RunAndReport(writer io.Writer) error {
@@ -103,11 +103,11 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 
 		coloredReason := ""
 		switch i.Reason {
-		case newsimulator.OccursInPast:
+		case simulator.OccursInPast:
 			coloredReason = au.Red(i.Reason).String()
-		case newsimulator.OccursAfterHalt:
+		case simulator.OccursAfterHalt:
 			coloredReason = au.Magenta(i.Reason).String()
-		case newsimulator.OccursSimultaneouslyWithAnotherMovement:
+		case simulator.OccursSimultaneouslyWithAnotherMovement:
 			coloredReason = au.Cyan(i.Reason).String()
 		}
 
@@ -126,12 +126,12 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 	return nil
 }
 
-func (r *runner) Env() newsimulator.Environment {
+func (r *runner) Env() simulator.Environment {
 	return r.env
 }
 
 func NewRunner() Runner {
 	return &runner{
-		env: newsimulator.NewEnvironment(startAt, *simDuration),
+		env: simulator.NewEnvironment(startAt, *simDuration),
 	}
 }

@@ -13,10 +13,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package newmodel
+package simulator
 
-import "knative-simulator/pkg/newsimulator"
-
-type Model interface {
-	Env() newsimulator.Environment
+type MovementListener interface {
+	OnMovement(movement Movement) error
 }
+
