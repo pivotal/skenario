@@ -15,7 +15,6 @@
 
 package simulator
 
-
 type EntityName string
 type EntityKind string
 

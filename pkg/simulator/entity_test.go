@@ -34,8 +34,13 @@ func testEntity(t *testing.T, describe spec.G, it spec.S) {
 		subject = NewEntity("test entity name", "test entity kind")
 	})
 
-	it("creates an entity", func() {
-		assert.Equal(t, subject.Name(), EntityName("test entity name"))
-		assert.Equal(t, subject.Kind(), EntityKind("test entity kind"))
+	describe("NewEntity()", func() {
+		it("sets a name", func() {
+			assert.Equal(t, subject.Name(), EntityName("test entity name"))
+		})
+
+		it("sets a kind", func() {
+			assert.Equal(t, subject.Kind(), EntityKind("test entity kind"))
+		})
 	})
 }
