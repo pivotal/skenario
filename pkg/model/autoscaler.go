@@ -1,166 +1,147 @@
+/*
+ * Copyright (C) 2019-Present Pivotal Software, Inc. All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the terms
+ * of the Apache License, Version 2.0 (the "License”); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package model
 
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/knative/pkg/logging"
-	"github.com/knative/serving/pkg/autoscaler"
-	"github.com/looplab/fsm"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
 
 	"knative-simulator/pkg/simulator"
+
+	"github.com/knative/serving/pkg/autoscaler"
+	fakes "k8s.io/client-go/kubernetes/fake"
 )
 
 const (
-	StateAutoscalerWaiting     = "AutoscalerWaiting"
-	StateAutoscalerCalculating = "AutoscalerCalculating"
+	MvWaitingToCalculating simulator.MovementKind = "autoscaler_calc"
+	MvCalculatingToWaiting simulator.MovementKind = "autoscaler_wait"
 
-	waitForNextCalculation = "wait_for_next_calculation"
-	calculateScale         = "calculate_scale"
-
-	tickInterval           = 60 * time.Second
-	stableWindow           = 60 * time.Second
-	panicWindow            = 6 * time.Second
-	scaleToZeroGracePeriod = 30 * time.Second
-	targetConcurrency      = 2.0
-	maxScaleUpRate         = 10.0
-	testNamespace          = "simulator-namespace"
-	testName               = "revisionService"
+	stableWindow                = 60 * time.Second
+	panicWindow                 = 6 * time.Second
+	scaleToZeroGracePeriod      = 30 * time.Second
+	targetConcurrencyDefault    = 2.0
+	targetConcurrencyPercentage = 0.5
+	maxScaleUpRate              = 10.0
+	testNamespace               = "simulator-namespace"
+	testName                    = "revisionService"
 )
 
-var logger *zap.SugaredLogger
-
-type KnativeAutoscaler struct {
-	name       simulator.ProcessIdentity
-	fsm        *fsm.FSM
-	env        *simulator.Environment
-	autoscaler *autoscaler.Autoscaler
-	replicas   []*RevisionReplica
-	exec       *Executable
-	endpoints  *ReplicaEndpoints
-
-	ctx    context.Context
-	buffer *KBuffer
+type KnativeAutoscaler interface {
+	Model
+	simulator.MovementListener
 }
 
-func (ka *KnativeAutoscaler) Identity() simulator.ProcessIdentity {
-	return ka.name
+type knativeAutoscaler struct {
+	env        simulator.Environment
+	tickTock   *tickTock
+	cluster    ClusterModel
+	autoscaler autoscaler.UniScaler
+	ctx        context.Context
 }
 
-func (ka *KnativeAutoscaler) OnOccurrence(event simulator.Event) (result simulator.StateTransitionResult) {
-	n := ""
+func (kas *knativeAutoscaler) Env() simulator.Environment {
+	return kas.env
+}
 
-	switch event.Name() {
-	case waitForNextCalculation:
-		ka.env.Schedule(simulator.NewGeneralEvent(
-			calculateScale,
-			event.OccursAt().Add(tickInterval),
-			ka,
-		))
-	case calculateScale:
-		ka.env.Schedule(simulator.NewGeneralEvent(
-			waitForNextCalculation,
-			event.OccursAt().Add(1*time.Nanosecond),
-			ka,
-		))
+func (kas *knativeAutoscaler) OnMovement(movement simulator.Movement) error {
+	switch movement.Kind() {
+	case MvWaitingToCalculating:
+		occursAt := movement.OccursAt()
+		kas.cluster.RecordToAutoscaler(kas.autoscaler, &occursAt, kas.ctx)
 
-		at := event.OccursAt()
-		for _, rr := range ka.replicas {
-			stat := autoscaler.Stat{
-				Time:                      &at,
-				PodName:                   string(rr.name),
-				AverageConcurrentRequests: 10,
-				RequestCount:              10,
-			}
-			ka.autoscaler.Record(context.Background(), stat)
-		}
+		currentlyActive := int32(kas.cluster.CurrentActive())
 
-		currentReplicas := int32(len(ka.replicas))
-		desiredScale, ok := ka.autoscaler.Scale(ka.ctx, event.OccursAt())
-		if ok {
-			if desiredScale > currentReplicas {
-				gap := desiredScale - currentReplicas
-				for i := int32(0); i < gap; i++ {
-					exec := NewExecutable(
-						simulator.ProcessIdentity(fmt.Sprintf("exec-%d", rand.Intn(999999))),
-						StateCold,
-						ka.env,
-					)
-
-					r := NewRevisionReplica(
-						simulator.ProcessIdentity(fmt.Sprintf("replica-%d", rand.Intn(999999))),
-						exec,
-						ka.env,
-						ka,
-					)
-					ka.endpoints.AddRevisionReplica(r)
-					ka.replicas = append(ka.replicas, r)
-					ka.env.ListenForScheduling(r.Identity(), finishLaunchingReplica, ka.buffer)
-					ka.env.ListenForScheduling(r.Identity(), terminateReplica, ka.buffer)
-					r.Run(event.OccursAt())
-				}
-
-				n = fmt.Sprintf("Scaling up from %d to %d", currentReplicas, desiredScale)
-			} else if desiredScale < currentReplicas {
-				gap := currentReplicas - desiredScale
-				for i := int32(0); i < gap; i++ {
-					r := ka.replicas[i]
-					ka.env.Schedule(simulator.NewGeneralEvent(
-						terminateReplica,
-						event.OccursAt().Add(10*time.Millisecond),
-						r,
-					))
-				}
-
-				ka.replicas = ka.replicas[len(ka.replicas)-int(gap):]
-
-				n = fmt.Sprintf("Scaling down to %d to %d", currentReplicas, desiredScale)
-			}
+		desired, ok := kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
+		if !ok {
+			movement.AddNote("autoscaler.Scale() was unsuccessful")
 		} else {
-			n = "There was an error in scaling"
+			if desired > currentlyActive {
+				movement.AddNote(fmt.Sprintf("%d ⇑ %d", currentlyActive, desired))
+
+				kas.cluster.SetDesired(desired)
+			} else if desired < currentlyActive {
+				movement.AddNote(fmt.Sprintf("%d ⥥ %d", currentlyActive, desired))
+
+				kas.cluster.SetDesired(desired)
+			}
 		}
+
+		kas.env.AddToSchedule(simulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock))
+	case MvCalculatingToWaiting:
+		kas.env.AddToSchedule(simulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock))
 	}
 
-	currentState := ka.fsm.Current()
-	err := ka.fsm.Event(string(event.Name()))
-	if err != nil {
-		switch err.(type) {
-		case fsm.NoTransitionError:
-		// ignore
-		default:
-			panic(err.Error())
-		}
-	}
-
-	return simulator.StateTransitionResult{FromState: currentState, ToState: ka.fsm.Current(), Note: n}
+	return nil
 }
 
-func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, endpoints *ReplicaEndpoints, kubernetesClient kubernetes.Interface) *KnativeAutoscaler {
+func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel) KnativeAutoscaler {
+	logger := newLogger()
+	ctx := newLoggedCtx(logger)
+	kpa := newKpa(logger)
+
+	kas := &knativeAutoscaler{
+		env:        env,
+		tickTock:   &tickTock{},
+		cluster:    cluster,
+		autoscaler: kpa,
+		ctx:        ctx,
+	}
+
+	firstCalculation := simulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock)
+	firstCalculation.AddNote("First calculation")
+
+	env.AddToSchedule(firstCalculation)
+	err := env.AddMovementListener(kas)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return kas
+}
+
+func newLogger() *zap.SugaredLogger {
 	devCfg := zap.NewDevelopmentConfig()
 	devCfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	//devCfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
 	devCfg.OutputPaths = []string{"stdout"}
 	devCfg.ErrorOutputPaths = []string{"stderr"}
 	unsugaredLogger, err := devCfg.Build()
 	if err != nil {
 		panic(err.Error())
 	}
-	logger = unsugaredLogger.Sugar()
-	defer logger.Sync()
+	return unsugaredLogger.Sugar()
+}
 
-	ctx := logging.WithLogger(context.Background(), logger)
+func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
+	return logging.WithLogger(context.Background(), logger)
+}
 
+func newKpa(logger *zap.SugaredLogger) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{
-		MaxScaleUpRate:         maxScaleUpRate,
-		StableWindow:           stableWindow,
-		PanicWindow:            panicWindow,
-		ScaleToZeroGracePeriod: scaleToZeroGracePeriod,
+		MaxScaleUpRate:                       maxScaleUpRate,
+		StableWindow:                         stableWindow,
+		PanicWindow:                          panicWindow,
+		ScaleToZeroGracePeriod:               scaleToZeroGracePeriod,
+		ContainerConcurrencyTargetPercentage: targetConcurrencyPercentage,
+		ContainerConcurrencyTargetDefault:    targetConcurrencyDefault,
 	}
 
 	dynConfig := autoscaler.NewDynamicConfig(config, logger)
@@ -170,7 +151,8 @@ func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, e
 		logger.Fatalf("could not create stats reporter: %s", err.Error())
 	}
 
-	informerFactory := informers.NewSharedInformerFactory(kubernetesClient, 0)
+	fakeClient := fakes.NewSimpleClientset()
+	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 	endpointsInformer := informerFactory.Core().V1().Endpoints()
 
 	as, err := autoscaler.New(
@@ -178,36 +160,42 @@ func NewAutoscaler(name simulator.ProcessIdentity, env *simulator.Environment, e
 		testNamespace,
 		testName,
 		endpointsInformer,
-		targetConcurrency,
+		targetConcurrencyDefault,
 		statsReporter,
 	)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	ka := &KnativeAutoscaler{
-		name:       name,
-		env:        env,
-		autoscaler: as,
-		endpoints:  endpoints,
-		replicas:   make([]*RevisionReplica, 0),
-		ctx:        ctx,
-	}
+	return as
+}
 
-	ka.fsm = fsm.NewFSM(
-		StateAutoscalerWaiting,
-		fsm.Events{
-			fsm.EventDesc{Name: waitForNextCalculation, Src: []string{StateAutoscalerCalculating}, Dst: StateAutoscalerWaiting},
-			fsm.EventDesc{Name: calculateScale, Src: []string{StateAutoscalerWaiting}, Dst: StateAutoscalerCalculating},
-		},
-		fsm.Callbacks{},
-	)
+type tickTock struct {
+	asEntity simulator.Entity
+}
 
-	ka.env.Schedule(simulator.NewGeneralEvent(
-		calculateScale,
-		env.Time(),
-		ka,
-	))
+func (tt *tickTock) Name() simulator.StockName {
+	return "Autoscaler ticktock"
+}
 
-	return ka
+func (tt *tickTock) KindStocked() simulator.EntityKind {
+	return simulator.EntityKind("KnativeAutoscaler")
+}
+
+func (tt *tickTock) Count() uint64 {
+	return 1
+}
+
+func (tt *tickTock) EntitiesInStock() []simulator.Entity {
+	return []simulator.Entity{tt.asEntity}
+}
+
+func (tt *tickTock) Remove() simulator.Entity {
+	return tt.asEntity
+}
+
+func (tt *tickTock) Add(entity simulator.Entity) error {
+	tt.asEntity = entity
+
+	return nil
 }

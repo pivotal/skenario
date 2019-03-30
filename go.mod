@@ -19,6 +19,7 @@ require (
 	github.com/knative/pkg v0.0.0-20190225184048-41761b2c813c
 	github.com/knative/serving v0.4.1-0.20190304203539-5424ed3359ea
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
 	github.com/looplab/fsm v0.1.0
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -27,7 +28,9 @@ require (
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/prometheus/common v0.2.0
+	github.com/sclevine/spec v1.2.0
 	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/stretchr/testify v1.2.2
 	github.com/wcharczuk/go-chart v2.0.2-0.20190219185203-9852fce5a172+incompatible
 	go.opencensus.io v0.19.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
