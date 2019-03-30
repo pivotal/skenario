@@ -156,6 +156,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				assert.NotNil(t, conf)
 			})
 
+			it("sets TickInterval", func() {
+				assert.Equal(t, 2*time.Second, conf.TickInterval)
+			})
+
 			it("sets StableWindow", func() {
 				assert.Equal(t, 60*time.Second, conf.StableWindow)
 			})

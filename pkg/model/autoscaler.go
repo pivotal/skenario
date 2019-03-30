@@ -35,6 +35,7 @@ const (
 	MvWaitingToCalculating simulator.MovementKind = "autoscaler_calc"
 	MvCalculatingToWaiting simulator.MovementKind = "autoscaler_wait"
 
+	tickInterval                = 2 * time.Second
 	stableWindow                = 60 * time.Second
 	panicWindow                 = 6 * time.Second
 	scaleToZeroGracePeriod      = 30 * time.Second
@@ -136,6 +137,7 @@ func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
 
 func newKpa(logger *zap.SugaredLogger) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{
+		TickInterval:                         tickInterval,
 		MaxScaleUpRate:                       maxScaleUpRate,
 		StableWindow:                         stableWindow,
 		PanicWindow:                          panicWindow,
