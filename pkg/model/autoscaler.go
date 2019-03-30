@@ -23,12 +23,10 @@ import (
 	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"k8s.io/client-go/informers"
 
 	"knative-simulator/pkg/simulator"
 
 	"github.com/knative/serving/pkg/autoscaler"
-	fakes "k8s.io/client-go/kubernetes/fake"
 )
 
 const (
@@ -97,7 +95,8 @@ func (kas *knativeAutoscaler) OnMovement(movement simulator.Movement) error {
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel) KnativeAutoscaler {
 	logger := newLogger()
 	ctx := newLoggedCtx(logger)
-	kpa := newKpa(logger)
+	epiSource := cluster.(EndpointInformerSource)
+	kpa := newKpa(logger, epiSource)
 
 	kas := &knativeAutoscaler{
 		env:        env,
@@ -135,7 +134,7 @@ func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
 	return logging.WithLogger(context.Background(), logger)
 }
 
-func newKpa(logger *zap.SugaredLogger) *autoscaler.Autoscaler {
+func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{
 		TickInterval:                         tickInterval,
 		MaxScaleUpRate:                       maxScaleUpRate,
@@ -153,15 +152,11 @@ func newKpa(logger *zap.SugaredLogger) *autoscaler.Autoscaler {
 		logger.Fatalf("could not create stats reporter: %s", err.Error())
 	}
 
-	fakeClient := fakes.NewSimpleClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-	endpointsInformer := informerFactory.Core().V1().Endpoints()
-
 	as, err := autoscaler.New(
 		dynConfig,
 		testNamespace,
 		testName,
-		endpointsInformer,
+		endpointsInformerSource.EPInformer(),
 		targetConcurrencyDefault,
 		statsReporter,
 	)

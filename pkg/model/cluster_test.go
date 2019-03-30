@@ -24,12 +24,14 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/client-go/informers/core/v1"
 
 	"knative-simulator/pkg/simulator"
 )
 
 func TestCluster(t *testing.T) {
 	spec.Run(t, "Cluster model", testCluster, spec.Report(report.Terminal{}))
+	spec.Run(t, "EPInformer interface", testEPInformer, spec.Report(report.Terminal{}))
 }
 
 func testCluster(t *testing.T, describe spec.G, it spec.S) {
@@ -351,6 +353,26 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			it("sets RequestCount to 1", func() {
 				assert.Equal(t, int32(1), firstRecorded.RequestCount)
 			})
+		})
+	})
+}
+
+func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
+	var subject EndpointInformerSource
+	var cluster ClusterModel
+	var envFake = new(fakeEnvironment)
+
+	it.Before(func() {
+		cluster = NewCluster(envFake)
+		assert.NotNil(t, cluster)
+		subject = cluster.(EndpointInformerSource)
+		assert.NotNil(t, subject)
+	})
+
+	describe("EPInformer()", func() {
+		// TODO: this test just feels like it's testing the compiler
+		it("returns an EndpointsInformer", func() {
+			assert.Implements(t, (*v1.EndpointsInformer)(nil), subject.EPInformer())
 		})
 	})
 }

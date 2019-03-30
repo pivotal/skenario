@@ -21,6 +21,9 @@ import (
 	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
+	"k8s.io/client-go/informers"
+	corev1informers "k8s.io/client-go/informers/core/v1"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
 	"knative-simulator/pkg/simulator"
 )
@@ -34,19 +37,24 @@ type ClusterModel interface {
 	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context)
 }
 
+type EndpointInformerSource interface {
+	EPInformer() corev1informers.EndpointsInformer
+}
+
 type clusterModel struct {
 	env                simulator.Environment
 	currentDesired     int32
 	replicasLaunching  simulator.ThroughStock
 	replicasActive     simulator.ThroughStock
 	replicasTerminated simulator.SinkStock
+	endpointsInformer  corev1informers.EndpointsInformer
 }
 
 func (cm *clusterModel) Env() simulator.Environment {
 	return cm.env
 }
 
-//TODO: can we get rid of this and the variable?
+// TODO: can we get rid of this and the variable?
 func (cm *clusterModel) CurrentDesired() int32 {
 	return cm.currentDesired
 }
@@ -123,11 +131,20 @@ func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *
 	}
 }
 
+func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
+	return cm.endpointsInformer
+}
+
 func NewCluster(env simulator.Environment) ClusterModel {
+	fakeClient := k8sfakes.NewSimpleClientset()
+	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
+	endpointsInformer := informerFactory.Core().V1().Endpoints()
+
 	return &clusterModel{
 		env:                env,
 		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:     simulator.NewThroughStock("ReplicasActive", simulator.EntityKind("Replica")),
 		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),
+		endpointsInformer:  endpointsInformer,
 	}
 }

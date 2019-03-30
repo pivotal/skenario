@@ -27,6 +27,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/informers/core/v1"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
 	"knative-simulator/pkg/simulator"
 )
@@ -81,6 +84,18 @@ func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, boo
 
 func (fa *fakeAutoscaler) Update(autoscaler.MetricSpec) error {
 	panic("implement me")
+}
+
+type fakeEndpointsInformerSource struct {
+	epInformerCalled bool
+}
+
+func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
+	feis.epInformerCalled = true
+
+	fakeClient := k8sfakes.NewSimpleClientset()
+	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
+	return informerFactory.Core().V1().Endpoints()
 }
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
@@ -147,9 +162,12 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		describe("newKpa() helper", func() {
 			var as *autoscaler.Autoscaler
 			var conf *autoscaler.Config
+			var epiFake *fakeEndpointsInformerSource
 
 			it.Before(func() {
-				as = newKpa(newLogger())
+				epiFake = new(fakeEndpointsInformerSource)
+
+				as = newKpa(newLogger(), epiFake)
 				assert.NotNil(t, as)
 
 				conf = as.Current()
@@ -187,6 +205,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Pend("sets the target concurrency at creation", func() {
 				// TODO: How to test? This is a private variable.
 				// It can be updated through autoscaler.Update() but doesn't have an obvious getter
+			})
+
+			it("gets the endpoints informer from EndpointsInformerSource", func() {
+				assert.True(t, epiFake.epInformerCalled)
 			})
 		})
 	})
