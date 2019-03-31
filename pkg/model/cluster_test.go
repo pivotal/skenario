@@ -80,7 +80,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			config.LaunchDelay = 11*time.Second
 			config.TerminateDelay = 22*time.Second
 
-			describe.Focus("ClusterConfig.LaunchDelay", func() {
+			describe("ClusterConfig.LaunchDelay", func() {
 				it.Before(func() {
 					envFake.theTime = time.Unix(0, 0)
 
