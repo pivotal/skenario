@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"math/rand"
 	"net"
 	"time"
 
@@ -62,6 +63,7 @@ type clusterModel struct {
 	replicasLaunching  simulator.ThroughStock
 	replicasActive     simulator.ThroughStock
 	replicasTerminated simulator.SinkStock
+	requestsInBuffer   simulator.ThroughStock
 	kubernetesClient   kubernetes.Interface
 	endpointsInformer  corev1informers.EndpointsInformer
 	nextIPValue        uint32
@@ -98,7 +100,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				cm.replicasActive,
 			))
 
-			nextLaunch = nextLaunch.Add(1*time.Nanosecond)
+			nextLaunch = nextLaunch.Add(1 * time.Nanosecond)
 		}
 	} else if desireDelta < 0 {
 		nextTerminate := cm.env.CurrentMovementTime().Add(cm.config.TerminateDelay)
@@ -111,7 +113,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				cm.replicasLaunching,
 				cm.replicasTerminated,
 			))
-			nextTerminate = nextTerminate.Add(1*time.Nanosecond)
+			nextTerminate = nextTerminate.Add(1 * time.Nanosecond)
 		}
 
 		for ; desireDelta < 0; desireDelta++ {
@@ -121,7 +123,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				cm.replicasActive,
 				cm.replicasTerminated,
 			))
-			nextTerminate = nextTerminate.Add(1*time.Nanosecond)
+			nextTerminate = nextTerminate.Add(1 * time.Nanosecond)
 		}
 	} else {
 		// No change.
@@ -139,6 +141,15 @@ func (cm *clusterModel) CurrentActive() uint64 {
 }
 
 func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context) {
+	// first report for the buffer
+	scaler.Record(ctx, autoscaler.Stat{
+		Time:                      atTime,
+		PodName:                   "Buffer",
+		AverageConcurrentRequests: float64(cm.requestsInBuffer.Count()),
+		RequestCount:              int32(cm.requestsInBuffer.Count()),
+	})
+
+	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
 		scaler.Record(ctx, autoscaler.Stat{
 			Time:                      atTime,
@@ -179,12 +190,27 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
 	endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
+	trafficSource := NewTrafficSource()
+	bufferStock := simulator.NewThroughStock("Buffer", "Request")
+
+	for i := 0; i < 1000; i++ {
+		r := rand.Int63n(int64(60 * time.Second))
+
+		env.AddToSchedule(simulator.NewMovement(
+			"request -> buffer",
+			env.CurrentMovementTime().Add(time.Duration(r)*time.Nanosecond),
+			trafficSource,
+			bufferStock,
+		))
+	}
+
 	return &clusterModel{
 		env:                env,
 		config:             config,
 		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:     NewReplicasActiveStock(),
 		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),
+		requestsInBuffer:   bufferStock,
 		kubernetesClient:   fakeClient,
 		endpointsInformer:  endpointsInformer,
 		nextIPValue:        1,

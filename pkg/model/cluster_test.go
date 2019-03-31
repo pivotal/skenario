@@ -41,7 +41,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var config ClusterConfig
 	var subject ClusterModel
 	var rawSubject *clusterModel
-	var envFake = new(fakeEnvironment)
+	var envFake *fakeEnvironment
 	var endpoints *corev1.Endpoints
 	var err error
 
@@ -56,6 +56,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("NewCluster()", func() {
+		envFake = new(fakeEnvironment)
+
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, subject.Env())
 		})
@@ -65,20 +67,42 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			assert.Len(t, endpoints.Subsets, 1)
 			assert.Len(t, endpoints.Subsets[0].Addresses, 0)
 		})
+
+		describe("scheduling request arrivals", func() {
+			it("schedules 1000 request arrivals", func() {
+				assert.Len(t, envFake.movements, 1000)
+			})
+
+			it("movements are kind 'request -> buffer'", func() {
+				assert.Equal(t, simulator.MovementKind("request -> buffer"), envFake.movements[0].Kind())
+			})
+
+			it("movements from traffic source", func() {
+				assert.Equal(t, simulator.StockName("TrafficSource"), envFake.movements[0].From().Name())
+			})
+
+			it("movement is to buffer strock", func() {
+				assert.Equal(t, simulator.StockName("Buffer"), envFake.movements[0].To().Name())
+			})
+		})
 	})
 
 	describe("CurrentDesired()", func() {
+		envFake = new(fakeEnvironment)
+
 		it("defaults to 0", func() {
 			assert.Equal(t, int32(0), subject.CurrentDesired())
 		})
 	})
 
 	describe("SetDesired()", func() {
+		envFake = new(fakeEnvironment)
+
 		describe("using ClusterConfig delay values", func() {
 			var firstLaunchAt, secondLaunchAt time.Time
 			var firstTerminateAt, secondTerminateAt, thirdTerminateAt, fourthTerminateAt time.Time
-			config.LaunchDelay = 11*time.Second
-			config.TerminateDelay = 22*time.Second
+			config.LaunchDelay = 11 * time.Second
+			config.TerminateDelay = 22 * time.Second
 
 			describe("ClusterConfig.LaunchDelay", func() {
 				it.Before(func() {
@@ -91,7 +115,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					envFake.movements = make([]simulator.Movement, 0)
 
 					firstLaunchAt = envFake.theTime.Add(rawSubject.config.LaunchDelay)
-					secondLaunchAt = firstLaunchAt.Add(1*time.Nanosecond)
+					secondLaunchAt = firstLaunchAt.Add(1 * time.Nanosecond)
 
 					subject.SetDesired(2)
 				})
@@ -379,6 +403,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("CurrentLaunching()", func() {
+		envFake = new(fakeEnvironment)
+
 		it.Before(func() {
 			subject.SetDesired(7)
 		})
@@ -390,6 +416,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("CurrentActive()", func() {
 		var rawSubject *clusterModel
+		envFake = new(fakeEnvironment)
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -407,9 +434,12 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	describe("RecordToAutoscaler()", func() {
 		var autoscalerFake *fakeAutoscaler
 		var rawSubject *clusterModel
-		var firstRecorded autoscaler.Stat
+		var firstReplicaRecorded, bufferRecorded autoscaler.Stat
 		var theTime = time.Now()
 		var ctx = context.Background()
+		envFake = new(fakeEnvironment)
+		recordOnce := 1
+		recordThrice := 3
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -418,6 +448,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				recorded:   make([]autoscaler.Stat, 0),
 				scaleTimes: make([]time.Time, 0),
 			}
+
+			rawSubject.requestsInBuffer.Add(simulator.NewEntity("request-1", "Request"))
 
 			firstReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 			secondReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
@@ -428,28 +460,51 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			rawSubject.replicasActive.Add(thirdReplica)
 
 			subject.RecordToAutoscaler(autoscalerFake, &theTime, ctx)
-			firstRecorded = autoscalerFake.recorded[0]
+			bufferRecorded = autoscalerFake.recorded[0]
+			firstReplicaRecorded = autoscalerFake.recorded[1]
 		})
 
+		// TODO immediately record arrivals at buffer
+
 		describe("Records added to the Autoscaler", func() {
-			it("records once for each replica in ReplicasActive", func() {
-				assert.Len(t, autoscalerFake.recorded, 3)
+			it("records once for the buffer and once each replica in ReplicasActive", func() {
+				assert.Len(t, autoscalerFake.recorded, recordOnce + recordThrice)
 			})
 
-			it("sets time to the movement OccursAt", func() {
-				assert.Equal(t, &theTime, firstRecorded.Time)
+			describe("the record for the Buffer", func() {
+				it("sets time to the movement OccursAt", func() {
+					assert.Equal(t, &theTime, bufferRecorded.Time)
+				})
+
+				it("sets the PodName to 'Buffer'", func() {
+					assert.Equal(t, "Buffer", bufferRecorded.PodName)
+				})
+
+				it("sets AverageConcurrentRequests to the number of Requests in the Buffer", func() {
+					assert.Equal(t, 1.0, bufferRecorded.AverageConcurrentRequests)
+				})
+
+				it("sets RequestCount to the net change in the number of Requests since last invocation", func() {
+					assert.Equal(t, int32(1), bufferRecorded.RequestCount)
+				})
 			})
 
-			it("sets the PodName to Replica name", func() {
-				assert.Equal(t, "Replica", firstRecorded.PodName)
-			})
+			describe("records for replicas", func() {
+				it("sets time to the movement OccursAt", func() {
+					assert.Equal(t, &theTime, firstReplicaRecorded.Time)
+				})
 
-			it("sets AverageConcurrentRequests to 1", func() {
-				assert.Equal(t, float64(1.0), firstRecorded.AverageConcurrentRequests)
-			})
+				it("sets the PodName to Replica name", func() {
+					assert.Equal(t, "Replica", firstReplicaRecorded.PodName)
+				})
 
-			it("sets RequestCount to 1", func() {
-				assert.Equal(t, int32(1), firstRecorded.RequestCount)
+				it("sets AverageConcurrentRequests to 1", func() {
+					assert.Equal(t, float64(1.0), firstReplicaRecorded.AverageConcurrentRequests)
+				})
+
+				it("sets RequestCount to 1", func() {
+					assert.Equal(t, int32(1), firstReplicaRecorded.RequestCount)
+				})
 			})
 		})
 	})

@@ -121,8 +121,14 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		it("schedules a first calculation", func() {
-			firstCalc := envFake.movements[0]
-			assert.Equal(t, simulator.MovementKind(MvWaitingToCalculating), firstCalc.Kind())
+			var found bool
+			for _, mv := range envFake.movements {
+				if mv.Kind() == simulator.MovementKind(MvWaitingToCalculating) {
+					found = true
+					break
+				}
+			}
+			assert.True(t, found)
 		})
 
 		it("registers itself as a MovementListener", func() {
@@ -170,10 +176,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				epiFake = new(fakeEndpointsInformerSource)
 
 				as = newKpa(newLogger(), epiFake, KnativeAutoscalerConfig{
-					TickInterval:                11*time.Second,
-					StableWindow:                22*time.Second,
-					PanicWindow:                 33*time.Second,
-					ScaleToZeroGracePeriod:      44*time.Second,
+					TickInterval:                11 * time.Second,
+					StableWindow:                22 * time.Second,
+					PanicWindow:                 33 * time.Second,
+					ScaleToZeroGracePeriod:      44 * time.Second,
 					TargetConcurrencyDefault:    55.0,
 					TargetConcurrencyPercentage: 66.0,
 					MaxScaleUpRate:              77.0,
@@ -234,7 +240,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("schedules a calculating -> waiting movement", func() {
-				next := envFake.movements[1]
+				next := envFake.movements[len(envFake.movements)-1]
 				assert.Equal(t, MvCalculatingToWaiting, next.Kind())
 			})
 		})
@@ -250,7 +256,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("schedules a waiting -> calculating movement", func() {
-				next := envFake.movements[1]
+				next := envFake.movements[len(envFake.movements)-1]
 				assert.Equal(t, MvWaitingToCalculating, next.Kind())
 			})
 		})
@@ -286,10 +292,12 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("updating statistics", func() {
 				var rawCluster *clusterModel
+				onceForBuffer := 1
+				onceForReplica := 1
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
-					newReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+					newReplica := NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
 					err := rawCluster.replicasActive.Add(newReplica)
 					assert.NoError(t, err)
 
@@ -299,7 +307,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("delegates statistics updating to ClusterModel", func() {
-					assert.Len(t, autoscalerFake.recorded, 1)
+					assert.Len(t, autoscalerFake.recorded, onceForBuffer+onceForReplica)
 				})
 			})
 
@@ -311,7 +319,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						autoscalerFake.scaleTo = 2
 
 						rawCluster = cluster.(*clusterModel)
-						newReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+						newReplica := NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
 						err := rawCluster.replicasActive.Add(newReplica)
 						assert.NoError(t, err)
 
@@ -334,7 +342,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						autoscalerFake.scaleTo = 1
 
 						rawCluster = cluster.(*clusterModel)
-						firstReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+						firstReplica := NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
 						secondReplica := NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
 						err := rawCluster.replicasActive.Add(firstReplica)
 						assert.NoError(t, err)
@@ -363,7 +371,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 						rawCluster = cluster.(*clusterModel)
 						rawCluster.currentDesired = 1
-						newReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+						newReplica := NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
 						err := rawCluster.replicasActive.Add(newReplica)
 						assert.NoError(t, err)
 
