@@ -69,39 +69,31 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("NewRunner()", func() {
-		tickIntervalDefaultValue := 2*time.Second
-		stableWindowDefaultValue := 60*time.Second
-		panicWindowDefaultValue := 6*time.Second
-		scaleToZeroGracePeriodDefaultValue := 30*time.Second
-		targetConcurrencyDefaultDefaultValue := 1.0
-		targetConcurrencyPercentageDefaultValue := 0.5
-		maxScaleUpRateDefaultValue := 10.0
-
 		it("has an Environment", func() {
 			assert.NotNil(t, subject.Env())
 		})
 
 		describe("configuring the autoscaler", func() {
 			it("sets a TickInterval value", func() {
-				assert.Equal(t, tickIntervalDefaultValue, subject.AutoscalerConfig().TickInterval)
+				assert.Equal(t, 2*time.Second, subject.AutoscalerConfig().TickInterval)
 			})
 			it("sets a StableWindow value", func() {
-				assert.Equal(t, stableWindowDefaultValue, subject.AutoscalerConfig().StableWindow)
+				assert.Equal(t, 60*time.Second, subject.AutoscalerConfig().StableWindow)
 			})
 			it("sets a PanicWindow value", func() {
-				assert.Equal(t, panicWindowDefaultValue, subject.AutoscalerConfig().PanicWindow)
+				assert.Equal(t, 6*time.Second, subject.AutoscalerConfig().PanicWindow)
 			})
 			it("sets a ScaleToZeroGracePeriod value", func() {
-				assert.Equal(t, scaleToZeroGracePeriodDefaultValue, subject.AutoscalerConfig().ScaleToZeroGracePeriod)
+				assert.Equal(t, 30*time.Second, subject.AutoscalerConfig().ScaleToZeroGracePeriod)
 			})
 			it("sets a TargetConcurrencyDefault value", func() {
-				assert.Equal(t, targetConcurrencyDefaultDefaultValue, subject.AutoscalerConfig().TargetConcurrencyDefault)
+				assert.Equal(t, 1.0, subject.AutoscalerConfig().TargetConcurrencyDefault)
 			})
 			it("sets a TargetConcurrencyPercentage value", func() {
-				assert.Equal(t, targetConcurrencyPercentageDefaultValue, subject.AutoscalerConfig().TargetConcurrencyPercentage)
+				assert.Equal(t, 0.5, subject.AutoscalerConfig().TargetConcurrencyPercentage)
 			})
 			it("sets a MaxScaleUpRate value", func() {
-				assert.Equal(t, maxScaleUpRateDefaultValue, subject.AutoscalerConfig().MaxScaleUpRate)
+				assert.Equal(t, 10.0, subject.AutoscalerConfig().MaxScaleUpRate)
 			})
 		})
 	})
