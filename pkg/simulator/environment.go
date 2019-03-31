@@ -32,6 +32,7 @@ type Environment interface {
 	AddMovementListener(listener MovementListener) error
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
+	HaltTime() time.Time
 }
 
 type CompletedMovement struct {
@@ -131,6 +132,10 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 
 func (env *environment) CurrentMovementTime() time.Time {
 	return env.current
+}
+
+func (env *environment) HaltTime() time.Time {
+	return env.haltAt
 }
 
 func NewEnvironment(startAt time.Time, runFor time.Duration) Environment {

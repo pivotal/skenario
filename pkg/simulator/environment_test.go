@@ -372,6 +372,17 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
+	describe("HaltTime()", func() {
+		it.Before(func() {
+			subject = NewEnvironment(startTime, runFor)
+			assert.NotNil(t, subject)
+		})
+
+		it("gives the start time + run duration", func() {
+			assert.Equal(t, startTime.Add(runFor), subject.HaltTime())
+		})
+	})
+
 	describe("helper funcs", func() {
 		describe("newEnvironment()", func() {
 			var env *environment

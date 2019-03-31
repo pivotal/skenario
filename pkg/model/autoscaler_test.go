@@ -62,6 +62,10 @@ func (fe *fakeEnvironment) CurrentMovementTime() time.Time {
 	return fe.theTime
 }
 
+func (fe *fakeEnvironment) HaltTime() time.Time {
+	return fe.theTime.Add(1 * time.Hour)
+}
+
 type fakeAutoscaler struct {
 	recorded   []autoscaler.Stat
 	scaleTimes []time.Time

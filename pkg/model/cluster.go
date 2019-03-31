@@ -194,8 +194,9 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	trafficSource := NewTrafficSource()
 	bufferStock := simulator.NewThroughStock("Buffer", "Request")
 
+	runsFor := env.HaltTime().Sub(env.CurrentMovementTime())
 	for i := uint(0); i < config.NumberOfRequests; i++ {
-		r := rand.Int63n(int64(60 * time.Second)) // TODO: base this on actual duration
+		r := rand.Int63n(runsFor.Nanoseconds())
 
 		env.AddToSchedule(simulator.NewMovement(
 			"request -> buffer",
