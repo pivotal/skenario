@@ -102,15 +102,17 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	var subject KnativeAutoscaler
 	var envFake *fakeEnvironment
 	var cluster ClusterModel
+	var config ClusterConfig
 	startAt := time.Unix(0, 0)
 
 	it.Before(func() {
+		config = ClusterConfig{}
 		envFake = &fakeEnvironment{
 			movements: make([]simulator.Movement, 0),
 			listeners: make([]simulator.MovementListener, 0),
 			theTime:   startAt,
 		}
-		cluster = NewCluster(envFake)
+		cluster = NewCluster(envFake, config)
 	})
 
 	describe("NewKnativeAutoscaler()", func() {

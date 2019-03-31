@@ -38,6 +38,7 @@ func TestCluster(t *testing.T) {
 }
 
 func testCluster(t *testing.T, describe spec.G, it spec.S) {
+	var config ClusterConfig
 	var subject ClusterModel
 	var rawSubject *clusterModel
 	var envFake = new(fakeEnvironment)
@@ -45,7 +46,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var err error
 
 	it.Before(func() {
-		subject = NewCluster(envFake)
+		config = ClusterConfig{}
+		subject = NewCluster(envFake, config)
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*clusterModel)
@@ -72,12 +74,84 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("SetDesired()", func() {
-		var rawSubject *clusterModel
+		describe("using ClusterConfig delay values", func() {
+			var firstLaunchAt, secondLaunchAt time.Time
+			var firstTerminateAt, secondTerminateAt, thirdTerminateAt, fourthTerminateAt time.Time
+			config.LaunchDelay = 11*time.Second
+			config.TerminateDelay = 22*time.Second
+
+			describe.Focus("ClusterConfig.LaunchDelay", func() {
+				it.Before(func() {
+					envFake.theTime = time.Unix(0, 0)
+
+					subject = NewCluster(envFake, config)
+					assert.NotNil(t, subject)
+
+					rawSubject = subject.(*clusterModel)
+					envFake.movements = make([]simulator.Movement, 0)
+
+					firstLaunchAt = envFake.theTime.Add(rawSubject.config.LaunchDelay)
+					secondLaunchAt = firstLaunchAt.Add(1*time.Nanosecond)
+
+					subject.SetDesired(2)
+				})
+
+				it("delays the first replica by the exact value", func() {
+					assert.Equal(t, firstLaunchAt, envFake.movements[0].OccursAt())
+				})
+
+				it("adds a nanosecond to each subsequent replica launch to prevent collisions", func() {
+					assert.Equal(t, secondLaunchAt, envFake.movements[1].OccursAt())
+				})
+			})
+
+			describe("ClusterConfig.TerminateDelay", func() {
+				it.Before(func() {
+					envFake.theTime = time.Unix(0, 0)
+
+					subject = NewCluster(envFake, config)
+					assert.NotNil(t, subject)
+
+					rawSubject = subject.(*clusterModel)
+					envFake.movements = make([]simulator.Movement, 0)
+
+					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching #1", simulator.EntityKind("Replica")))
+					assert.NoError(t, err)
+					err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching #2", simulator.EntityKind("Replica")))
+					assert.NoError(t, err)
+					err = rawSubject.replicasActive.Add(NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next()))
+					assert.NoError(t, err)
+					err = rawSubject.replicasActive.Add(NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next()))
+					assert.NoError(t, err)
+
+					firstTerminateAt = envFake.theTime.Add(rawSubject.config.TerminateDelay)
+					secondTerminateAt = firstTerminateAt.Add(1 * time.Nanosecond)
+					thirdTerminateAt = secondTerminateAt.Add(1 * time.Nanosecond)
+					fourthTerminateAt = thirdTerminateAt.Add(1 * time.Nanosecond)
+
+					subject.SetDesired(0)
+				})
+
+				it("delays the termination of the first launching replica by the exact amount", func() {
+					assert.Equal(t, firstTerminateAt, envFake.movements[0].OccursAt())
+				})
+
+				it("delays the termination of the second launching replica by an additional nanosecond", func() {
+					assert.Equal(t, secondTerminateAt, envFake.movements[1].OccursAt())
+				})
+
+				it("delays the termination of each active replicas by a nanosecond", func() {
+					// two examples to force a full pass through the loop for terminating active replicas
+					assert.Equal(t, thirdTerminateAt, envFake.movements[2].OccursAt())
+					assert.Equal(t, fourthTerminateAt, envFake.movements[3].OccursAt())
+				})
+			})
+		})
 
 		describe("there are launching replicas but no active replicas", func() {
 			describe("new value > launching replicas", func() {
 				it.Before(func() {
-					subject = NewCluster(envFake)
+					subject = NewCluster(envFake, config)
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
@@ -105,7 +179,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("new value < launching replicas", func() {
 				it.Before(func() {
-					subject = NewCluster(envFake)
+					subject = NewCluster(envFake, config)
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
@@ -129,7 +203,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("new value == launching replicas", func() {
 				it.Before(func() {
-					subject = NewCluster(envFake)
+					subject = NewCluster(envFake, config)
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
@@ -153,13 +227,13 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("there are active replicas but no launching replicas", func() {
 			it.Before(func() {
-				subject = NewCluster(envFake)
+				subject = NewCluster(envFake, config)
 				assert.NotNil(t, subject)
 
 				rawSubject = subject.(*clusterModel)
 				envFake.movements = make([]simulator.Movement, 0)
 
-				newReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+				newReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 			})
@@ -213,13 +287,13 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("there is a mix of active and launching replicas", func() {
 			it.Before(func() {
-				subject = NewCluster(envFake)
+				subject = NewCluster(envFake, config)
 				assert.NotNil(t, subject)
 
 				rawSubject = subject.(*clusterModel)
 				envFake.movements = make([]simulator.Movement, 0)
 
-				newReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+				newReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
@@ -278,7 +352,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		describe("there are no active or launching replicas", func() {
 			describe("new value > 0", func() {
 				it.Before(func() {
-					subject = NewCluster(envFake)
+					subject = NewCluster(envFake, config)
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
@@ -319,8 +393,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			secondReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			firstReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			secondReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 		})
@@ -345,9 +419,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				scaleTimes: make([]time.Time, 0),
 			}
 
-			firstReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			secondReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			thirdReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			firstReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			secondReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			thirdReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
@@ -382,12 +456,14 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 }
 
 func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
+	var config ClusterConfig
 	var subject EndpointInformerSource
 	var cluster ClusterModel
 	var envFake = new(fakeEnvironment)
 
 	it.Before(func() {
-		cluster = NewCluster(envFake)
+		config = ClusterConfig{}
+		cluster = NewCluster(envFake, config)
 		assert.NotNil(t, cluster)
 		subject = cluster.(EndpointInformerSource)
 		assert.NotNil(t, subject)
@@ -402,13 +478,15 @@ func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
 }
 
 func testIPV4Sequence(t *testing.T, describe spec.G, it spec.S) {
+	var config ClusterConfig
 	var cluster ClusterModel
 	var subject IPV4Sequence
 	var rawSubject *clusterModel
 	var envFake = new(fakeEnvironment)
 
 	it.Before(func() {
-		cluster = NewCluster(envFake)
+		config = ClusterConfig{}
+		cluster = NewCluster(envFake, config)
 		subject = cluster.(IPV4Sequence)
 		rawSubject = cluster.(*clusterModel)
 	})

@@ -33,6 +33,11 @@ import (
 	"knative-simulator/pkg/simulator"
 )
 
+type ClusterConfig struct {
+	LaunchDelay    time.Duration
+	TerminateDelay time.Duration
+}
+
 type ClusterModel interface {
 	Model
 	CurrentDesired() int32
@@ -52,6 +57,7 @@ type IPV4Sequence interface {
 
 type clusterModel struct {
 	env                simulator.Environment
+	config             ClusterConfig
 	currentDesired     int32
 	replicasLaunching  simulator.ThroughStock
 	replicasActive     simulator.ThroughStock
@@ -76,8 +82,8 @@ func (cm *clusterModel) SetDesired(desired int32) {
 
 	desireDelta := desired - (launching + active)
 
-	delay := 10 * time.Nanosecond
 	if desireDelta > 0 {
+		nextLaunch := cm.env.CurrentMovementTime().Add(cm.config.LaunchDelay)
 		for ; desireDelta > 0; desireDelta-- {
 			newReplica := NewReplicaEntity(cm.kubernetesClient, cm.endpointsInformer, cm.Next())
 			err := cm.replicasLaunching.Add(newReplica)
@@ -87,34 +93,35 @@ func (cm *clusterModel) SetDesired(desired int32) {
 
 			cm.env.AddToSchedule(simulator.NewMovement(
 				"launching -> active",
-				cm.env.CurrentMovementTime().Add(delay),
+				nextLaunch,
 				cm.replicasLaunching,
 				cm.replicasActive,
 			))
 
-			delay += 10
+			nextLaunch = nextLaunch.Add(1*time.Nanosecond)
 		}
 	} else if desireDelta < 0 {
+		nextTerminate := cm.env.CurrentMovementTime().Add(cm.config.TerminateDelay)
 		// for now I assume launching replicas are terminated before active replicas
 		desireDelta = desireDelta + launching
 		for ; launching > 0; launching-- {
 			cm.env.AddToSchedule(simulator.NewMovement(
 				"launching -> terminated",
-				cm.env.CurrentMovementTime().Add(delay),
+				nextTerminate,
 				cm.replicasLaunching,
 				cm.replicasTerminated,
 			))
-			delay += 10
+			nextTerminate = nextTerminate.Add(1*time.Nanosecond)
 		}
 
 		for ; desireDelta < 0; desireDelta++ {
 			cm.env.AddToSchedule(simulator.NewMovement(
 				"active -> terminated",
-				cm.env.CurrentMovementTime().Add(delay),
+				nextTerminate,
 				cm.replicasActive,
 				cm.replicasTerminated,
 			))
-			delay += 10
+			nextTerminate = nextTerminate.Add(1*time.Nanosecond)
 		}
 	} else {
 		// No change.
@@ -155,7 +162,7 @@ func (cm *clusterModel) Next() string {
 	return ip.String()
 }
 
-func NewCluster(env simulator.Environment) ClusterModel {
+func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 	endpointsInformer := informerFactory.Core().V1().Endpoints()
@@ -174,6 +181,7 @@ func NewCluster(env simulator.Environment) ClusterModel {
 
 	return &clusterModel{
 		env:                env,
+		config:             config,
 		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:     NewReplicasActiveStock(),
 		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),

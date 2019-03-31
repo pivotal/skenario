@@ -44,13 +44,15 @@ var (
 	targetConcurrencyDefault    = flag.Float64("targetConcurrencyDefault", 1.0, "Default target concurrency of Replicas")
 	targetConcurrencyPercentage = flag.Float64("targetConcurrencyPercentage", 0.5, "Percentage adjustment of target concurrency of Replicas")
 	maxScaleUpRate              = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
+	launchDelay                 = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
+	terminateDelay              = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
 )
 
 func main() {
 	flag.Parse()
 	r := NewRunner()
 
-	cluster := model.NewCluster(r.Env())
+	cluster := model.NewCluster(r.Env(), r.ClusterConfig())
 	cluster.SetDesired(1)
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 
@@ -63,6 +65,7 @@ func main() {
 type Runner interface {
 	Env() simulator.Environment
 	AutoscalerConfig() model.KnativeAutoscalerConfig
+	ClusterConfig() model.ClusterConfig
 	RunAndReport(writer io.Writer) error
 }
 
@@ -149,6 +152,13 @@ func (r *runner) AutoscalerConfig() model.KnativeAutoscalerConfig {
 		TargetConcurrencyDefault:    *targetConcurrencyDefault,
 		TargetConcurrencyPercentage: *targetConcurrencyPercentage,
 		MaxScaleUpRate:              *maxScaleUpRate,
+	}
+}
+
+func (r *runner) ClusterConfig() model.ClusterConfig {
+	return model.ClusterConfig{
+		LaunchDelay:    *launchDelay,
+		TerminateDelay: *terminateDelay,
 	}
 }
 

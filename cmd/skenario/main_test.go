@@ -96,5 +96,15 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, 10.0, subject.AutoscalerConfig().MaxScaleUpRate)
 			})
 		})
+
+		describe("configuring the cluster", func() {
+			it("sets a LaunchDelay value", func() {
+				assert.Equal(t, 1*time.Second, subject.ClusterConfig().LaunchDelay)
+			})
+
+			it("sets TerminateDelay value", func() {
+				assert.Equal(t, 1*time.Second, subject.ClusterConfig().TerminateDelay)
+			})
+		})
 	})
 }
