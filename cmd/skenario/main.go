@@ -32,19 +32,19 @@ import (
 	"knative-simulator/pkg/simulator"
 )
 
-var startAt = time.Unix(0, 0)
-var startRunning = time.Now()
-var au = aurora.NewAurora(true)
-
-var simDuration = flag.Duration("duration", 10*time.Minute, "Duration of time to simulate.")
-
-var tickInterval = flag.Duration("tickInterval", 2*time.Second, "Tick interval duration of the Autoscaler")
-var stableWindow = flag.Duration("stableWindow", 60*time.Second, "Duration of stable window of the Autoscaler")
-var panicWindow = flag.Duration("panicWindow", 6*time.Second, "Duration of panic window of the Autoscaler")
-var scaleToZeroGrace = flag.Duration("scaleToZeroGrace", 30*time.Second, "Duration of the scale-to-zero grace period of the Autoscaler")
-var targetConcurrencyDefault = flag.Float64("targetConcurrencyDefault", 1.0, "Default target concurrency of Replicas")
-var targetConcurrencyPercentage = flag.Float64("targetConcurrencyPercentage", 0.5, "Percentage adjustment of target concurrency of Replicas")
-var maxScaleUpRate = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
+var (
+	startAt                     = time.Unix(0, 0)
+	startRunning                = time.Now()
+	au                          = aurora.NewAurora(true)
+	simDuration                 = flag.Duration("duration", 10*time.Minute, "Duration of time to simulate.")
+	tickInterval                = flag.Duration("tickInterval", 2*time.Second, "Tick interval duration of the Autoscaler")
+	stableWindow                = flag.Duration("stableWindow", 60*time.Second, "Duration of stable window of the Autoscaler")
+	panicWindow                 = flag.Duration("panicWindow", 6*time.Second, "Duration of panic window of the Autoscaler")
+	scaleToZeroGrace            = flag.Duration("scaleToZeroGrace", 30*time.Second, "Duration of the scale-to-zero grace period of the Autoscaler")
+	targetConcurrencyDefault    = flag.Float64("targetConcurrencyDefault", 1.0, "Default target concurrency of Replicas")
+	targetConcurrencyPercentage = flag.Float64("targetConcurrencyPercentage", 0.5, "Percentage adjustment of target concurrency of Replicas")
+	maxScaleUpRate              = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
+)
 
 func main() {
 	flag.Parse()
