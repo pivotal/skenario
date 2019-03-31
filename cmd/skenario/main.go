@@ -53,7 +53,6 @@ func main() {
 	r := NewRunner()
 
 	cluster := model.NewCluster(r.Env(), r.ClusterConfig())
-	cluster.SetDesired(1)
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 
 	err := r.RunAndReport(os.Stdout)
