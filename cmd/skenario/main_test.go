@@ -69,8 +69,40 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("NewRunner()", func() {
+		tickIntervalDefaultValue := 2*time.Second
+		stableWindowDefaultValue := 60*time.Second
+		panicWindowDefaultValue := 6*time.Second
+		scaleToZeroGracePeriodDefaultValue := 30*time.Second
+		targetConcurrencyDefaultDefaultValue := 1.0
+		targetConcurrencyPercentageDefaultValue := 0.5
+		maxScaleUpRateDefaultValue := 10.0
+
 		it("has an Environment", func() {
 			assert.NotNil(t, subject.Env())
+		})
+
+		describe("configuring the autoscaler", func() {
+			it("sets a TickInterval value", func() {
+				assert.Equal(t, tickIntervalDefaultValue, subject.AutoscalerConfig().TickInterval)
+			})
+			it("sets a StableWindow value", func() {
+				assert.Equal(t, stableWindowDefaultValue, subject.AutoscalerConfig().StableWindow)
+			})
+			it("sets a PanicWindow value", func() {
+				assert.Equal(t, panicWindowDefaultValue, subject.AutoscalerConfig().PanicWindow)
+			})
+			it("sets a ScaleToZeroGracePeriod value", func() {
+				assert.Equal(t, scaleToZeroGracePeriodDefaultValue, subject.AutoscalerConfig().ScaleToZeroGracePeriod)
+			})
+			it("sets a TargetConcurrencyDefault value", func() {
+				assert.Equal(t, targetConcurrencyDefaultDefaultValue, subject.AutoscalerConfig().TargetConcurrencyDefault)
+			})
+			it("sets a TargetConcurrencyPercentage value", func() {
+				assert.Equal(t, targetConcurrencyPercentageDefaultValue, subject.AutoscalerConfig().TargetConcurrencyPercentage)
+			})
+			it("sets a MaxScaleUpRate value", func() {
+				assert.Equal(t, maxScaleUpRateDefaultValue, subject.AutoscalerConfig().MaxScaleUpRate)
+			})
 		})
 	})
 }

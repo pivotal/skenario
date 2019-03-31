@@ -115,7 +115,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
-			subject = NewKnativeAutoscaler(envFake, startAt, cluster)
+			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
 		})
 
 		it("schedules a first calculation", func() {
@@ -167,7 +167,15 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				epiFake = new(fakeEndpointsInformerSource)
 
-				as = newKpa(newLogger(), epiFake)
+				as = newKpa(newLogger(), epiFake, KnativeAutoscalerConfig{
+					TickInterval:                11*time.Second,
+					StableWindow:                22*time.Second,
+					PanicWindow:                 33*time.Second,
+					ScaleToZeroGracePeriod:      44*time.Second,
+					TargetConcurrencyDefault:    55.0,
+					TargetConcurrencyPercentage: 66.0,
+					MaxScaleUpRate:              77.0,
+				})
 				assert.NotNil(t, as)
 
 				conf = as.Current()
@@ -175,36 +183,31 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("sets TickInterval", func() {
-				assert.Equal(t, 2*time.Second, conf.TickInterval)
+				assert.Equal(t, 11*time.Second, conf.TickInterval)
 			})
 
 			it("sets StableWindow", func() {
-				assert.Equal(t, 60*time.Second, conf.StableWindow)
+				assert.Equal(t, 22*time.Second, conf.StableWindow)
 			})
 
 			it("sets PanicWindow", func() {
-				assert.Equal(t, 6*time.Second, conf.PanicWindow)
-			})
-
-			it("sets MaxScaleUpRate", func() {
-				assert.Equal(t, 10.0, conf.MaxScaleUpRate)
+				assert.Equal(t, 33*time.Second, conf.PanicWindow)
 			})
 
 			it("sets ScaleToZeroGracePeriod", func() {
-				assert.Equal(t, 30*time.Second, conf.ScaleToZeroGracePeriod)
+				assert.Equal(t, 44*time.Second, conf.ScaleToZeroGracePeriod)
 			})
 
 			it("sets ContainerCurrencyTargetDefault", func() {
-				assert.Equal(t, 2.0, conf.ContainerConcurrencyTargetDefault)
+				assert.Equal(t, 55.0, conf.ContainerConcurrencyTargetDefault)
 			})
 
 			it("sets ContainerCurrencyTargetPercentage", func() {
-				assert.Equal(t, 0.5, conf.ContainerConcurrencyTargetPercentage)
+				assert.Equal(t, 66.0, conf.ContainerConcurrencyTargetPercentage)
 			})
 
-			it.Pend("sets the target concurrency at creation", func() {
-				// TODO: How to test? This is a private variable.
-				// It can be updated through autoscaler.Update() but doesn't have an obvious getter
+			it("sets MaxScaleUpRate", func() {
+				assert.Equal(t, 77.0, conf.MaxScaleUpRate)
 			})
 
 			it("gets the endpoints informer from EndpointsInformerSource", func() {
@@ -220,7 +223,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("When moving from waiting to calculating", func() {
 			it.Before(func() {
-				subject = NewKnativeAutoscaler(envFake, startAt, cluster)
+				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
 				ttStock = &tickTock{}
 				asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 
@@ -236,7 +239,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("When moving from calculating to waiting", func() {
 			it.Before(func() {
-				subject = NewKnativeAutoscaler(envFake, startAt, cluster)
+				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
 				ttStock = &tickTock{}
 				asMovement = simulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
 
@@ -395,7 +398,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		ttStock := &tickTock{}
 
 		it.Before(func() {
-			_ = NewKnativeAutoscaler(envFake, startAt, cluster)
+			_ = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
 		})
 
 		describe("Name()", func() {

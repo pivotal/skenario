@@ -35,15 +35,24 @@ import (
 var startAt = time.Unix(0, 0)
 var startRunning = time.Now()
 var au = aurora.NewAurora(true)
+
 var simDuration = flag.Duration("duration", 10*time.Minute, "Duration of time to simulate.")
+
+var tickInterval = flag.Duration("tickInterval", 2*time.Second, "Tick interval duration of the Autoscaler")
+var stableWindow = flag.Duration("stableWindow", 60*time.Second, "Duration of stable window of the Autoscaler")
+var panicWindow = flag.Duration("panicWindow", 6*time.Second, "Duration of panic window of the Autoscaler")
+var scaleToZeroGrace = flag.Duration("scaleToZeroGrace", 30*time.Second, "Duration of the scale-to-zero grace period of the Autoscaler")
+var targetConcurrencyDefault = flag.Float64("targetConcurrencyDefault", 1.0, "Default target concurrency of Replicas")
+var targetConcurrencyPercentage = flag.Float64("targetConcurrencyPercentage", 0.5, "Percentage adjustment of target concurrency of Replicas")
+var maxScaleUpRate = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
 
 func main() {
 	flag.Parse()
 	r := NewRunner()
 
 	cluster := model.NewCluster(r.Env())
-	cluster.SetDesired(10)
-	model.NewKnativeAutoscaler(r.Env(), startAt, cluster)
+	cluster.SetDesired(1)
+	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 
 	err := r.RunAndReport(os.Stdout)
 	if err != nil {
@@ -53,6 +62,7 @@ func main() {
 
 type Runner interface {
 	Env() simulator.Environment
+	AutoscalerConfig() model.KnativeAutoscalerConfig
 	RunAndReport(writer io.Writer) error
 }
 
@@ -82,7 +92,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 	)
 
 	printer := message.NewPrinter(language.AmericanEnglish)
-	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-58s","Time (ns)", "Movement Name", "From Stock", "To Stock", "Notes")).Bold())
+	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-24s ⟶   %-24s  %-58s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Notes")).Bold())
 
 	for _, c := range completed {
 		mv := c.Movement
@@ -128,6 +138,18 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 
 func (r *runner) Env() simulator.Environment {
 	return r.env
+}
+
+func (r *runner) AutoscalerConfig() model.KnativeAutoscalerConfig {
+	return model.KnativeAutoscalerConfig{
+		TickInterval:                *tickInterval,
+		StableWindow:                *stableWindow,
+		PanicWindow:                 *panicWindow,
+		ScaleToZeroGracePeriod:      *scaleToZeroGrace,
+		TargetConcurrencyDefault:    *targetConcurrencyDefault,
+		TargetConcurrencyPercentage: *targetConcurrencyPercentage,
+		MaxScaleUpRate:              *maxScaleUpRate,
+	}
 }
 
 func NewRunner() Runner {

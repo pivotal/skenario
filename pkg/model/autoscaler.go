@@ -33,16 +33,19 @@ const (
 	MvWaitingToCalculating simulator.MovementKind = "autoscaler_calc"
 	MvCalculatingToWaiting simulator.MovementKind = "autoscaler_wait"
 
-	tickInterval                = 2 * time.Second
-	stableWindow                = 60 * time.Second
-	panicWindow                 = 6 * time.Second
-	scaleToZeroGracePeriod      = 30 * time.Second
-	targetConcurrencyDefault    = 2.0
-	targetConcurrencyPercentage = 0.5
-	maxScaleUpRate              = 10.0
 	testNamespace               = "simulator-namespace"
 	testName                    = "revisionService"
 )
+
+type KnativeAutoscalerConfig struct {
+	TickInterval                time.Duration
+	StableWindow                time.Duration
+	PanicWindow                 time.Duration
+	ScaleToZeroGracePeriod      time.Duration
+	TargetConcurrencyDefault    float64
+	TargetConcurrencyPercentage float64
+	MaxScaleUpRate              float64
+}
 
 type KnativeAutoscaler interface {
 	Model
@@ -92,11 +95,11 @@ func (kas *knativeAutoscaler) OnMovement(movement simulator.Movement) error {
 	return nil
 }
 
-func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel) KnativeAutoscaler {
+func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscaler {
 	logger := newLogger()
 	ctx := newLoggedCtx(logger)
 	epiSource := cluster.(EndpointInformerSource)
-	kpa := newKpa(logger, epiSource)
+	kpa := newKpa(logger, epiSource, config)
 
 	kas := &knativeAutoscaler{
 		env:        env,
@@ -134,15 +137,15 @@ func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
 	return logging.WithLogger(context.Background(), logger)
 }
 
-func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource) *autoscaler.Autoscaler {
+func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig KnativeAutoscalerConfig) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{
-		TickInterval:                         tickInterval,
-		MaxScaleUpRate:                       maxScaleUpRate,
-		StableWindow:                         stableWindow,
-		PanicWindow:                          panicWindow,
-		ScaleToZeroGracePeriod:               scaleToZeroGracePeriod,
-		ContainerConcurrencyTargetPercentage: targetConcurrencyPercentage,
-		ContainerConcurrencyTargetDefault:    targetConcurrencyDefault,
+		TickInterval:                         kconfig.TickInterval,
+		MaxScaleUpRate:                       kconfig.MaxScaleUpRate,
+		StableWindow:                         kconfig.StableWindow,
+		PanicWindow:                          kconfig.PanicWindow,
+		ScaleToZeroGracePeriod:               kconfig.ScaleToZeroGracePeriod,
+		ContainerConcurrencyTargetPercentage: kconfig.TargetConcurrencyPercentage,
+		ContainerConcurrencyTargetDefault:    kconfig.TargetConcurrencyDefault,
 	}
 
 	dynConfig := autoscaler.NewDynamicConfig(config, logger)
@@ -157,7 +160,7 @@ func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerS
 		testNamespace,
 		testName,
 		endpointsInformerSource.EPInformer(),
-		targetConcurrencyDefault,
+		kconfig.TargetConcurrencyDefault,
 		statsReporter,
 	)
 	if err != nil {
