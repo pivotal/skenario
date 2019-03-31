@@ -17,12 +17,17 @@ package model
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	corev1informers "k8s.io/client-go/informers/core/v1"
+	"k8s.io/client-go/kubernetes"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
 	"knative-simulator/pkg/simulator"
@@ -41,13 +46,19 @@ type EndpointInformerSource interface {
 	EPInformer() corev1informers.EndpointsInformer
 }
 
+type IPV4Sequence interface {
+	Next() string
+}
+
 type clusterModel struct {
 	env                simulator.Environment
 	currentDesired     int32
 	replicasLaunching  simulator.ThroughStock
 	replicasActive     simulator.ThroughStock
 	replicasTerminated simulator.SinkStock
+	kubernetesClient   kubernetes.Interface
 	endpointsInformer  corev1informers.EndpointsInformer
+	nextIPValue        uint32
 }
 
 func (cm *clusterModel) Env() simulator.Environment {
@@ -68,8 +79,8 @@ func (cm *clusterModel) SetDesired(desired int32) {
 	delay := 10 * time.Nanosecond
 	if desireDelta > 0 {
 		for ; desireDelta > 0; desireDelta-- {
-			// TODO: better replica names, please
-			err := cm.replicasLaunching.Add(simulator.NewEntity("a replica", simulator.EntityKind("Replica")))
+			newReplica := NewReplicaEntity(cm.kubernetesClient, cm.endpointsInformer, cm.Next())
+			err := cm.replicasLaunching.Add(newReplica)
 			if err != nil {
 				panic(fmt.Sprintf("could not scale up in ClusterModel: %s", err.Error()))
 			}
@@ -135,16 +146,39 @@ func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
 	return cm.endpointsInformer
 }
 
+func (cm *clusterModel) Next() string {
+	ip := make(net.IP, 4)
+	binary.BigEndian.PutUint32(ip, cm.nextIPValue)
+
+	cm.nextIPValue++
+
+	return ip.String()
+}
+
 func NewCluster(env simulator.Environment) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 	endpointsInformer := informerFactory.Core().V1().Endpoints()
 
+	newEndpoints := &corev1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "Skenario Revision",
+		},
+		Subsets: []corev1.EndpointSubset{{
+			Addresses: []corev1.EndpointAddress{},
+		}},
+	}
+
+	fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
+	endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
+
 	return &clusterModel{
 		env:                env,
 		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
-		replicasActive:     simulator.NewThroughStock("ReplicasActive", simulator.EntityKind("Replica")),
+		replicasActive:     NewReplicasActiveStock(),
 		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),
+		kubernetesClient:   fakeClient,
 		endpointsInformer:  endpointsInformer,
+		nextIPValue:        1,
 	}
 }

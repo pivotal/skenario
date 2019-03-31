@@ -284,7 +284,8 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
-					err := rawCluster.replicasActive.Add(simulator.NewEntity("active replica", "Replica"))
+					newReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+					err := rawCluster.replicasActive.Add(newReplica)
 					assert.NoError(t, err)
 
 					asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
@@ -305,7 +306,8 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						autoscalerFake.scaleTo = 2
 
 						rawCluster = cluster.(*clusterModel)
-						err := rawCluster.replicasActive.Add(simulator.NewEntity("active replica", "Replica"))
+						newReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+						err := rawCluster.replicasActive.Add(newReplica)
 						assert.NoError(t, err)
 
 						asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
@@ -327,9 +329,11 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 						autoscalerFake.scaleTo = 1
 
 						rawCluster = cluster.(*clusterModel)
-						err := rawCluster.replicasActive.Add(simulator.NewEntity("first active replica", "Replica"))
+						firstReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+						secondReplica := NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+						err := rawCluster.replicasActive.Add(firstReplica)
 						assert.NoError(t, err)
-						err = rawCluster.replicasActive.Add(simulator.NewEntity("second active replica", "Replica"))
+						err = rawCluster.replicasActive.Add(secondReplica)
 						assert.NoError(t, err)
 
 						asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
@@ -354,7 +358,8 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 						rawCluster = cluster.(*clusterModel)
 						rawCluster.currentDesired = 1
-						err := rawCluster.replicasActive.Add(simulator.NewEntity("first active replica", "Replica"))
+						newReplica :=  NewReplicaEntity(rawCluster.kubernetesClient, rawCluster.endpointsInformer, rawCluster.Next())
+						err := rawCluster.replicasActive.Add(newReplica)
 						assert.NoError(t, err)
 
 						activeBefore = kpa.cluster.CurrentActive()

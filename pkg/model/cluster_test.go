@@ -24,6 +24,8 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers/core/v1"
 
 	"knative-simulator/pkg/simulator"
@@ -32,20 +34,34 @@ import (
 func TestCluster(t *testing.T) {
 	spec.Run(t, "Cluster model", testCluster, spec.Report(report.Terminal{}))
 	spec.Run(t, "EPInformer interface", testEPInformer, spec.Report(report.Terminal{}))
+	spec.Run(t, "IPV4Sequence interface", testIPV4Sequence, spec.Report(report.Terminal{}))
 }
 
 func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var subject ClusterModel
+	var rawSubject *clusterModel
 	var envFake = new(fakeEnvironment)
+	var endpoints *corev1.Endpoints
+	var err error
 
 	it.Before(func() {
 		subject = NewCluster(envFake)
 		assert.NotNil(t, subject)
+
+		rawSubject = subject.(*clusterModel)
+		endpoints, err = rawSubject.kubernetesClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
+		assert.NoError(t, err)
 	})
 
 	describe("NewCluster()", func() {
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, subject.Env())
+		})
+
+		it("creates an 'empty' Endpoints entry for 'Skenario Revision'", func() {
+			assert.Equal(t, "Skenario Revision", endpoints.Name)
+			assert.Len(t, endpoints.Subsets, 1)
+			assert.Len(t, endpoints.Subsets[0].Addresses, 0)
 		})
 	})
 
@@ -143,7 +159,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				rawSubject = subject.(*clusterModel)
 				envFake.movements = make([]simulator.Movement, 0)
 
-				err := rawSubject.replicasActive.Add(simulator.NewEntity("already active", simulator.EntityKind("Replica")))
+				newReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 			})
 
@@ -202,7 +219,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				rawSubject = subject.(*clusterModel)
 				envFake.movements = make([]simulator.Movement, 0)
 
-				err := rawSubject.replicasActive.Add(simulator.NewEntity("already active", simulator.EntityKind("Replica")))
+				newReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
@@ -301,8 +319,10 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			rawSubject.replicasActive.Add(simulator.NewEntity("first entity", "Replica"))
-			rawSubject.replicasActive.Add(simulator.NewEntity("second entity", "Replica"))
+			firstReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			secondReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			rawSubject.replicasActive.Add(firstReplica)
+			rawSubject.replicasActive.Add(secondReplica)
 		})
 
 		it("gives the .Count() of replicas active", func() {
@@ -325,9 +345,13 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				scaleTimes: make([]time.Time, 0),
 			}
 
-			rawSubject.replicasActive.Add(simulator.NewEntity("Test Replica 1", simulator.EntityKind("Replica")))
-			rawSubject.replicasActive.Add(simulator.NewEntity("Test Replica 2", simulator.EntityKind("Replica")))
-			rawSubject.replicasActive.Add(simulator.NewEntity("Test Replica 3", simulator.EntityKind("Replica")))
+			firstReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			secondReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			thirdReplica :=  NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+
+			rawSubject.replicasActive.Add(firstReplica)
+			rawSubject.replicasActive.Add(secondReplica)
+			rawSubject.replicasActive.Add(thirdReplica)
 
 			subject.RecordToAutoscaler(autoscalerFake, &theTime, ctx)
 			firstRecorded = autoscalerFake.recorded[0]
@@ -343,7 +367,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("sets the PodName to Replica name", func() {
-				assert.Equal(t, "Test Replica 1", firstRecorded.PodName)
+				assert.Equal(t, "Replica", firstRecorded.PodName)
 			})
 
 			it("sets AverageConcurrentRequests to 1", func() {
@@ -375,4 +399,35 @@ func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
 			assert.Implements(t, (*v1.EndpointsInformer)(nil), subject.EPInformer())
 		})
 	})
+}
+
+func testIPV4Sequence(t *testing.T, describe spec.G, it spec.S) {
+	var cluster ClusterModel
+	var subject IPV4Sequence
+	var rawSubject *clusterModel
+	var envFake = new(fakeEnvironment)
+
+	it.Before(func() {
+		cluster = NewCluster(envFake)
+		subject = cluster.(IPV4Sequence)
+		rawSubject = cluster.(*clusterModel)
+	})
+
+	describe("NextIP()", func() {
+		var ipGiven string
+		it.Before(func() {
+			// twice to show we didn't succeed purely on init values
+			ipGiven = subject.Next()
+			ipGiven = subject.Next()
+		})
+
+		it("creates an IPv4 address string", func() {
+			assert.Equal(t, "0.0.0.2", ipGiven)
+		})
+
+		it("increments the next IP to give out", func() {
+			assert.Equal(t, uint32(3), rawSubject.nextIPValue)
+		})
+	})
+
 }
