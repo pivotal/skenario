@@ -47,6 +47,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		config = ClusterConfig{}
+		config.NumberOfRequests = 10
 		subject = NewCluster(envFake, config)
 		assert.NotNil(t, subject)
 
@@ -69,8 +70,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		describe("scheduling request arrivals", func() {
-			it("schedules 1000 request arrivals", func() {
-				assert.Len(t, envFake.movements, 1000)
+			defaultNumberOfArrivals := 10
+			it("schedules request arrivals", func() {
+				assert.Len(t, envFake.movements, defaultNumberOfArrivals)
 			})
 
 			it("movements are kind 'request -> buffer'", func() {

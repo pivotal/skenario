@@ -46,6 +46,7 @@ var (
 	maxScaleUpRate              = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
 	launchDelay                 = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
 	terminateDelay              = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
+	numberOfRequests            = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate")
 )
 
 func main() {
@@ -158,6 +159,7 @@ func (r *runner) ClusterConfig() model.ClusterConfig {
 	return model.ClusterConfig{
 		LaunchDelay:    *launchDelay,
 		TerminateDelay: *terminateDelay,
+		NumberOfRequests: *numberOfRequests,
 	}
 }
 

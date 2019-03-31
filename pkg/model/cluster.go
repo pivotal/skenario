@@ -35,8 +35,9 @@ import (
 )
 
 type ClusterConfig struct {
-	LaunchDelay    time.Duration
-	TerminateDelay time.Duration
+	LaunchDelay      time.Duration
+	TerminateDelay   time.Duration
+	NumberOfRequests uint
 }
 
 type ClusterModel interface {
@@ -193,8 +194,8 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	trafficSource := NewTrafficSource()
 	bufferStock := simulator.NewThroughStock("Buffer", "Request")
 
-	for i := 0; i < 1000; i++ {
-		r := rand.Int63n(int64(60 * time.Second))
+	for i := uint(0); i < config.NumberOfRequests; i++ {
+		r := rand.Int63n(int64(60 * time.Second)) // TODO: base this on actual duration
 
 		env.AddToSchedule(simulator.NewMovement(
 			"request -> buffer",

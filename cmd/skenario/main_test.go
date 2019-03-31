@@ -106,5 +106,11 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, 1*time.Second, subject.ClusterConfig().TerminateDelay)
 			})
 		})
+
+		describe("configuring the traffic source", func() {
+			it("sets a NumberOfRequests value", func() {
+				assert.Equal(t, uint(10), subject.ClusterConfig().NumberOfRequests)
+			})
+		})
 	})
 }
