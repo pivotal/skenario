@@ -18,6 +18,7 @@ package model
 import (
 	"time"
 
+	"github.com/knative/serving/pkg/autoscaler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	informers "k8s.io/client-go/informers/core/v1"
@@ -30,6 +31,7 @@ type Replica interface {
 	Activate()
 	Deactivate()
 	SendRequest(entity simulator.Entity)
+	Stat() autoscaler.Stat
 }
 
 type ReplicaEntity interface {
@@ -38,12 +40,13 @@ type ReplicaEntity interface {
 }
 
 type replicaEntity struct {
-	env                simulator.Environment
-	kubernetesClient   kubernetes.Interface
-	endpointsInformer  informers.EndpointsInformer
-	endpointAddress    corev1.EndpointAddress
-	requestsProcessing simulator.ThroughStock
-	requestsComplete   simulator.SinkStock
+	env                  simulator.Environment
+	kubernetesClient     kubernetes.Interface
+	endpointsInformer    informers.EndpointsInformer
+	endpointAddress      corev1.EndpointAddress
+	requestsProcessing   simulator.ThroughStock
+	requestsComplete     simulator.SinkStock
+	numRequestsSinceStat int32
 }
 
 func (re *replicaEntity) Activate() {
@@ -97,12 +100,28 @@ func (re *replicaEntity) Deactivate() {
 func (re *replicaEntity) SendRequest(entity simulator.Entity) {
 	re.requestsProcessing.Add(entity)
 
+	re.numRequestsSinceStat++
+
 	re.env.AddToSchedule(simulator.NewMovement(
 		"processing -> complete",
 		re.env.CurrentMovementTime().Add(1*time.Second),
 		re.requestsProcessing,
 		re.requestsComplete,
 	))
+}
+
+func (re *replicaEntity) Stat() autoscaler.Stat {
+	atTime := re.env.CurrentMovementTime()
+	stat := autoscaler.Stat{
+		Time:                      &atTime,
+		PodName:                   string(re.Name()),
+		AverageConcurrentRequests: float64(re.requestsProcessing.Count()),
+		RequestCount:              re.numRequestsSinceStat,
+	}
+
+	re.numRequestsSinceStat = 0
+
+	return stat
 }
 
 func (re *replicaEntity) Name() simulator.EntityName {
@@ -119,7 +138,7 @@ func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, en
 		kubernetesClient:   client,
 		endpointsInformer:  endpointsInformer,
 		requestsProcessing: simulator.NewThroughStock("RequestsProcessing", "Request"),
-		requestsComplete: simulator.NewSinkStock("RequestsComplete", "Request"),
+		requestsComplete:   simulator.NewSinkStock("RequestsComplete", "Request"),
 	}
 
 	re.endpointAddress = corev1.EndpointAddress{

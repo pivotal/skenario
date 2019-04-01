@@ -152,12 +152,10 @@ func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *
 
 	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
-		scaler.Record(ctx, autoscaler.Stat{
-			Time:                      atTime,
-			PodName:                   string(e.Name()),
-			AverageConcurrentRequests: 1,
-			RequestCount:              1,
-		})
+		r := e.(ReplicaEntity)
+		stat := r.Stat()
+
+		scaler.Record(ctx, stat)
 	}
 }
 

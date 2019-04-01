@@ -436,15 +436,18 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	describe("RecordToAutoscaler()", func() {
 		var autoscalerFake *fakeAutoscaler
 		var rawSubject *clusterModel
-		var firstReplicaRecorded, bufferRecorded autoscaler.Stat
+		var bufferRecorded autoscaler.Stat
 		var theTime = time.Now()
 		var ctx = context.Background()
+		var replicaFake *fakeReplica
 		envFake = new(fakeEnvironment)
 		recordOnce := 1
 		recordThrice := 3
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
+
+			replicaFake = new(fakeReplica)
 
 			autoscalerFake = &fakeAutoscaler{
 				recorded:   make([]autoscaler.Stat, 0),
@@ -455,58 +458,44 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			thirdReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			//thirdReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+
+			rawSubject.replicasActive.Add(replicaFake)
 
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
-			rawSubject.replicasActive.Add(thirdReplica)
 
 			subject.RecordToAutoscaler(autoscalerFake, &theTime, ctx)
 			bufferRecorded = autoscalerFake.recorded[0]
-			firstReplicaRecorded = autoscalerFake.recorded[1]
 		})
 
 		// TODO immediately record arrivals at buffer
 
-		describe("Records added to the Autoscaler", func() {
-			it("records once for the buffer and once each replica in ReplicasActive", func() {
-				assert.Len(t, autoscalerFake.recorded, recordOnce + recordThrice)
+		it("records once for the buffer and once each replica in ReplicasActive", func() {
+			assert.Len(t, autoscalerFake.recorded, recordOnce+recordThrice)
+		})
+
+		describe("the record for the Buffer", func() {
+			it("sets time to the movement OccursAt", func() {
+				assert.Equal(t, &theTime, bufferRecorded.Time)
 			})
 
-			describe("the record for the Buffer", func() {
-				it("sets time to the movement OccursAt", func() {
-					assert.Equal(t, &theTime, bufferRecorded.Time)
-				})
-
-				it("sets the PodName to 'Buffer'", func() {
-					assert.Equal(t, "Buffer", bufferRecorded.PodName)
-				})
-
-				it("sets AverageConcurrentRequests to the number of Requests in the Buffer", func() {
-					assert.Equal(t, 1.0, bufferRecorded.AverageConcurrentRequests)
-				})
-
-				it("sets RequestCount to the net change in the number of Requests since last invocation", func() {
-					assert.Equal(t, int32(1), bufferRecorded.RequestCount)
-				})
+			it("sets the PodName to 'Buffer'", func() {
+				assert.Equal(t, "Buffer", bufferRecorded.PodName)
 			})
 
-			describe("records for replicas", func() {
-				it("sets time to the movement OccursAt", func() {
-					assert.Equal(t, &theTime, firstReplicaRecorded.Time)
-				})
+			it("sets AverageConcurrentRequests to the number of Requests in the Buffer", func() {
+				assert.Equal(t, 1.0, bufferRecorded.AverageConcurrentRequests)
+			})
 
-				it("sets the PodName to Replica name", func() {
-					assert.Equal(t, "Replica", firstReplicaRecorded.PodName)
-				})
+			it("sets RequestCount to the net change in the number of Requests since last invocation", func() {
+				assert.Equal(t, int32(1), bufferRecorded.RequestCount)
+			})
+		})
 
-				it("sets AverageConcurrentRequests to 1", func() {
-					assert.Equal(t, float64(1.0), firstReplicaRecorded.AverageConcurrentRequests)
-				})
-
-				it("sets RequestCount to 1", func() {
-					assert.Equal(t, int32(1), firstReplicaRecorded.RequestCount)
-				})
+		describe("records for replicas", func() {
+			it("delegates Stat creation to the Replica", func() {
+				assert.True(t, replicaFake.statCalled)
 			})
 		})
 	})

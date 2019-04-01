@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -171,6 +172,10 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, simulator.EntityName("request-1"), rawSubject.requestsProcessing.EntitiesInStock()[0].Name())
 		})
 
+		it("increments the number of requests since last Stat()", func() {
+			assert.Equal(t, int32(1), rawSubject.numRequestsSinceStat)
+		})
+
 		describe("scheduling processing", func() {
 			it("schedules a movement from RequestsProcessing to RequestsComplete", func() {
 				assert.Equal(t, simulator.StockName("RequestsComplete"), envFake.movements[0].To().Name())
@@ -178,6 +183,45 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 
 			it("schedules the movement to occur after 1 second", func() {
 				assert.Equal(t, envFake.theTime.Add(1*time.Second), envFake.movements[0].OccursAt())
+			})
+		})
+	})
+
+	describe("Stat()", func() {
+		describe("Creating an autoscaler.Stat struct", func() {
+			var request1, request2 simulator.Entity
+			var stat autoscaler.Stat
+
+			it.Before(func() {
+				rawSubject = subject.(*replicaEntity)
+
+				request1 = simulator.NewEntity("request-1", simulator.EntityKind("Request"))
+				subject.SendRequest(request1)
+				request2 = simulator.NewEntity("request-2", simulator.EntityKind("Request"))
+				subject.SendRequest(request2)
+
+				stat = subject.Stat()
+			})
+
+			it("sets Time to the value provided", func() {
+				assert.Equal(t, envFake.theTime, *stat.Time)
+			})
+
+			it("sets PodName to the replica's name", func() {
+				assert.Equal(t, string(subject.Name()), stat.PodName)
+			})
+
+			it("sets AverageConcurrentRequests based on RequestsProcessing.Count()", func() {
+				assert.Equal(t, float64(rawSubject.requestsProcessing.Count()), stat.AverageConcurrentRequests)
+			})
+
+			it("sets RequestCount based on the number of movements to RequestsProcessing", func() {
+				assert.Equal(t, int32(2), stat.RequestCount)
+			})
+
+			it("resets the RequestCount counter after each call", func() {
+				stat = subject.Stat()
+				assert.Equal(t, int32(0), stat.RequestCount)
 			})
 		})
 	})
