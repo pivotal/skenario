@@ -16,6 +16,8 @@
 package model
 
 import (
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	informers "k8s.io/client-go/informers/core/v1"
@@ -27,6 +29,7 @@ import (
 type Replica interface {
 	Activate()
 	Deactivate()
+	SendRequest(entity simulator.Entity)
 }
 
 type ReplicaEntity interface {
@@ -35,9 +38,12 @@ type ReplicaEntity interface {
 }
 
 type replicaEntity struct {
-	kubernetesClient  kubernetes.Interface
-	endpointsInformer informers.EndpointsInformer
-	endpointAddress   corev1.EndpointAddress
+	env                simulator.Environment
+	kubernetesClient   kubernetes.Interface
+	endpointsInformer  informers.EndpointsInformer
+	endpointAddress    corev1.EndpointAddress
+	requestsProcessing simulator.ThroughStock
+	requestsComplete   simulator.SinkStock
 }
 
 func (re *replicaEntity) Activate() {
@@ -88,6 +94,17 @@ func (re *replicaEntity) Deactivate() {
 	}
 }
 
+func (re *replicaEntity) SendRequest(entity simulator.Entity) {
+	re.requestsProcessing.Add(entity)
+
+	re.env.AddToSchedule(simulator.NewMovement(
+		"processing -> complete",
+		re.env.CurrentMovementTime().Add(1*time.Second),
+		re.requestsProcessing,
+		re.requestsComplete,
+	))
+}
+
 func (re *replicaEntity) Name() simulator.EntityName {
 	return "Replica"
 }
@@ -96,10 +113,13 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 	return "Replica"
 }
 
-func NewReplicaEntity(client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string) ReplicaEntity {
+func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string) ReplicaEntity {
 	re := &replicaEntity{
-		kubernetesClient:  client,
-		endpointsInformer: endpointsInformer,
+		env:                env,
+		kubernetesClient:   client,
+		endpointsInformer:  endpointsInformer,
+		requestsProcessing: simulator.NewThroughStock("RequestsProcessing", "Request"),
+		requestsComplete: simulator.NewSinkStock("RequestsComplete", "Request"),
 	}
 
 	re.endpointAddress = corev1.EndpointAddress{

@@ -17,6 +17,7 @@ package model
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -41,6 +42,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 	var rawSubject *replicaEntity
 	var fakeClient kubernetes.Interface
 	var endpointsInformer v1.EndpointsInformer
+	var envFake *fakeEnvironment
 
 	it.Before(func() {
 		fakeClient = k8sfakes.NewSimpleClientset()
@@ -59,7 +61,9 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
 		endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
-		subject = NewReplicaEntity(fakeClient, endpointsInformer, "1.2.3.4")
+		envFake = new(fakeEnvironment)
+
+		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4")
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*replicaEntity)
@@ -73,6 +77,10 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 				IP:       "1.2.3.4",
 				Hostname: "Replica",
 			}
+		})
+
+		it("sets an Environment", func() {
+			assert.Equal(t, envFake, rawSubject.env)
 		})
 
 		it("sets a kubernetes client", func() {
@@ -145,6 +153,32 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 
 		it("Removes its EndpointAddress from the Endpoints", func() {
 			assert.NotContains(t, epAddresses, rawSubject.endpointAddress)
+		})
+	})
+
+	describe("SendRequest()", func() {
+		var request simulator.Entity
+
+		it.Before(func() {
+			rawSubject = subject.(*replicaEntity)
+
+			request = simulator.NewEntity("request-1", simulator.EntityKind("Request"))
+			subject.SendRequest(request)
+		})
+
+		it("adds the Request to RequestsProcessing", func() {
+			assert.Equal(t, uint64(1), rawSubject.requestsProcessing.Count())
+			assert.Equal(t, simulator.EntityName("request-1"), rawSubject.requestsProcessing.EntitiesInStock()[0].Name())
+		})
+
+		describe("scheduling processing", func() {
+			it("schedules a movement from RequestsProcessing to RequestsComplete", func() {
+				assert.Equal(t, simulator.StockName("RequestsComplete"), envFake.movements[0].To().Name())
+			})
+
+			it("schedules the movement to occur after 1 second", func() {
+				assert.Equal(t, envFake.theTime.Add(1*time.Second), envFake.movements[0].OccursAt())
+			})
 		})
 	})
 }

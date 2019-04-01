@@ -88,7 +88,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 	if desireDelta > 0 {
 		nextLaunch := cm.env.CurrentMovementTime().Add(cm.config.LaunchDelay)
 		for ; desireDelta > 0; desireDelta-- {
-			newReplica := NewReplicaEntity(cm.kubernetesClient, cm.endpointsInformer, cm.Next())
+			newReplica := NewReplicaEntity(cm.env, cm.kubernetesClient, cm.endpointsInformer, cm.Next())
 			err := cm.replicasLaunching.Add(newReplica)
 			if err != nil {
 				panic(fmt.Sprintf("could not scale up in ClusterModel: %s", err.Error()))

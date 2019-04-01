@@ -145,9 +145,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NoError(t, err)
 					err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching #2", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
-					err = rawSubject.replicasActive.Add(NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next()))
+					err = rawSubject.replicasActive.Add(NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next()))
 					assert.NoError(t, err)
-					err = rawSubject.replicasActive.Add(NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next()))
+					err = rawSubject.replicasActive.Add(NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next()))
 					assert.NoError(t, err)
 
 					firstTerminateAt = envFake.theTime.Add(rawSubject.config.TerminateDelay)
@@ -259,7 +259,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				rawSubject = subject.(*clusterModel)
 				envFake.movements = make([]simulator.Movement, 0)
 
-				newReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+				newReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 			})
@@ -319,7 +319,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				rawSubject = subject.(*clusterModel)
 				envFake.movements = make([]simulator.Movement, 0)
 
-				newReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+				newReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
@@ -422,8 +422,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			secondReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 		})
@@ -453,9 +453,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 			rawSubject.requestsInBuffer.Add(simulator.NewEntity("request-1", "Request"))
 
-			firstReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			secondReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			thirdReplica := NewReplicaEntity(rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
+			thirdReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
