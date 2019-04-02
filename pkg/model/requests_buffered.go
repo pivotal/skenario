@@ -57,15 +57,18 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 	addResult := rbs.delegate.Add(entity)
 
 	if rbs.replicas.Count() > 0 {
-		e := rbs.replicas.EntitiesInStock()[0]
-		replica := e.(ReplicaEntity)
+		m := rbs.replicas.Count()
+		replicas := rbs.replicas.EntitiesInStock()
+		for i := range rbs.delegate.EntitiesInStock() {
+			replica := replicas[uint64(i) % m].(ReplicaEntity)
 
-		rbs.env.AddToSchedule(simulator.NewMovement(
-			"buffer -> replica",
-			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
-			rbs.delegate,
-			replica.RequestsProcessing(),
-		))
+			rbs.env.AddToSchedule(simulator.NewMovement(
+				"buffer -> replica",
+				rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
+				rbs,
+				replica.RequestsProcessing(),
+			))
+		}
 	} else {
 		for _, e := range rbs.delegate.EntitiesInStock() {
 			rnd := rand.Intn(int(time.Millisecond))
@@ -77,15 +80,15 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 				rbs.env.AddToSchedule(simulator.NewMovement(
 					"exhausted_attempts",
 					rbs.env.CurrentMovementTime().Add(backoff).Add(time.Duration(rnd)),
-					rbs.delegate,
+					rbs,
 					rbs.requestsFailed,
 				))
 			} else {
 				rbs.env.AddToSchedule(simulator.NewMovement(
 					"buffer_backoff",
 					rbs.env.CurrentMovementTime().Add(backoff).Add(time.Duration(rnd)),
-					rbs.delegate,
-					rbs.delegate,
+					rbs,
+					rbs,
 				))
 			}
 		}

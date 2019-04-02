@@ -75,7 +75,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		it.Before(func() {
 			address = corev1.EndpointAddress{
 				IP:       "1.2.3.4",
-				Hostname: "Replica",
+				Hostname: string(subject.Name()),
 			}
 		})
 
@@ -97,8 +97,11 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Entity interface", func() {
-		it("implements Name()", func() {
-			assert.Equal(t, simulator.EntityName("Replica"), subject.Name())
+		it("Name() creates sequential names", func() {
+			beforeName := subject.Name()
+			subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "9.8.7.6")
+			afterName := subject.Name()
+			assert.NotEqual(t, beforeName, afterName)
 		})
 
 		it("implements Kind()", func() {
@@ -158,7 +161,8 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("RequestsProcessing()", func() {
 		it("returns the Requests Processing stock", func() {
-			assert.Equal(t, simulator.StockName("RequestsProcessing"), subject.RequestsProcessing().Name())
+			assert.Contains(t, subject.RequestsProcessing().Name(), "[replica-")
+			assert.Contains(t, subject.RequestsProcessing().Name(), "] RequestsProcessing")
 			assert.Equal(t, simulator.EntityKind("Request"), subject.RequestsProcessing().KindStocked())
 		})
 	})

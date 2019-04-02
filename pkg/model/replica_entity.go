@@ -16,6 +16,8 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/knative/serving/pkg/autoscaler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +30,7 @@ import (
 type Replica interface {
 	Activate()
 	Deactivate()
-	RequestsProcessing() simulator.SinkStock
+	RequestsProcessing() RequestsProcessingStock
 	Stat() autoscaler.Stat
 }
 
@@ -39,6 +41,7 @@ type ReplicaEntity interface {
 
 type replicaEntity struct {
 	env                  simulator.Environment
+	name                 simulator.EntityName
 	kubernetesClient     kubernetes.Interface
 	endpointsInformer    informers.EndpointsInformer
 	endpointAddress      corev1.EndpointAddress
@@ -46,6 +49,8 @@ type replicaEntity struct {
 	requestsComplete     simulator.SinkStock
 	numRequestsSinceStat int32
 }
+
+var replicaNum int
 
 func (re *replicaEntity) Activate() {
 	endpoints, err := re.kubernetesClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
@@ -95,10 +100,9 @@ func (re *replicaEntity) Deactivate() {
 	}
 }
 
-func (re *replicaEntity) RequestsProcessing() simulator.SinkStock {
+func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 	return re.requestsProcessing
 }
-
 
 func (re *replicaEntity) Stat() autoscaler.Stat {
 	atTime := re.env.CurrentMovementTime()
@@ -115,7 +119,7 @@ func (re *replicaEntity) Stat() autoscaler.Stat {
 }
 
 func (re *replicaEntity) Name() simulator.EntityName {
-	return "Replica"
+	return re.name
 }
 
 func (re *replicaEntity) Kind() simulator.EntityKind {
@@ -123,11 +127,14 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 }
 
 func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string) ReplicaEntity {
+	replicaNum++
+	name := simulator.EntityName(fmt.Sprintf("replica-%d", replicaNum))
 	complete := simulator.NewSinkStock("RequestsComplete", "Request")
-	processing := NewRequestsProcessingStock(env, complete)
+	processing := NewRequestsProcessingStock(env, name, complete)
 
 	re := &replicaEntity{
 		env:                env,
+		name:               name,
 		kubernetesClient:   client,
 		endpointsInformer:  endpointsInformer,
 		requestsProcessing: processing,

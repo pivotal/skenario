@@ -16,6 +16,7 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -35,6 +36,7 @@ type fakeReplica struct {
 	deactivateCalled         bool
 	requestsProcessingCalled bool
 	statCalled               bool
+	fakeReplicaNum           int
 }
 
 func (fr *fakeReplica) Name() simulator.EntityName {
@@ -53,9 +55,9 @@ func (fr *fakeReplica) Deactivate() {
 	fr.deactivateCalled = true
 }
 
-func (fr *fakeReplica) RequestsProcessing() simulator.SinkStock {
+func (fr *fakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.requestsProcessingCalled = true
-	return simulator.NewSinkStock("RequestsProcessing", "Request")
+	return NewRequestsProcessingStock(new(fakeEnvironment), simulator.EntityName(fmt.Sprintf("fake-%d", fr.fakeReplicaNum)), simulator.NewSinkStock("fake-sink", "Request"))
 }
 
 func (fr *fakeReplica) Stat() autoscaler.Stat {

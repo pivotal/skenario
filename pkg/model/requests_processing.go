@@ -16,6 +16,7 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"knative-simulator/pkg/simulator"
@@ -29,12 +30,14 @@ type RequestsProcessingStock interface {
 type requestsProcessingStock struct {
 	env                  simulator.Environment
 	delegate             simulator.ThroughStock
+	replicaName          simulator.EntityName
 	requestsComplete     simulator.SinkStock
 	numRequestsSinceLast int32
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
-	return rps.delegate.Name()
+	name := fmt.Sprintf("[%s] %s", rps.replicaName, rps.delegate.Name())
+	return simulator.StockName(name)
 }
 
 func (rps *requestsProcessingStock) KindStocked() simulator.EntityKind {
@@ -59,7 +62,7 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	rps.env.AddToSchedule(simulator.NewMovement(
 		"processing -> complete",
 		rps.env.CurrentMovementTime().Add(1*time.Second),
-		rps.delegate,
+		rps,
 		rps.requestsComplete,
 	))
 	return rps.delegate.Add(entity)
@@ -71,10 +74,11 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 	return rc
 }
 
-func NewRequestsProcessingStock(env simulator.Environment, requestSink simulator.SinkStock) RequestsProcessingStock {
+func NewRequestsProcessingStock(env simulator.Environment, replicaName simulator.EntityName, requestSink simulator.SinkStock) RequestsProcessingStock {
 	return &requestsProcessingStock{
-		delegate:         simulator.NewThroughStock("RequestsProcessing", "Request"),
-		requestsComplete: requestSink,
 		env:              env,
+		delegate:         simulator.NewThroughStock("RequestsProcessing", "Request"),
+		replicaName:      replicaName,
+		requestsComplete: requestSink,
 	}
 }

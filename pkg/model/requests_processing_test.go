@@ -37,7 +37,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = new(fakeEnvironment)
-		subject = NewRequestsProcessingStock(envFake, simulator.NewSinkStock("RequestsComplete", "Request"))
+		subject = NewRequestsProcessingStock(envFake, "replica-99", simulator.NewSinkStock("RequestsComplete", "Request"))
 		rawSubject = subject.(*requestsProcessingStock)
 	})
 
@@ -55,6 +55,12 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 			assert.NotNil(t, rawSubject.delegate)
 			assert.Equal(t, simulator.StockName("RequestsProcessing"), rawSubject.delegate.Name())
 			assert.Equal(t, simulator.EntityKind("Request"), rawSubject.delegate.KindStocked())
+		})
+	})
+
+	describe("Name()", func() {
+		it("includes the replica's name", func() {
+			assert.Equal(t, simulator.StockName("[replica-99] RequestsProcessing"), subject.Name())
 		})
 	})
 

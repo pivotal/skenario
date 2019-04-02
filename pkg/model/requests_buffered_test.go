@@ -58,18 +58,58 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Add()", func() {
+		var request RequestEntity
+
+		describe("there are multiple replicas available to serve multiple requests", func() {
+			it.Before(func() {
+				envFake = new(fakeEnvironment)
+
+				replicaStock = NewReplicasActiveStock()
+
+				replicaFake = new(fakeReplica)
+				replicaFake.fakeReplicaNum = 11
+				replicaStock.Add(replicaFake)
+
+				replicaFake = new(fakeReplica)
+				replicaFake.fakeReplicaNum = 22
+				replicaStock.Add(replicaFake)
+
+				replicaFake = new(fakeReplica)
+				replicaFake.fakeReplicaNum = 33
+				replicaStock.Add(replicaFake)
+
+				subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+
+				subject.Add(NewRequestEntity(envFake, subject))
+				subject.Add(NewRequestEntity(envFake, subject))
+				subject.Add(NewRequestEntity(envFake, subject))
+			})
+
+			it("assigns the Requests to Replicas using round robin", func() {
+				first := envFake.movements[0].To().Name()
+				second := envFake.movements[1].To().Name()
+
+				assert.NotEqual(t, first, second)
+			})
+
+			it("adds some jitter to avoid schedule collisions", func() {
+
+			})
+		})
+
 		describe("there are no other requests yet", func() {
 			describe("there is at least one Replica available to process the request", func() {
 				it.Before(func() {
 					envFake = new(fakeEnvironment)
+					request = NewRequestEntity(envFake, subject)
 
 					replicaStock = NewReplicasActiveStock()
 					replicaFake = new(fakeReplica)
 					replicaStock.Add(replicaFake)
 
-					subject = NewRequestsBufferedStock(envFake, replicaStock, nil)
+					subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
 
-					subject.Add(simulator.NewEntity("request-111", "Request"))
+					subject.Add(request)
 				})
 
 				it("schedules the Request to move to a Replica for processing", func() {
@@ -79,17 +119,15 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			describe("there are no Replicas active", func() {
-				var request1 RequestEntity
-
 				describe("scheduling the first retry", func() {
 					it.Before(func() {
 						envFake = new(fakeEnvironment)
-						request1 = NewRequestEntity(envFake, subject)
+						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
 						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
 
-						subject.Add(request1)
+						subject.Add(request)
 					})
 
 					it("schedules a movement from the Buffer back to itself", func() {
@@ -105,13 +143,13 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				describe("scheduling subsequent retries", func() {
 					it.Before(func() {
 						envFake = new(fakeEnvironment)
-						request1 = NewRequestEntity(envFake, subject)
+						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
 						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
 
-						subject.Add(request1)
-						subject.Add(request1)
+						subject.Add(request)
+						subject.Add(request)
 					})
 
 					it("on each retry it schedules a movement from Buffer back into itself", func() {
@@ -129,13 +167,13 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				describe("running out of retries", func() {
 					it.Before(func() {
 						envFake = new(fakeEnvironment)
-						request1 = NewRequestEntity(envFake, subject)
+						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
 						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
 
 						for i := 0; i < 18; i++ {
-							subject.Add(request1)
+							subject.Add(request)
 						}
 					})
 
@@ -154,12 +192,5 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				})
 			})
 		})
-
-		describe.Pend("there are other requests waiting in the buffer", func() {
-			it.Pend("assigns the Requests to Replicas in a round robin", func() {
-				// TODO is this the actual behaviour? If not, does it matter?
-			})
-		})
-
 	})
 }
