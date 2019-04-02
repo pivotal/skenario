@@ -16,6 +16,7 @@
 package model
 
 import (
+	"math/rand"
 	"time"
 
 	"knative-simulator/pkg/simulator"
@@ -67,20 +68,22 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 		))
 	} else {
 		for _, e := range rbs.delegate.EntitiesInStock() {
+			rnd := rand.Intn(999999)
+
 			request := e.(RequestEntity)
 			backoff, outOfAttempts := request.NextBackoff()
 
 			if outOfAttempts {
 				rbs.env.AddToSchedule(simulator.NewMovement(
 					"exhausted_attempts",
-					rbs.env.CurrentMovementTime().Add(backoff),
+					rbs.env.CurrentMovementTime().Add(backoff).Add(time.Duration(rnd)),
 					rbs.delegate,
 					rbs.requestsFailed,
 				))
 			} else {
 				rbs.env.AddToSchedule(simulator.NewMovement(
 					"buffer_backoff",
-					rbs.env.CurrentMovementTime().Add(backoff),
+					rbs.env.CurrentMovementTime().Add(backoff).Add(time.Duration(rnd)),
 					rbs.delegate,
 					rbs.delegate,
 				))
