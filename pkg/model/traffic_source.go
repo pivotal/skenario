@@ -16,8 +16,6 @@
 package model
 
 import (
-	"fmt"
-
 	"knative-simulator/pkg/simulator"
 )
 
@@ -26,7 +24,8 @@ type TrafficSource interface {
 }
 
 type trafficSource struct {
-	reqCount int
+	env              simulator.Environment
+	requestsBuffered RequestsBufferedStock
 }
 
 func (ts *trafficSource) Name() simulator.StockName {
@@ -46,15 +45,12 @@ func (ts *trafficSource) EntitiesInStock() []simulator.Entity {
 }
 
 func (ts *trafficSource) Remove() simulator.Entity {
-	count := ts.reqCount
-	ts.reqCount++
-	name := fmt.Sprintf("request-%d", count)
-
-	return simulator.NewEntity(simulator.EntityName(name), "Request")
+	return NewRequestEntity(ts.env, ts.requestsBuffered)
 }
 
-func NewTrafficSource() TrafficSource {
+func NewTrafficSource(env simulator.Environment, buffer RequestsBufferedStock) TrafficSource {
 	return &trafficSource{
-		reqCount: 1,
+		env:              env,
+		requestsBuffered: buffer,
 	}
 }

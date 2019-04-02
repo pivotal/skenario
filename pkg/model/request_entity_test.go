@@ -37,7 +37,7 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 	var bufferStock RequestsBufferedStock
 
 	it.Before(func() {
-		bufferStock = NewRequestsBufferedStock(envFake, NewReplicasActiveStock())
+		bufferStock = NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil)
 		envFake = new(fakeEnvironment)
 		subject = NewRequestEntity(envFake, bufferStock)
 		rawSubject = subject.(*requestEntity)
@@ -72,27 +72,18 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("ScheduleBackoffMovement()", func() {
+	describe("NextBackoff()", func() {
+		var backoff time.Duration
 		var outOfAttempts bool
 
 		describe("scheduling the first retry", func() {
 			it.Before(func() {
 				subject = NewRequestEntity(envFake, bufferStock)
-				outOfAttempts = subject.ScheduleBackoffMovement()
-			})
-			it("schedules a movement from the Buffer back to itself", func() {
-				assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[0].From().Name())
-				assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[0].To().Name())
+				backoff, outOfAttempts = subject.NextBackoff()
 			})
 
-			it("gives sequential MovementKinds", func() {
-				assert.Equal(t, simulator.MovementKind("buffer_backoff_1"), envFake.movements[0].Kind())
-				subject.ScheduleBackoffMovement()
-				assert.Equal(t, simulator.MovementKind("buffer_backoff_2"), envFake.movements[1].Kind())
-			})
-
-			it("schedules the movement to occur in 100ms", func() {
-				assert.Equal(t, envFake.theTime.Add(100*time.Millisecond), envFake.movements[0].OccursAt())
+			it("returns the next backoff duration", func() {
+				assert.Equal(t, 100*time.Millisecond, backoff)
 			})
 
 			// yes, this test can pass by coincidence, but at least it documents the intent
@@ -104,30 +95,29 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 		describe("scheduling subsequent retries", func() {
 			it.Before(func() {
 				subject = NewRequestEntity(envFake, bufferStock)
-				rawSubject = subject.(*requestEntity)
-				subject.ScheduleBackoffMovement()
+				backoff, _ = subject.NextBackoff()
 			})
 
 			// The real implementation has jitter, but I will ignore this for now.
 			it("on each retry, increases the backoff time by 1.3x", func() {
-				assert.Equal(t, 130*time.Millisecond, rawSubject.nextBackoff)
-				subject.ScheduleBackoffMovement()
-				assert.Equal(t, 169*time.Millisecond, rawSubject.nextBackoff)
+				backoff, _ = subject.NextBackoff()
+				assert.Equal(t, 130*time.Millisecond, backoff)
+				backoff, _ = subject.NextBackoff()
+				assert.Equal(t, 169*time.Millisecond, backoff)
 			})
 		})
 
 		describe("running out of retries", func() {
 			it.Before(func() {
 				subject = NewRequestEntity(envFake, bufferStock)
-				rawSubject = subject.(*requestEntity)
 				for i := 0; i < 18; i++ {
-					outOfAttempts = subject.ScheduleBackoffMovement()
+					_, outOfAttempts = subject.NextBackoff()
 				}
 				assert.False(t, outOfAttempts)
 			})
 
 			it("returns true to indicate no more retries are possible", func() {
-				outOfAttempts = subject.ScheduleBackoffMovement()
+				_, outOfAttempts = subject.NextBackoff()
 				assert.True(t, outOfAttempts)
 			})
 		})

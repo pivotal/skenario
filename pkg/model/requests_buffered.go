@@ -26,9 +26,10 @@ type RequestsBufferedStock interface {
 }
 
 type requestsBufferedStock struct {
-	env      simulator.Environment
-	delegate simulator.ThroughStock
-	replicas ReplicasActiveStock
+	env            simulator.Environment
+	delegate       simulator.ThroughStock
+	replicas       ReplicasActiveStock
+	requestsFailed simulator.SinkStock
 }
 
 func (rbs *requestsBufferedStock) Name() simulator.StockName {
@@ -52,25 +53,49 @@ func (rbs *requestsBufferedStock) Remove() simulator.Entity {
 }
 
 func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
+	addResult := rbs.delegate.Add(entity)
+
 	if rbs.replicas.Count() > 0 {
 		e := rbs.replicas.EntitiesInStock()[0]
-		r := e.(ReplicaEntity)
+		replica := e.(ReplicaEntity)
 
 		rbs.env.AddToSchedule(simulator.NewMovement(
 			"buffer -> replica",
 			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
 			rbs.delegate,
-			r.RequestsProcessing(),
+			replica.RequestsProcessing(),
 		))
+	} else {
+		for _, e := range rbs.delegate.EntitiesInStock() {
+			request := e.(RequestEntity)
+			backoff, outOfAttempts := request.NextBackoff()
+
+			if outOfAttempts {
+				rbs.env.AddToSchedule(simulator.NewMovement(
+					"buffer_exhausted_attempts",
+					rbs.env.CurrentMovementTime().Add(backoff),
+					rbs.delegate,
+					rbs.requestsFailed,
+				))
+			} else {
+				rbs.env.AddToSchedule(simulator.NewMovement(
+					"buffer_backoff_attempt",
+					rbs.env.CurrentMovementTime().Add(backoff),
+					rbs.delegate,
+					rbs.delegate,
+				))
+			}
+		}
 	}
 
-	return rbs.delegate.Add(entity)
+	return addResult
 }
 
-func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock) RequestsBufferedStock {
+func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsBufferedStock {
 	return &requestsBufferedStock{
-		env: env,
-		delegate: simulator.NewThroughStock("RequestsBuffered", "Request"),
-		replicas: replicas,
+		env:            env,
+		delegate:       simulator.NewThroughStock("RequestsBuffered", "Request"),
+		replicas:       replicas,
+		requestsFailed: requestsFailed,
 	}
 }

@@ -25,7 +25,7 @@ import (
 const backoffMultiplier float64 = 1.3
 
 type Request interface {
-	ScheduleBackoffMovement() (outOfAttempts bool)
+	NextBackoff() (backoff time.Duration, outOfAttempts bool)
 }
 
 type RequestEntity interface {
@@ -51,22 +51,17 @@ func (re *requestEntity) Kind() simulator.EntityKind {
 	return "Request"
 }
 
-func (re *requestEntity) ScheduleBackoffMovement() (outOfAttempts bool) {
+func (re *requestEntity) NextBackoff() (backoff time.Duration, outOfAttempts bool) {
 	if re.attempts < 18 {
 		re.attempts++
 	} else {
-		return true
+		return re.nextBackoff, true
 	}
 
-	re.env.AddToSchedule(simulator.NewMovement(
-		simulator.MovementKind(fmt.Sprintf("buffer_backoff_%d", re.attempts)),
-		re.env.CurrentMovementTime().Add(re.nextBackoff),
-		re.bufferStock,
-		re.bufferStock,
-	))
-
+	thisBackoff := re.nextBackoff
 	re.nextBackoff = time.Duration(int64(float64(re.nextBackoff) * backoffMultiplier))
-	return outOfAttempts
+
+	return thisBackoff, outOfAttempts
 }
 
 func NewRequestEntity(env simulator.Environment, buffer RequestsBufferedStock) RequestEntity {
