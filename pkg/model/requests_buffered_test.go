@@ -116,7 +116,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					})
 
 					it("on each retry it schedules a movement from Buffer back into itself", func() {
-						assert.Equal(t, simulator.MovementKind("buffer_backoff_attempt"), envFake.movements[1].Kind())
+						assert.Equal(t, simulator.MovementKind("buffer_backoff"), envFake.movements[1].Kind())
 						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[1].From().Name())
 						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[1].To().Name())
 					})
@@ -136,7 +136,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					})
 
 					it("schedules a movement from Buffer into RequestsFailed", func() {
-						assert.Equal(t, simulator.MovementKind("buffer_exhausted_attempts"), envFake.movements[18].Kind())
+						assert.Equal(t, simulator.MovementKind("exhausted_attempts"), envFake.movements[18].Kind())
 						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[18].From().Name())
 						assert.Equal(t, simulator.StockName("RequestsFailed"), envFake.movements[18].To().Name())
 					})

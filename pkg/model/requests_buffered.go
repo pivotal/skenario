@@ -72,14 +72,14 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 
 			if outOfAttempts {
 				rbs.env.AddToSchedule(simulator.NewMovement(
-					"buffer_exhausted_attempts",
+					"exhausted_attempts",
 					rbs.env.CurrentMovementTime().Add(backoff),
 					rbs.delegate,
 					rbs.requestsFailed,
 				))
 			} else {
 				rbs.env.AddToSchedule(simulator.NewMovement(
-					"buffer_backoff_attempt",
+					"buffer_backoff",
 					rbs.env.CurrentMovementTime().Add(backoff),
 					rbs.delegate,
 					rbs.delegate,
