@@ -31,10 +31,10 @@ func TestReplicasActive(t *testing.T) {
 }
 
 type fakeReplica struct {
-	activateCalled    bool
-	deactivateCalled  bool
-	sendRequestCalled bool
-	statCalled        bool
+	activateCalled           bool
+	deactivateCalled         bool
+	requestsProcessingCalled bool
+	statCalled               bool
 }
 
 func (fr *fakeReplica) Name() simulator.EntityName {
@@ -53,8 +53,9 @@ func (fr *fakeReplica) Deactivate() {
 	fr.deactivateCalled = true
 }
 
-func (fr *fakeReplica) SendRequest(entity simulator.Entity) {
-	fr.sendRequestCalled = true
+func (fr *fakeReplica) RequestsProcessing() simulator.SinkStock {
+	fr.requestsProcessingCalled = true
+	return simulator.NewSinkStock("RequestsProcessing", "Request")
 }
 
 func (fr *fakeReplica) Stat() autoscaler.Stat {

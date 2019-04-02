@@ -83,7 +83,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, simulator.StockName("TrafficSource"), envFake.movements[0].From().Name())
 			})
 
-			it("movement is to buffer strock", func() {
+			it("movement is to buffer stock", func() {
 				assert.Equal(t, simulator.StockName("Buffer"), envFake.movements[0].To().Name())
 			})
 		})

@@ -17,7 +17,6 @@ package model
 
 import (
 	"testing"
-	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
@@ -157,33 +156,10 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("SendRequest()", func() {
-		var request simulator.Entity
-
-		it.Before(func() {
-			rawSubject = subject.(*replicaEntity)
-
-			request = simulator.NewEntity("request-1", simulator.EntityKind("Request"))
-			subject.SendRequest(request)
-		})
-
-		it("adds the Request to RequestsProcessing", func() {
-			assert.Equal(t, uint64(1), rawSubject.requestsProcessing.Count())
-			assert.Equal(t, simulator.EntityName("request-1"), rawSubject.requestsProcessing.EntitiesInStock()[0].Name())
-		})
-
-		it("increments the number of requests since last Stat()", func() {
-			assert.Equal(t, int32(1), rawSubject.numRequestsSinceStat)
-		})
-
-		describe("scheduling processing", func() {
-			it("schedules a movement from RequestsProcessing to RequestsComplete", func() {
-				assert.Equal(t, simulator.StockName("RequestsComplete"), envFake.movements[0].To().Name())
-			})
-
-			it("schedules the movement to occur after 1 second", func() {
-				assert.Equal(t, envFake.theTime.Add(1*time.Second), envFake.movements[0].OccursAt())
-			})
+	describe("RequestsProcessing()", func() {
+		it("returns the Requests Processing stock", func() {
+			assert.Equal(t, simulator.StockName("RequestsProcessing"), subject.RequestsProcessing().Name())
+			assert.Equal(t, simulator.EntityKind("Request"), subject.RequestsProcessing().KindStocked())
 		})
 	})
 
@@ -196,9 +172,9 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 				rawSubject = subject.(*replicaEntity)
 
 				request1 = simulator.NewEntity("request-1", simulator.EntityKind("Request"))
-				subject.SendRequest(request1)
+				rawSubject.requestsProcessing.Add(request1)
 				request2 = simulator.NewEntity("request-2", simulator.EntityKind("Request"))
-				subject.SendRequest(request2)
+				rawSubject.requestsProcessing.Add(request2)
 
 				stat = subject.Stat()
 			})

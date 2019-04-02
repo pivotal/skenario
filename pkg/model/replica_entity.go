@@ -16,8 +16,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/knative/serving/pkg/autoscaler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +28,7 @@ import (
 type Replica interface {
 	Activate()
 	Deactivate()
-	SendRequest(entity simulator.Entity)
+	RequestsProcessing() simulator.SinkStock
 	Stat() autoscaler.Stat
 }
 
@@ -44,7 +42,7 @@ type replicaEntity struct {
 	kubernetesClient     kubernetes.Interface
 	endpointsInformer    informers.EndpointsInformer
 	endpointAddress      corev1.EndpointAddress
-	requestsProcessing   simulator.ThroughStock
+	requestsProcessing   RequestsProcessingStock
 	requestsComplete     simulator.SinkStock
 	numRequestsSinceStat int32
 }
@@ -97,18 +95,10 @@ func (re *replicaEntity) Deactivate() {
 	}
 }
 
-func (re *replicaEntity) SendRequest(entity simulator.Entity) {
-	re.requestsProcessing.Add(entity)
-
-	re.numRequestsSinceStat++
-
-	re.env.AddToSchedule(simulator.NewMovement(
-		"processing -> complete",
-		re.env.CurrentMovementTime().Add(1*time.Second),
-		re.requestsProcessing,
-		re.requestsComplete,
-	))
+func (re *replicaEntity) RequestsProcessing() simulator.SinkStock {
+	return re.requestsProcessing
 }
+
 
 func (re *replicaEntity) Stat() autoscaler.Stat {
 	atTime := re.env.CurrentMovementTime()
@@ -116,7 +106,7 @@ func (re *replicaEntity) Stat() autoscaler.Stat {
 		Time:                      &atTime,
 		PodName:                   string(re.Name()),
 		AverageConcurrentRequests: float64(re.requestsProcessing.Count()),
-		RequestCount:              re.numRequestsSinceStat,
+		RequestCount:              re.requestsProcessing.RequestCount(),
 	}
 
 	re.numRequestsSinceStat = 0
@@ -133,12 +123,15 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 }
 
 func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string) ReplicaEntity {
+	complete := simulator.NewSinkStock("RequestsComplete", "Request")
+	processing := NewRequestsProcessingStock(env, complete)
+
 	re := &replicaEntity{
 		env:                env,
 		kubernetesClient:   client,
 		endpointsInformer:  endpointsInformer,
-		requestsProcessing: simulator.NewThroughStock("RequestsProcessing", "Request"),
-		requestsComplete:   simulator.NewSinkStock("RequestsComplete", "Request"),
+		requestsProcessing: processing,
+		requestsComplete:   complete,
 	}
 
 	re.endpointAddress = corev1.EndpointAddress{
