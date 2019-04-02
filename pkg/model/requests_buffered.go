@@ -68,7 +68,7 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 		))
 	} else {
 		for _, e := range rbs.delegate.EntitiesInStock() {
-			rnd := rand.Intn(999999)
+			rnd := rand.Intn(int(time.Millisecond))
 
 			request := e.(RequestEntity)
 			backoff, outOfAttempts := request.NextBackoff()
