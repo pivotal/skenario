@@ -55,15 +55,15 @@ func (rbs *requestsBufferedStock) Remove() simulator.Entity {
 
 func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 	addResult := rbs.delegate.Add(entity)
-	var jitter time.Duration
 
-	if rbs.replicas.Count() > 0 {
-		m := rbs.replicas.Count()
+	var jitter time.Duration
+	countReplicas := rbs.replicas.Count()
+	if countReplicas > 0 {
 		replicas := rbs.replicas.EntitiesInStock()
 		for i := range rbs.delegate.EntitiesInStock() {
 			jitter = time.Duration(rand.Intn(int(time.Millisecond)))
 
-			replica := (*replicas[uint64(i)%m]).(ReplicaEntity)
+			replica := (*replicas[uint64(i)%countReplicas]).(ReplicaEntity)
 
 			rbs.env.AddToSchedule(simulator.NewMovement(
 				"buffer -> replica",
