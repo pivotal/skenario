@@ -153,7 +153,7 @@ func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *
 
 	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
-		r := e.(ReplicaEntity)
+		r := (*e).(ReplicaEntity)
 		stat := r.Stat()
 
 		scaler.Record(ctx, stat)

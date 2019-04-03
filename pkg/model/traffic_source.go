@@ -40,8 +40,8 @@ func (ts *trafficSource) Count() uint64 {
 	return 0
 }
 
-func (ts *trafficSource) EntitiesInStock() []simulator.Entity {
-	return []simulator.Entity{}
+func (ts *trafficSource) EntitiesInStock() []*simulator.Entity {
+	return []*simulator.Entity{}
 }
 
 func (ts *trafficSource) Remove() simulator.Entity {

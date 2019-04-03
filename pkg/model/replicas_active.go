@@ -39,7 +39,7 @@ func (ras *replicasActiveStock) Count() uint64 {
 	return ras.delegate.Count()
 }
 
-func (ras *replicasActiveStock) EntitiesInStock() []simulator.Entity {
+func (ras *replicasActiveStock) EntitiesInStock() []*simulator.Entity {
 	return ras.delegate.EntitiesInStock()
 }
 

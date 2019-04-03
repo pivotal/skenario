@@ -186,8 +186,8 @@ func (tt *tickTock) Count() uint64 {
 	return 1
 }
 
-func (tt *tickTock) EntitiesInStock() []simulator.Entity {
-	return []simulator.Entity{tt.asEntity}
+func (tt *tickTock) EntitiesInStock() []*simulator.Entity {
+	return []*simulator.Entity{&tt.asEntity}
 }
 
 func (tt *tickTock) Remove() simulator.Entity {

@@ -48,7 +48,7 @@ func (rps *requestsProcessingStock) Count() uint64 {
 	return rps.delegate.Count()
 }
 
-func (rps *requestsProcessingStock) EntitiesInStock() []simulator.Entity {
+func (rps *requestsProcessingStock) EntitiesInStock() []*simulator.Entity {
 	return rps.delegate.EntitiesInStock()
 }
 

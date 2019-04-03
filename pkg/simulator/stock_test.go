@@ -63,7 +63,7 @@ func testStock(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("EntitiesInStock()", func() {
 		it("returns an Entity slice for the current contents of the stock", func() {
-			assert.ElementsMatch(t, []Entity{entity}, subject.EntitiesInStock())
+			assert.ElementsMatch(t, []*Entity{&entity}, subject.EntitiesInStock())
 		})
 	})
 }
