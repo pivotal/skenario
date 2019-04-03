@@ -86,10 +86,12 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("assigns the Requests to Replicas using round robin", func() {
-				first := envFake.movements[1].To().Name()
-				second := envFake.movements[2].To().Name()
+				first := envFake.movements[1]
+				second := envFake.movements[2]
 
-				assert.NotEqual(t, first, second)
+				assert.Equal(t, simulator.MovementKind("buffer -> replica"), first.Kind())
+				assert.Equal(t, simulator.MovementKind("buffer -> replica"), second.Kind())
+				assert.NotEqual(t, first.To(), second.To())
 			})
 
 			it("adds some jitter to avoid schedule collisions", func() {
