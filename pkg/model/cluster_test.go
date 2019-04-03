@@ -83,8 +83,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, simulator.StockName("TrafficSource"), envFake.movements[0].From().Name())
 			})
 
-			it("movement is to buffer strock", func() {
-				assert.Equal(t, simulator.StockName("Buffer"), envFake.movements[0].To().Name())
+			it("movement is to buffer stock", func() {
+				assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[0].To().Name())
 			})
 		})
 	})
@@ -454,11 +454,11 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				scaleTimes: make([]time.Time, 0),
 			}
 
-			rawSubject.requestsInBuffer.Add(simulator.NewEntity("request-1", "Request"))
+			request := NewRequestEntity(envFake, rawSubject.requestsInBuffer)
+			rawSubject.requestsInBuffer.Add(request)
 
 			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
-			//thirdReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, rawSubject.Next())
 
 			rawSubject.replicasActive.Add(replicaFake)
 

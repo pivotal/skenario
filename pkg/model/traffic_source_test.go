@@ -31,13 +31,27 @@ func TestTrafficSource(t *testing.T) {
 
 func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 	var subject TrafficSource
+	var rawSubject *trafficSource
+	var envFake *fakeEnvironment
 
 	it.Before(func() {
-		subject = NewTrafficSource()
+		requestsBuffered := NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"))
+		envFake = new(fakeEnvironment)
+
+		subject = NewTrafficSource(envFake, requestsBuffered)
 		assert.NotNil(t, subject)
+
+		rawSubject = subject.(*trafficSource)
 	})
 
 	describe("NewTrafficSource()", func() {
+		it("sets an environment", func() {
+			assert.Equal(t, envFake, rawSubject.env)
+		})
+
+		it("sets the buffer", func() {
+			assert.Equal(t, simulator.StockName("RequestsBuffered"), rawSubject.requestsBuffered.Name())
+		})
 	})
 
 	describe("Name()", func() {
@@ -60,7 +74,7 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("EntitiesInStock()", func() {
 		it("always empty", func() {
-			assert.Equal(t, []simulator.Entity{}, subject.EntitiesInStock())
+			assert.Equal(t, []*simulator.Entity{}, subject.EntitiesInStock())
 		})
 	})
 
@@ -74,14 +88,9 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 			assert.NotNil(t, entity2)
 		})
 
-		it("creates a new Entity of EntityKind 'Request'", func() {
+		it("creates a new RequestEntity of EntityKind 'Request'", func() {
+			assert.IsType(t, &requestEntity{}, entity1)
 			assert.Equal(t, simulator.EntityKind("Request"), entity1.Kind())
 		})
-
-		it("gives each request Entity sequential names", func() {
-			assert.Equal(t, simulator.EntityName("request-1"), entity1.Name())
-			assert.Equal(t, simulator.EntityName("request-2"), entity2.Name())
-		})
 	})
-
 }

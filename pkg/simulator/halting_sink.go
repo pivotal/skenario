@@ -51,6 +51,6 @@ func (hs *haltingSink) Remove() Entity {
 	return hs.delegate.Remove()
 }
 
-func (hs *haltingSink) EntitiesInStock() []Entity {
+func (hs *haltingSink) EntitiesInStock() []*Entity {
 	return hs.delegate.EntitiesInStock()
 }

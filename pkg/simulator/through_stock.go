@@ -21,7 +21,7 @@ type stock struct {
 	name       StockName
 	stocksKind EntityKind
 
-	stock []Entity
+	stock []*Entity
 }
 
 func (s *stock) Name() StockName {
@@ -36,7 +36,7 @@ func (s *stock) Count() uint64 {
 	return uint64(len(s.stock))
 }
 
-func (s *stock) EntitiesInStock() []Entity {
+func (s *stock) EntitiesInStock() []*Entity {
 	return s.stock
 }
 
@@ -55,7 +55,7 @@ func (s *stock) Add(entity Entity) error {
 		)
 	}
 
-	s.stock = append(s.stock, entity)
+	s.stock = append(s.stock, &entity)
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s *stock) Remove() Entity {
 	if s.Count() > 0 {
 		e := s.stock[0]
 		s.stock = s.stock[:s.Count()-1]
-		return e
+		return *e
 	}
 
 	return nil

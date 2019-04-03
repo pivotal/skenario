@@ -65,6 +65,7 @@ type clusterModel struct {
 	replicasActive     simulator.ThroughStock
 	replicasTerminated simulator.SinkStock
 	requestsInBuffer   simulator.ThroughStock
+	requestsFailed     simulator.SinkStock
 	kubernetesClient   kubernetes.Interface
 	endpointsInformer  corev1informers.EndpointsInformer
 	nextIPValue        uint32
@@ -152,7 +153,7 @@ func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *
 
 	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
-		r := e.(ReplicaEntity)
+		r := (*e).(ReplicaEntity)
 		stat := r.Stat()
 
 		scaler.Record(ctx, stat)
@@ -189,8 +190,10 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
 	endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
-	trafficSource := NewTrafficSource()
-	bufferStock := simulator.NewThroughStock("Buffer", "Request")
+	replicasActive := NewReplicasActiveStock()
+	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
+	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed)
+	trafficSource := NewTrafficSource(env, bufferStock)
 
 	runsFor := env.HaltTime().Sub(env.CurrentMovementTime())
 	for i := uint(0); i < config.NumberOfRequests; i++ {
@@ -208,9 +211,10 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 		env:                env,
 		config:             config,
 		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
-		replicasActive:     NewReplicasActiveStock(),
+		replicasActive:     replicasActive,
 		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),
 		requestsInBuffer:   bufferStock,
+		requestsFailed:     requestsFailed,
 		kubernetesClient:   fakeClient,
 		endpointsInformer:  endpointsInformer,
 		nextIPValue:        1,
