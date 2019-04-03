@@ -55,7 +55,7 @@ func (rbs *requestsBufferedStock) Remove() simulator.Entity {
 
 func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 	addResult := rbs.delegate.Add(entity)
-	rnd := time.Duration(rand.Intn(int(time.Millisecond)))
+	jitter := time.Duration(rand.Intn(int(time.Millisecond)))
 
 	if rbs.replicas.Count() > 0 {
 		m := rbs.replicas.Count()
@@ -65,7 +65,7 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 
 			rbs.env.AddToSchedule(simulator.NewMovement(
 				"buffer -> replica",
-				rbs.env.CurrentMovementTime().Add(rnd),
+				rbs.env.CurrentMovementTime().Add(jitter),
 				rbs,
 				replica.RequestsProcessing(),
 			))
@@ -79,14 +79,14 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 			if outOfAttempts {
 				rbs.env.AddToSchedule(simulator.NewMovement(
 					"exhausted_attempts",
-					rbs.env.CurrentMovementTime().Add(backoff).Add(rnd),
+					rbs.env.CurrentMovementTime().Add(backoff).Add(jitter),
 					rbs,
 					rbs.requestsFailed,
 				))
 			} else {
 				rbs.env.AddToSchedule(simulator.NewMovement(
 					"buffer_backoff",
-					rbs.env.CurrentMovementTime().Add(backoff).Add(rnd),
+					rbs.env.CurrentMovementTime().Add(backoff).Add(jitter),
 					rbs,
 					rbs,
 				))
