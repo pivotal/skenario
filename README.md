@@ -3,5 +3,84 @@
 Skenario is a simulator toolkit for Knative, originally created to assist
 with Autoscaler development. 
 
+The core concept of Skenario are:
+
+* **Entities**. These are discrete individual "things" in the simulation. Examples so far include Replicas and
+  Requests. Superficially these resemble Agents in an agent-based modelling (ABM) system, but they include
+  very little logic of their own. Instead, Entities are managed by:
+* **Stocks**. These are where entities exist between any advancement of the clock. Stocks are inspired by the
+  "stock-and-flow" concept from Systems Dynamics. Three basic subtypes are defined: Source, Sink and Through Stocks.
+  This is where most logic for the simulations is placed.
+* **Movements**. These are the instants where an Entity ceases to belong to one Stock and becomes resident in
+  another Stock. Movements are scheduled in the Environment by Stocks and Entities. Only one Movement occurs
+  at a time. Movements occur in temporal order.
+* **Environment**. This is the core execution logic for Skenario. It manages the schedule of Movements, including
+  maintaining the order of Movements. On each pass through the simulation loop, the Environment picks the next-soonest
+  Movement from a priority queue. It removes the Entity from the "From" Stock and adds it to the "To" Stock, recording
+  the outcome for later display.
+
+The Environment mimics the core logic of standard Discrete Event Simulators (specifically, next-event-time simulators).
+However the focus on Movements between Stocks is distinct.
+
+Only one Movement may occur at a time -- Skenario does not attempt parallel simulation. You'll notice I have not
+tried to make anything threadsafe.
+
 See "[Implement workload simulator for autoscaler development](https://github.com/knative/serving/issues/1686)"
 for background and notes. 
+
+## Usage
+
+Basically:
+
+
+```
+$ go run cmd/skenario/main.go -h
+
+  -duration duration
+        Duration of time to simulate. (default 10m0s)
+
+  -maxScaleUpRate float
+        Maximum rate the autoscaler can raise its desired (default 10)
+
+  -numberOfRequests uint
+        Number of randomly-arriving requests to generate (default 10)
+
+  -panicWindow duration
+        Duration of panic window of the Autoscaler (default 6s)
+
+  -replicaLaunchDelay duration
+        Time it takes a Replica to move from launching to active (default 1s)
+
+  -replicaTerminateDelay duration
+        Time it takes a Replica to move from launching or active to terminated (default 1s)
+
+  -scaleToZeroGrace duration
+        Duration of the scale-to-zero grace period of the Autoscaler (default 30s)
+
+  -stableWindow duration
+        Duration of stable window of the Autoscaler (default 1m0s)
+
+  -targetConcurrencyDefault float
+        Default target concurrency of Replicas (default 1)
+
+  -targetConcurrencyPercentage float
+        Percentage adjustment of target concurrency of Replicas (default 0.5)
+
+  -tickInterval duration
+        Tick interval duration of the Autoscaler (default 2s)
+```
+
+### Reading the output
+
+The output has three parts.
+
+1. The header. This shows the totals for number of completed movements, number of ignored movements, clock time and
+   simulation time.
+1. Movements trace. This is every Movement that occurred during the life of the simulation.
+    * "Time" shows the current nanosecond of the simulation. Only one Movement can occur per time.
+    * "Movement name" is a simple descriptive title.
+    * "From Stock" shows the Stock from which the Entity is being removed.
+    * "To Stock" shows the Stock to which the Entity is being added.
+    * "Notes" shows annotations added to the Movement by one or more Stocks or Entities. These are mostly empty.
+1. Ignored Movements. The Environment did not carry these out during simulation. Most often this is because the
+   Movement would have occurred after the simulation ended.
