@@ -211,7 +211,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 		env:                env,
 		config:             config,
 		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
-		replicasActive:     NewReplicasActiveStock(),
+		replicasActive:     replicasActive,
 		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),
 		requestsInBuffer:   bufferStock,
 		requestsFailed:     requestsFailed,
