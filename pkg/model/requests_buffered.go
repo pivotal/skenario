@@ -63,7 +63,7 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 		for i := range rbs.delegate.EntitiesInStock() {
 			jitter = time.Duration(rand.Intn(int(time.Millisecond)))
 
-			replica := replicas[uint64(i) % m].(ReplicaEntity)
+			replica := replicas[uint64(i)%m].(ReplicaEntity)
 
 			rbs.env.AddToSchedule(simulator.NewMovement(
 				"buffer -> replica",
@@ -73,27 +73,24 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 			))
 		}
 	} else {
-		for _, e := range rbs.delegate.EntitiesInStock() {
+		request := entity.(RequestEntity)
+		backoff, outOfAttempts := request.NextBackoff()
+
+		if outOfAttempts {
+			rbs.env.AddToSchedule(simulator.NewMovement(
+				"exhausted_attempts",
+				rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
+				rbs,
+				rbs.requestsFailed,
+			))
+		} else {
 			jitter = time.Duration(rand.Intn(int(time.Millisecond)))
-
-			request := e.(RequestEntity)
-			backoff, outOfAttempts := request.NextBackoff()
-
-			if outOfAttempts {
-				rbs.env.AddToSchedule(simulator.NewMovement(
-					"exhausted_attempts",
-					rbs.env.CurrentMovementTime().Add(backoff).Add(jitter),
-					rbs,
-					rbs.requestsFailed,
-				))
-			} else {
-				rbs.env.AddToSchedule(simulator.NewMovement(
-					"buffer_backoff",
-					rbs.env.CurrentMovementTime().Add(backoff).Add(jitter),
-					rbs,
-					rbs,
-				))
-			}
+			rbs.env.AddToSchedule(simulator.NewMovement(
+				"buffer_backoff",
+				rbs.env.CurrentMovementTime().Add(backoff).Add(jitter),
+				rbs,
+				rbs,
+			))
 		}
 	}
 
