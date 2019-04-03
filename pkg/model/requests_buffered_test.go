@@ -86,8 +86,8 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("assigns the Requests to Replicas using round robin", func() {
-				first := envFake.movements[0].To().Name()
-				second := envFake.movements[1].To().Name()
+				first := envFake.movements[1].To().Name()
+				second := envFake.movements[2].To().Name()
 
 				assert.NotEqual(t, first, second)
 			})
