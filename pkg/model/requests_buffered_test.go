@@ -98,6 +98,10 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				assert.NotEqual(t, envFake.theTime.Add(1*time.Millisecond), envFake.movements[1].OccursAt())
 				assert.WithinDuration(t, envFake.theTime.Add(1*time.Millisecond), envFake.movements[1].OccursAt(), 1 * time.Millisecond)
 			})
+
+			it("changes the jitter for each movement", func() {
+				assert.NotEqual(t, envFake.movements[1].OccursAt(), envFake.movements[2].OccursAt())
+			})
 		})
 
 		describe("there are no other requests yet", func() {
@@ -164,6 +168,11 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					it("adds some jitter per request to avoid schedule collisions", func() {
 						assert.NotEqual(t, envFake.theTime.Add(130*time.Millisecond), envFake.movements[1].OccursAt())
 						assert.WithinDuration(t, envFake.theTime.Add(130*time.Millisecond), envFake.movements[1].OccursAt(), time.Millisecond)
+					})
+
+					it("changes the jitter for each movement", func() {
+						diff := (169 * time.Millisecond) - (130 * time.Millisecond)
+						assert.NotEqual(t, envFake.movements[1].OccursAt().Add(diff), envFake.movements[2].OccursAt())
 					})
 				})
 
