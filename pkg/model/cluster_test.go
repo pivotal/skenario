@@ -74,8 +74,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.Len(t, envFake.movements, defaultNumberOfArrivals)
 			})
 
-			it("movements are kind 'request -> buffer'", func() {
-				assert.Equal(t, simulator.MovementKind("request -> buffer"), envFake.movements[0].Kind())
+			it("movements are kind 'arrive_at_buffer'", func() {
+				assert.Equal(t, simulator.MovementKind("arrive_at_buffer"), envFake.movements[0].Kind())
 			})
 
 			it("movements from traffic source", func() {
@@ -197,7 +197,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[9].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[9].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {
@@ -225,7 +225,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements from ReplicasLaunching to ReplicasTerminating", func() {
 					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, simulator.MovementKind("launching -> terminated"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("terminate_launch"), envFake.movements[0].Kind())
 				})
 			})
 
@@ -280,7 +280,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[1].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[1].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {
@@ -299,7 +299,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
 					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, simulator.MovementKind("active -> terminated"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("terminate_active"), envFake.movements[0].Kind())
 				})
 			})
 
@@ -345,7 +345,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("adds another movement from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[1].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[1].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {
@@ -364,8 +364,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 				it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
 					assert.Len(t, envFake.movements, 2)
-					assert.Equal(t, "launching -> terminated", string(envFake.movements[0].Kind()))
-					assert.Equal(t, "active -> terminated", string(envFake.movements[1].Kind()))
+					assert.Equal(t, "terminate_launch", string(envFake.movements[0].Kind()))
+					assert.Equal(t, "terminate_active", string(envFake.movements[1].Kind()))
 				})
 			})
 
@@ -404,7 +404,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("launching -> active"), envFake.movements[1].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[1].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {

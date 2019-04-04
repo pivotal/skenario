@@ -91,7 +91,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				))
 
 			cm.env.AddToSchedule(simulator.NewMovement(
-				"launching -> active",
+				"finish_launching",
 				nextLaunch,
 				cm.replicasLaunching,
 				cm.replicasActive,
@@ -106,7 +106,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 		desireDelta = desireDelta + launching
 		for ; launching > 0; launching-- {
 			cm.env.AddToSchedule(simulator.NewMovement(
-				"launching -> terminated",
+				"terminate_launch",
 				nextTerminate,
 				cm.replicasLaunching,
 				cm.replicasTerminated,
@@ -116,7 +116,7 @@ func (cm *clusterModel) SetDesired(desired int32) {
 
 		for ; desireDelta < 0; desireDelta++ {
 			cm.env.AddToSchedule(simulator.NewMovement(
-				"active -> terminated",
+				"terminate_active",
 				nextTerminate,
 				cm.replicasActive,
 				cm.replicasTerminated,
@@ -187,7 +187,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 		r := rand.Int63n(runsFor.Nanoseconds())
 
 		env.AddToSchedule(simulator.NewMovement(
-			"request -> buffer",
+			"arrive_at_buffer",
 			env.CurrentMovementTime().Add(time.Duration(r)*time.Nanosecond),
 			trafficSource,
 			bufferStock,

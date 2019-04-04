@@ -60,7 +60,7 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	rps.numRequestsSinceLast++
 
 	rps.env.AddToSchedule(simulator.NewMovement(
-		"processing -> complete",
+		"complete_request",
 		rps.env.CurrentMovementTime().Add(1*time.Second),
 		rps,
 		rps.requestsComplete,

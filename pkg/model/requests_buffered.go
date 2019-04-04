@@ -67,7 +67,7 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 			replica := (*replicas[uint64(i)%countReplicas]).(ReplicaEntity)
 
 			rbs.env.AddToSchedule(simulator.NewMovement(
-				"buffer -> replica",
+				"send_to_replica",
 				rbs.env.CurrentMovementTime().Add(jitter),
 				rbs,
 				replica.RequestsProcessing(),

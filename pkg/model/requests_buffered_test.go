@@ -89,8 +89,8 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				first := envFake.movements[1]
 				second := envFake.movements[2]
 
-				assert.Equal(t, simulator.MovementKind("buffer -> replica"), first.Kind())
-				assert.Equal(t, simulator.MovementKind("buffer -> replica"), second.Kind())
+				assert.Equal(t, simulator.MovementKind("send_to_replica"), first.Kind())
+				assert.Equal(t, simulator.MovementKind("send_to_replica"), second.Kind())
 				assert.NotEqual(t, first.To(), second.To())
 			})
 
