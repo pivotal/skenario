@@ -109,6 +109,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 		ctx:        ctx,
 	}
 
+	kas.tickTock.Add(simulator.NewEntity("Autoscaler", "Autoscaler"))
 	firstCalculation := simulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock)
 	firstCalculation.AddNote("First calculation")
 

@@ -104,6 +104,7 @@ func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	var subject KnativeAutoscaler
+	var rawSubject *knativeAutoscaler
 	var envFake *fakeEnvironment
 	var cluster ClusterModel
 	var config ClusterConfig
@@ -122,6 +123,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
 			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
+			rawSubject = subject.(*knativeAutoscaler)
 		})
 
 		it("schedules a first calculation", func() {
@@ -141,6 +143,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		it("sets an Environment", func() {
 			assert.Equal(t, envFake, subject.Env())
+		})
+
+		it("adds an entity representing the autoscaler to the ticktock stock", func() {
+			assert.NotNil(t, rawSubject.tickTock.Remove())
 		})
 
 		describe("newLogger()", func() {
