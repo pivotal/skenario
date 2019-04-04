@@ -31,6 +31,7 @@ type requestsBufferedStock struct {
 	delegate       simulator.ThroughStock
 	replicas       ReplicasActiveStock
 	requestsFailed simulator.SinkStock
+	countRequests  int
 }
 
 func (rbs *requestsBufferedStock) Name() simulator.StockName {
@@ -56,6 +57,8 @@ func (rbs *requestsBufferedStock) Remove() simulator.Entity {
 func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 	addResult := rbs.delegate.Add(entity)
 
+	rbs.countRequests++
+
 	var jitter time.Duration
 	countReplicas := rbs.replicas.Count()
 	if countReplicas > 0 {
@@ -64,7 +67,7 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 		for i := range requests {
 			jitter = time.Duration(rand.Intn(int(time.Millisecond)))
 
-			replica := (*replicas[uint64(i)%countReplicas]).(ReplicaEntity)
+			replica := (*replicas[uint64(i+rbs.countRequests)%countReplicas]).(ReplicaEntity)
 
 			rbs.env.AddToSchedule(simulator.NewMovement(
 				"send_to_replica",
@@ -104,5 +107,6 @@ func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActive
 		delegate:       simulator.NewThroughStock("RequestsBuffered", "Request"),
 		replicas:       replicas,
 		requestsFailed: requestsFailed,
+		countRequests:  0,
 	}
 }
