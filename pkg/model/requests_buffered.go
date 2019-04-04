@@ -60,7 +60,8 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 	countReplicas := rbs.replicas.Count()
 	if countReplicas > 0 {
 		replicas := rbs.replicas.EntitiesInStock()
-		for i := range rbs.delegate.EntitiesInStock() {
+		requests := rbs.delegate.EntitiesInStock()
+		for i := range requests {
 			jitter = time.Duration(rand.Intn(int(time.Millisecond)))
 
 			replica := (*replicas[uint64(i)%countReplicas]).(ReplicaEntity)
