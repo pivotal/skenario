@@ -306,8 +306,12 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("contains the completed movements", func() {
-					assert.Contains(t, completed, CompletedMovement{Movement: first})
-					assert.Contains(t, completed, CompletedMovement{Movement: second})
+					assert.Equal(t, first, completed[1].Movement)
+					assert.Equal(t, second, completed[2].Movement)
+				})
+
+				it("contains the moved entities", func() {
+					assert.Equal(t, EntityName("entity-1"), completed[2].Moved.Name())
 				})
 			})
 

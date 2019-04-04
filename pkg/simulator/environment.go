@@ -37,11 +37,13 @@ type Environment interface {
 
 type CompletedMovement struct {
 	Movement Movement
+	Moved    Entity
 }
 
 type IgnoredMovement struct {
 	Reason   string
 	Movement Movement
+	Moved    Entity
 }
 
 type environment struct {
@@ -122,9 +124,10 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 		}
 
 		// TODO: handle nils and errors
-		movement.To().Add(movement.From().Remove())
+		moved := movement.From().Remove()
+		movement.To().Add(moved)
 
-		env.completed = append(env.completed, CompletedMovement{Movement: movement})
+		env.completed = append(env.completed, CompletedMovement{Movement: movement, Moved: moved})
 	}
 
 	return env.completed, env.ignored, nil

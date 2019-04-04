@@ -95,14 +95,21 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 	)
 
 	printer := message.NewPrinter(language.AmericanEnglish)
-	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-34s ⟶   %-34s  %-58s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Notes")).Bold())
+	fmt.Fprintln(writer, au.BgGreen(fmt.Sprintf("%20s  %-24s %-14s %-34s ⟶   %-34s  %-58s", "Time (ns)", "Movement Name", "Entity Name", "From Stock", "To Stock", "Notes")).Bold())
 
 	for _, c := range completed {
 		mv := c.Movement
+		e := c.Moved
+		eName := "<nil>"
+		if e != nil {
+			eName = string(e.Name())
+		}
+
 		fmt.Fprintln(writer, printer.Sprintf(
-			"%20d  %-24s %-34s ⟶   %-34s  %s",
+			"%20d  %-24s %-14s %-34s ⟶   %-34s  %s",
 			mv.OccursAt().UnixNano(),
 			mv.Kind(),
+			eName,
 			mv.From().Name(),
 			mv.To().Name(),
 			strings.Join(mv.Notes(), fmt.Sprintf("\n%-122s", " ")),
@@ -110,7 +117,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 	}
 
 	fmt.Fprint(writer, "\n")
-	fmt.Fprintln(writer, au.BgBrown(fmt.Sprintf("%20s  %-24s %-34s ⟶   %-34s  %-28s %-29s", "Time (ns)", "Movement Name", "From Stock", "To Stock", "Notes", "Reason Ignored")).Bold())
+	fmt.Fprintln(writer, au.BgBrown(fmt.Sprintf("%20s  %-24s %-14s %-34s ⟶   %-34s  %-28s %-29s", "Time (ns)", "Movement Name", "Entity Name", "From Stock", "To Stock", "Notes", "Reason Ignored")).Bold())
 	for _, i := range ignored {
 		mv := i.Movement
 
@@ -125,9 +132,10 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 		}
 
 		fmt.Fprintln(writer, printer.Sprintf(
-			"%20d  %-24s %-34s ⟶   %-34s  %-28s %-29s",
+			"%20d  %-24s %-14s %-34s ⟶   %-34s  %-28s %-29s",
 			mv.OccursAt().UnixNano(),
 			mv.Kind(),
+			"-",
 			mv.From().Name(),
 			mv.To().Name(),
 			strings.Join(mv.Notes(), fmt.Sprintf("\n%-122s", " ")),
