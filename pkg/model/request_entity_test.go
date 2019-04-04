@@ -16,6 +16,7 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -58,13 +59,19 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Entity interface", func() {
+		var number int
+
+		it.Before(func() {
+			number = rawSubject.number
+		})
+
 		it("implements Name()", func() {
-			assert.Equal(t, simulator.EntityName("request-1"), subject.Name())
+			assert.Equal(t, simulator.EntityName(fmt.Sprintf("request-%d", number)), subject.Name())
 		})
 
 		it("gives sequential Name()s", func() {
 			subject2 := NewRequestEntity(envFake, bufferStock)
-			assert.Equal(t, simulator.EntityName("request-2"), subject2.Name())
+			assert.Equal(t, simulator.EntityName(fmt.Sprintf("request-%d", number+1)), subject2.Name())
 		})
 
 		it("implements Kind()", func() {

@@ -35,6 +35,7 @@ type RequestEntity interface {
 
 type requestEntity struct {
 	env         simulator.Environment
+	number      int
 	bufferStock RequestsBufferedStock
 	nextBackoff time.Duration
 	attempts    int
@@ -43,8 +44,7 @@ type requestEntity struct {
 var reqNumber int
 
 func (re *requestEntity) Name() simulator.EntityName {
-	reqNumber++
-	return simulator.EntityName(fmt.Sprintf("request-%d", reqNumber))
+	return simulator.EntityName(fmt.Sprintf("request-%d", re.number))
 }
 
 func (re *requestEntity) Kind() simulator.EntityKind {
@@ -65,8 +65,10 @@ func (re *requestEntity) NextBackoff() (backoff time.Duration, outOfAttempts boo
 }
 
 func NewRequestEntity(env simulator.Environment, buffer RequestsBufferedStock) RequestEntity {
+	reqNumber++
 	return &requestEntity{
 		env:         env,
+		number:      reqNumber,
 		bufferStock: buffer,
 		nextBackoff: 100 * time.Millisecond,
 	}
