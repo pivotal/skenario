@@ -71,7 +71,7 @@ func testStock(t *testing.T, describe spec.G, it spec.S) {
 func testSourceStock(t *testing.T, describe spec.G, it spec.S) {
 	var subject SourceStock
 	var subjectAsThrough ThroughStock
-	var entity Entity
+	var entity1, entity2 Entity
 
 	it.Before(func() {
 		subjectAsThrough = NewThroughStock("test name", "test entity kind")
@@ -80,8 +80,12 @@ func testSourceStock(t *testing.T, describe spec.G, it spec.S) {
 		subject = subjectAsThrough.(SourceStock)
 		assert.NotNil(t, subject)
 
-		entity = NewEntity("test entity name", "test entity kind")
-		err := subjectAsThrough.Add(entity)
+		entity1 = NewEntity("test entity 1", "test entity kind")
+		err := subjectAsThrough.Add(entity1)
+		assert.NoError(t, err)
+
+		entity2 = NewEntity("test entity 2", "test entity kind")
+		err = subjectAsThrough.Add(entity2)
 		assert.NoError(t, err)
 	})
 
@@ -93,6 +97,11 @@ func testSourceStock(t *testing.T, describe spec.G, it spec.S) {
 
 			after := subject.Count()
 			assert.Equal(t, before-1, after)
+		})
+
+		it("removes in FIFO order", func() {
+			assert.Equal(t, entity1, subject.Remove())
+			assert.Equal(t, entity2, subject.Remove())
 		})
 	})
 }

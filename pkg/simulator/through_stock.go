@@ -60,9 +60,9 @@ func (s *stock) Add(entity Entity) error {
 }
 
 func (s *stock) Remove() Entity {
+	var e *Entity
 	if s.Count() > 0 {
-		e := s.stock[0]
-		s.stock = s.stock[:s.Count()-1]
+		e, s.stock = s.stock[0], s.stock[1:]
 		return *e
 	}
 
