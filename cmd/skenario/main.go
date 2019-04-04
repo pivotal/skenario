@@ -112,7 +112,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 			eName,
 			mv.From().Name(),
 			mv.To().Name(),
-			strings.Join(mv.Notes(), fmt.Sprintf("\n%-122s", " ")),
+			strings.Join(mv.Notes(), fmt.Sprintf("\n%-137s", " ")),
 		))
 	}
 
@@ -138,7 +138,7 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 			"-",
 			mv.From().Name(),
 			mv.To().Name(),
-			strings.Join(mv.Notes(), fmt.Sprintf("\n%-122s", " ")),
+			strings.Join(mv.Notes(), fmt.Sprintf("\n%-137s", " ")),
 			coloredReason,
 		))
 	}
