@@ -41,7 +41,7 @@ type ReplicaEntity interface {
 
 type replicaEntity struct {
 	env                  simulator.Environment
-	name                 simulator.EntityName
+	number               int
 	kubernetesClient     kubernetes.Interface
 	endpointsInformer    informers.EndpointsInformer
 	endpointAddress      corev1.EndpointAddress
@@ -119,7 +119,7 @@ func (re *replicaEntity) Stat() autoscaler.Stat {
 }
 
 func (re *replicaEntity) Name() simulator.EntityName {
-	return re.name
+	return simulator.EntityName(fmt.Sprintf("replica-%d", re.number))
 }
 
 func (re *replicaEntity) Kind() simulator.EntityKind {
@@ -128,18 +128,17 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 
 func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string) ReplicaEntity {
 	replicaNum++
-	name := simulator.EntityName(fmt.Sprintf("replica-%d", replicaNum))
 	complete := simulator.NewSinkStock("RequestsComplete", "Request")
-	processing := NewRequestsProcessingStock(env, name, complete)
 
 	re := &replicaEntity{
 		env:                env,
-		name:               name,
+		number:             replicaNum,
 		kubernetesClient:   client,
 		endpointsInformer:  endpointsInformer,
-		requestsProcessing: processing,
 		requestsComplete:   complete,
 	}
+
+	re.requestsProcessing = NewRequestsProcessingStock(env, re.Name(), complete)
 
 	re.endpointAddress = corev1.EndpointAddress{
 		IP:       address,
