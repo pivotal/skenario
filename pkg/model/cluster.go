@@ -17,10 +17,7 @@ package model
 
 import (
 	"context"
-	"encoding/binary"
-	"fmt"
 	"math/rand"
-	"net"
 	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -53,14 +50,11 @@ type EndpointInformerSource interface {
 	EPInformer() corev1informers.EndpointsInformer
 }
 
-type IPV4Sequence interface {
-	Next() string
-}
-
 type clusterModel struct {
 	env                simulator.Environment
 	config             ClusterConfig
 	currentDesired     int32
+	replicaSource      ReplicaSource
 	replicasLaunching  simulator.ThroughStock
 	replicasActive     simulator.ThroughStock
 	replicasTerminated simulator.SinkStock
@@ -68,7 +62,6 @@ type clusterModel struct {
 	requestsFailed     simulator.SinkStock
 	kubernetesClient   kubernetes.Interface
 	endpointsInformer  corev1informers.EndpointsInformer
-	nextIPValue        uint32
 }
 
 func (cm *clusterModel) Env() simulator.Environment {
@@ -87,13 +80,15 @@ func (cm *clusterModel) SetDesired(desired int32) {
 	desireDelta := desired - (launching + active)
 
 	if desireDelta > 0 {
+		offset := 1*time.Nanosecond
 		nextLaunch := cm.env.CurrentMovementTime().Add(cm.config.LaunchDelay)
 		for ; desireDelta > 0; desireDelta-- {
-			newReplica := NewReplicaEntity(cm.env, cm.kubernetesClient, cm.endpointsInformer, cm.Next())
-			err := cm.replicasLaunching.Add(newReplica)
-			if err != nil {
-				panic(fmt.Sprintf("could not scale up in ClusterModel: %s", err.Error()))
-			}
+			cm.env.AddToSchedule(simulator.NewMovement(
+				"begin_launch",
+				cm.env.CurrentMovementTime().Add(offset),
+				cm.replicaSource,
+				cm.replicasLaunching,
+				))
 
 			cm.env.AddToSchedule(simulator.NewMovement(
 				"launching -> active",
@@ -102,7 +97,8 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				cm.replicasActive,
 			))
 
-			nextLaunch = nextLaunch.Add(1 * time.Nanosecond)
+			nextLaunch = nextLaunch.Add(offset)
+			offset++
 		}
 	} else if desireDelta < 0 {
 		nextTerminate := cm.env.CurrentMovementTime().Add(cm.config.TerminateDelay)
@@ -164,15 +160,6 @@ func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
 	return cm.endpointsInformer
 }
 
-func (cm *clusterModel) Next() string {
-	ip := make(net.IP, 4)
-	binary.BigEndian.PutUint32(ip, cm.nextIPValue)
-
-	cm.nextIPValue++
-
-	return ip.String()
-}
-
 func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
@@ -210,6 +197,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	return &clusterModel{
 		env:                env,
 		config:             config,
+		replicaSource:      NewReplicaSource(env, fakeClient, endpointsInformer),
 		replicasLaunching:  simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:     replicasActive,
 		replicasTerminated: simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica")),
@@ -217,6 +205,5 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 		requestsFailed:     requestsFailed,
 		kubernetesClient:   fakeClient,
 		endpointsInformer:  endpointsInformer,
-		nextIPValue:        1,
 	}
 }
