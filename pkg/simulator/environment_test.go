@@ -316,12 +316,15 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			describe("ignored movements", func() {
-				var tooEarly, tooLate, goldilocks, collides Movement
+				var nilStock ThroughStock
+				var tooEarly, tooLate, goldilocks, collides, nilEntity Movement
 				var ignored []IgnoredMovement
 
 				it.Before(func() {
 					subject = NewEnvironment(startTime, runFor)
 					assert.NotNil(t, subject)
+
+					nilStock = NewThroughStock("NilStock", "test movement kind")
 
 					var err error
 
@@ -329,18 +332,20 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 					goldilocks = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock)
 					collides = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock)
 					tooLate = NewMovement("test movement kind", time.Unix(999999, 0), fromStock, toStock)
+					nilEntity = NewMovement("test movement kind", time.Unix(444444, 0), nilStock, toStock)
 
 					subject.AddToSchedule(tooEarly)
 					subject.AddToSchedule(goldilocks)
 					subject.AddToSchedule(collides)
 					subject.AddToSchedule(tooLate)
+					subject.AddToSchedule(nilEntity)
 					_, ignored, err = subject.Run()
 
 					assert.NoError(t, err)
 				})
 
 				it("contains the correct number of ignored movements", func() {
-					assert.Len(t, ignored, 3)
+					assert.Len(t, ignored, 4)
 				})
 
 				it("contains movements that were scheduled in the past", func() {
@@ -353,6 +358,10 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 				it("contains movements that could not be scheduled due to a timing collision", func() {
 					assert.Contains(t, ignored, IgnoredMovement{Reason: OccursSimultaneouslyWithAnotherMovement, Movement: collides})
+				})
+
+				it("contains movements for which the entity was nil", func() {
+					assert.Contains(t, ignored, IgnoredMovement{Reason: FromStockIsEmpty, Movement: nilEntity})
 				})
 
 				it("doesn't contain any events that were scheduled", func() {

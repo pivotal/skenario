@@ -129,6 +129,8 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 			coloredReason = au.Magenta(i.Reason).String()
 		case simulator.OccursSimultaneouslyWithAnotherMovement:
 			coloredReason = au.Cyan(i.Reason).String()
+		case simulator.FromStockIsEmpty:
+			coloredReason = au.Brown(i.Reason).String()
 		}
 
 		fmt.Fprintln(writer, printer.Sprintf(

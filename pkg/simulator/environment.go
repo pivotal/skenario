@@ -25,6 +25,7 @@ const (
 	OccursInPast                            = "ScheduledToOccurInPast"
 	OccursAfterHalt                         = "ScheduledToOccurAfterHalt"
 	OccursSimultaneouslyWithAnotherMovement = "ScheduleCollidesWithAnotherMovement"
+	FromStockIsEmpty                        = "FromStockEmptyAtMovementTime"
 )
 
 type Environment interface {
@@ -123,11 +124,13 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 			}
 		}
 
-		// TODO: handle nils and errors
 		moved := movement.From().Remove()
-		movement.To().Add(moved)
-
-		env.completed = append(env.completed, CompletedMovement{Movement: movement, Moved: moved})
+		if moved == nil {
+			env.ignored = append(env.ignored, IgnoredMovement{Movement: movement, Reason: FromStockIsEmpty})
+		} else {
+			movement.To().Add(moved)
+			env.completed = append(env.completed, CompletedMovement{Movement: movement, Moved: moved})
+		}
 	}
 
 	return env.completed, env.ignored, nil
