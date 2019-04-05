@@ -148,8 +148,9 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, envFake, subject.Env())
 		})
 
-		it("adds an entity representing the autoscaler to the ticktock stock", func() {
-			assert.NotNil(t, rawSubject.tickTock.Remove())
+		it("sets a ticktock stock", func() {
+			assert.NotNil(t, rawSubject.tickTock)
+			assert.Equal(t, simulator.StockName("Autoscaler Ticktock"), rawSubject.tickTock.Name())
 		})
 
 		describe("newLogger()", func() {
@@ -239,13 +240,18 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("OnMovement()", func() {
 		var asMovement simulator.Movement
-		var ttStock *tickTock
+		var ttStock AutoscalerTicktockStock
+		var autoscalerEntity simulator.Entity
 		var theTime = time.Now()
+
+		it.Before(func() {
+			autoscalerEntity = simulator.NewEntity("Test Autoscaler Entity", "Autoscaler")
+		})
 
 		describe("When moving from waiting to calculating", func() {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
-				ttStock = &tickTock{}
+				ttStock = NewAutoscalerTicktockStock(autoscalerEntity)
 				asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
 
 				err := subject.OnMovement(asMovement)
@@ -262,7 +268,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		describe("When moving from calculating to waiting", func() {
 			it.Before(func() {
 				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval: 999 * time.Second})
-				ttStock = &tickTock{}
+				ttStock = NewAutoscalerTicktockStock(autoscalerEntity)
 				asMovement = simulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
 
 				err := subject.OnMovement(asMovement)
@@ -419,59 +425,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				it("notes that there was a problem", func() {
 					assert.Equal(t, "autoscaler.Scale() was unsuccessful", asMovement.Notes()[0])
 				})
-			})
-		})
-	})
-
-	describe("tickTock stock", func() {
-		ttStock := &tickTock{}
-
-		it.Before(func() {
-			_ = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
-		})
-
-		describe("Name()", func() {
-			it("is called 'KnativeAutoscaler Stock'", func() {
-				assert.Equal(t, ttStock.Name(), simulator.StockName("Autoscaler ticktock"))
-			})
-		})
-
-		describe("KindStocked()", func() {
-			it("accepts Knative Autoscalers", func() {
-				assert.Equal(t, ttStock.KindStocked(), simulator.EntityKind("KnativeAutoscaler"))
-			})
-		})
-
-		describe("Count()", func() {
-			it("always has 1 entity stocked", func() {
-				assert.Equal(t, ttStock.Count(), uint64(1))
-
-				err := ttStock.Add(simulator.NewEntity("test entity", simulator.EntityKind("KnativeAutoscaler")))
-				assert.NoError(t, err)
-
-				assert.Equal(t, ttStock.Count(), uint64(1))
-			})
-		})
-
-		describe("Remove()", func() {
-			it("gives back the one KnativeAutoscaler", func() {
-				entity := simulator.NewEntity("test entity", simulator.EntityKind("KnativeAutoscaler"))
-				err := ttStock.Add(entity)
-				assert.NoError(t, err)
-
-				assert.Equal(t, ttStock.Remove(), entity)
-			})
-		})
-
-		describe("Add()", func() {
-			it("adds the entity if it's not already set", func() {
-				assert.Nil(t, ttStock.asEntity)
-
-				entity := simulator.NewEntity("test entity", simulator.EntityKind("KnativeAutoscaler"))
-				err := ttStock.Add(entity)
-				assert.NoError(t, err)
-
-				assert.Equal(t, ttStock.asEntity, entity)
 			})
 		})
 	})

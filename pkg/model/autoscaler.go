@@ -54,7 +54,7 @@ type KnativeAutoscaler interface {
 
 type knativeAutoscaler struct {
 	env        simulator.Environment
-	tickTock   *tickTock
+	tickTock   AutoscalerTicktockStock
 	cluster    ClusterModel
 	autoscaler autoscaler.UniScaler
 	ctx        context.Context
@@ -102,16 +102,17 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 	epiSource := cluster.(EndpointInformerSource)
 	kpa := newKpa(logger, epiSource, config)
 
+	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
+
 	kas := &knativeAutoscaler{
 		env:        env,
-		tickTock:   &tickTock{},
+		tickTock:   NewAutoscalerTicktockStock(autoscalerEntity),
 		cluster:    cluster,
 		autoscaler: kpa,
 		ctx:        ctx,
 		config:     config,
 	}
 
-	kas.tickTock.Add(simulator.NewEntity("Autoscaler", "Autoscaler"))
 	firstCalculation := simulator.NewMovement(MvWaitingToCalculating, startAt.Add(config.TickInterval).Add(1*time.Millisecond), kas.tickTock, kas.tickTock)
 	firstCalculation.AddNote("First calculation")
 
@@ -171,34 +172,4 @@ func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerS
 	}
 
 	return as
-}
-
-type tickTock struct {
-	asEntity simulator.Entity
-}
-
-func (tt *tickTock) Name() simulator.StockName {
-	return "Autoscaler ticktock"
-}
-
-func (tt *tickTock) KindStocked() simulator.EntityKind {
-	return simulator.EntityKind("KnativeAutoscaler")
-}
-
-func (tt *tickTock) Count() uint64 {
-	return 1
-}
-
-func (tt *tickTock) EntitiesInStock() []*simulator.Entity {
-	return []*simulator.Entity{&tt.asEntity}
-}
-
-func (tt *tickTock) Remove() simulator.Entity {
-	return tt.asEntity
-}
-
-func (tt *tickTock) Add(entity simulator.Entity) error {
-	tt.asEntity = entity
-
-	return nil
 }
