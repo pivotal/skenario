@@ -96,7 +96,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 			it("adds some jitter to avoid schedule collisions", func() {
 				assert.NotEqual(t, envFake.theTime.Add(1*time.Millisecond), envFake.movements[1].OccursAt())
-				assert.WithinDuration(t, envFake.theTime.Add(1*time.Millisecond), envFake.movements[1].OccursAt(), 1 * time.Millisecond)
+				assert.WithinDuration(t, envFake.theTime.Add(1*time.Millisecond), envFake.movements[1].OccursAt(), 1*time.Millisecond)
 			})
 
 			it("changes the jitter for each movement", func() {

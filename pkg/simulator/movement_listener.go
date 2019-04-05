@@ -18,4 +18,3 @@ package simulator
 type MovementListener interface {
 	OnMovement(movement Movement) error
 }
-

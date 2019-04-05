@@ -167,8 +167,8 @@ func (r *runner) AutoscalerConfig() model.KnativeAutoscalerConfig {
 
 func (r *runner) ClusterConfig() model.ClusterConfig {
 	return model.ClusterConfig{
-		LaunchDelay:    *launchDelay,
-		TerminateDelay: *terminateDelay,
+		LaunchDelay:      *launchDelay,
+		TerminateDelay:   *terminateDelay,
 		NumberOfRequests: *numberOfRequests,
 	}
 }

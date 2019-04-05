@@ -115,7 +115,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					rawSubject = subject.(*clusterModel)
 					envFake.movements = make([]simulator.Movement, 0)
 
-					firstLaunchAt = envFake.theTime.Add(rawSubject.config.LaunchDelay).Add(1*time.Nanosecond)
+					firstLaunchAt = envFake.theTime.Add(rawSubject.config.LaunchDelay).Add(1 * time.Nanosecond)
 					secondLaunchAt = firstLaunchAt.Add(1 * time.Nanosecond)
 
 					subject.SetDesired(2)
@@ -535,4 +535,3 @@ func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 }
-

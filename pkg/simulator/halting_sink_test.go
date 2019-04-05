@@ -33,10 +33,10 @@ func testHaltingSink(t *testing.T, describe spec.G, it spec.S) {
 	var e Entity
 
 	it.Before(func() {
-	 	mpq = NewMovementPriorityQueue()
+		mpq = NewMovementPriorityQueue()
 		assert.False(t, mpq.IsClosed())
 
-	 	subject = NewHaltingSink("test name", "Scenario", mpq)
+		subject = NewHaltingSink("test name", "Scenario", mpq)
 		e = NewEntity("test entity", "Scenario")
 	})
 

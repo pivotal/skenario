@@ -33,8 +33,8 @@ const (
 	MvWaitingToCalculating simulator.MovementKind = "autoscaler_calc"
 	MvCalculatingToWaiting simulator.MovementKind = "autoscaler_wait"
 
-	testNamespace               = "simulator-namespace"
-	testName                    = "revisionService"
+	testNamespace = "simulator-namespace"
+	testName      = "revisionService"
 )
 
 type KnativeAutoscalerConfig struct {

@@ -131,11 +131,11 @@ func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, en
 	complete := simulator.NewSinkStock("RequestsComplete", "Request")
 
 	re := &replicaEntity{
-		env:                env,
-		number:             replicaNum,
-		kubernetesClient:   client,
-		endpointsInformer:  endpointsInformer,
-		requestsComplete:   complete,
+		env:               env,
+		number:            replicaNum,
+		kubernetesClient:  client,
+		endpointsInformer: endpointsInformer,
+		requestsComplete:  complete,
 	}
 
 	re.requestsProcessing = NewRequestsProcessingStock(env, re.Name(), complete)

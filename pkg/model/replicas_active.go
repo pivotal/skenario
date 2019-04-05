@@ -24,7 +24,7 @@ type ReplicasActiveStock interface {
 }
 
 type replicasActiveStock struct {
-	delegate          simulator.ThroughStock
+	delegate simulator.ThroughStock
 }
 
 func (ras *replicasActiveStock) Name() simulator.StockName {
@@ -60,6 +60,6 @@ func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
 
 func NewReplicasActiveStock() ReplicasActiveStock {
 	return &replicasActiveStock{
-		delegate:          simulator.NewThroughStock("ReplicasActive", "Replica"),
+		delegate: simulator.NewThroughStock("ReplicasActive", "Replica"),
 	}
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-
 )
 
 func TestStock(t *testing.T) {
