@@ -87,7 +87,7 @@ func (kas *knativeAutoscaler) OnMovement(movement simulator.Movement) error {
 			}
 		}
 
-		kas.env.AddToSchedule(simulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Nanosecond), kas.tickTock, kas.tickTock))
+		kas.env.AddToSchedule(simulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Millisecond), kas.tickTock, kas.tickTock))
 	case MvCalculatingToWaiting:
 		kas.env.AddToSchedule(simulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock))
 	}

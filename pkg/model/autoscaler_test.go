@@ -249,9 +249,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				assert.NoError(t, err)
 			})
 
-			it("schedules a calculating -> waiting movement", func() {
+			it("schedules a calculating -> waiting movement for 1ms later", func() {
 				next := envFake.movements[len(envFake.movements)-1]
 				assert.Equal(t, MvCalculatingToWaiting, next.Kind())
+				assert.Equal(t, theTime.Add(1*time.Millisecond), next.OccursAt())
 			})
 		})
 
