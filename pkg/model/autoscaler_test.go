@@ -122,21 +122,48 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
-			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval:111*time.Second})
+			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval: 60 * time.Second})
 			rawSubject = subject.(*knativeAutoscaler)
 		})
 
-		describe("scheduling the first waiting to calculation movement", func() {
-			it("is an autoscaler_calc movement", func() {
-				assert.Equal(t, simulator.MovementKind("autoscaler_calc"), envFake.movements[0].Kind())
+		describe("scheduling calculations and waits", func() {
+			var tickInterval time.Duration
+			var calcMovements, waitMovements []simulator.Movement
+
+			it.Before(func() {
+				tickInterval = 1 * time.Minute
+				calcMovements = []simulator.Movement{}
+				waitMovements = []simulator.Movement{}
+
+				for _, mv := range envFake.movements {
+					if mv.Kind() == MvWaitingToCalculating {
+						calcMovements = append(calcMovements, mv)
+					} else if mv.Kind() == MvCalculatingToWaiting {
+						waitMovements = append(waitMovements, mv)
+					}
+				}
 			})
 
-			it("OccursAt is based on KnativeAutoscalerConfig.TickInterval + 1ms", func() {
-				assert.Equal(t, startAt.Add(111*time.Second).Add(1*time.Millisecond), envFake.movements[0].OccursAt())
+			it("schedules an autoscaler_calc movement to occur on each TickInterval", func() {
+				assert.Len(t, calcMovements, 59)
+
+				theTime := startAt.Add(1 * time.Nanosecond)
+				for _, mv := range calcMovements {
+					theTime = theTime.Add(tickInterval)
+
+					assert.Equal(t, theTime, mv.OccursAt())
+				}
 			})
 
-			it("has a note about it being the first calculation", func() {
-				assert.Equal(t, "First calculation", envFake.movements[0].Notes()[0])
+			it("schedules an autoscaler_wait movement to occur 1ms after each autoscaler_calc", func() {
+				assert.Len(t, calcMovements, 59)
+
+				theTime := startAt.Add(1 * time.Nanosecond)
+				for _, mv := range waitMovements {
+					theTime = theTime.Add(tickInterval)
+
+					assert.Equal(t, theTime.Add(1 * time.Millisecond), mv.OccursAt())
+				}
 			})
 		})
 
@@ -241,50 +268,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	describe("OnMovement()", func() {
 		var asMovement simulator.Movement
 		var ttStock AutoscalerTicktockStock
-		var autoscalerEntity simulator.Entity
 		var theTime = time.Now()
-
-		it.Before(func() {
-			autoscalerEntity = simulator.NewEntity("Test Autoscaler Entity", "Autoscaler")
-		})
-
-		describe("When moving from waiting to calculating", func() {
-			it.Before(func() {
-				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
-				ttStock = NewAutoscalerTicktockStock(autoscalerEntity)
-				asMovement = simulator.NewMovement(MvWaitingToCalculating, theTime, ttStock, ttStock)
-
-				err := subject.OnMovement(asMovement)
-				assert.NoError(t, err)
-			})
-
-			it("schedules a calculating -> waiting movement for 1ms later", func() {
-				next := envFake.movements[len(envFake.movements)-1]
-				assert.Equal(t, MvCalculatingToWaiting, next.Kind())
-				assert.Equal(t, theTime.Add(1*time.Millisecond), next.OccursAt())
-			})
-		})
-
-		describe("When moving from calculating to waiting", func() {
-			it.Before(func() {
-				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval: 999 * time.Second})
-				ttStock = NewAutoscalerTicktockStock(autoscalerEntity)
-				asMovement = simulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
-
-				err := subject.OnMovement(asMovement)
-				assert.NoError(t, err)
-			})
-
-			it("schedules a waiting -> calculating movement", func() {
-				next := envFake.movements[len(envFake.movements)-1]
-				assert.Equal(t, MvWaitingToCalculating, next.Kind())
-			})
-
-			it("chooses the OccursAt time based on KnativeAutoscalerConfig.TickInterval", func() {
-				next := envFake.movements[len(envFake.movements)-1]
-				assert.Equal(t, theTime.Add(999 * time.Second), next.OccursAt())
-			})
-		})
 
 		describe("driving the actual Autoscaler", func() {
 			var autoscalerFake *fakeAutoscaler
