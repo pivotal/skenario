@@ -55,6 +55,7 @@ func (rbs *requestsBufferedStock) Remove() simulator.Entity {
 }
 
 func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
+	request := entity.(RequestEntity)
 	addResult := rbs.delegate.Add(entity)
 
 	rbs.countRequests++
@@ -63,21 +64,16 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 	countReplicas := rbs.replicas.Count()
 	if countReplicas > 0 {
 		replicas := rbs.replicas.EntitiesInStock()
-		requests := rbs.delegate.EntitiesInStock()
-		for i := range requests {
-			jitter = time.Duration(rand.Intn(int(time.Millisecond)))
+		replica := (*replicas[uint64(rbs.countRequests)%countReplicas]).(ReplicaEntity)
+		jitter = time.Duration(rand.Intn(int(time.Millisecond)))
 
-			replica := (*replicas[uint64(i+rbs.countRequests)%countReplicas]).(ReplicaEntity)
-
-			rbs.env.AddToSchedule(simulator.NewMovement(
-				"send_to_replica",
-				rbs.env.CurrentMovementTime().Add(jitter),
-				rbs,
-				replica.RequestsProcessing(),
-			))
-		}
+		rbs.env.AddToSchedule(simulator.NewMovement(
+			"send_to_replica",
+			rbs.env.CurrentMovementTime().Add(jitter),
+			rbs,
+			replica.RequestsProcessing(),
+		))
 	} else {
-		request := entity.(RequestEntity)
 		backoff, outOfAttempts := request.NextBackoff()
 
 		if outOfAttempts {
