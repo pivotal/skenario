@@ -122,19 +122,22 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
-			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
+			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval:111*time.Second})
 			rawSubject = subject.(*knativeAutoscaler)
 		})
 
-		it("schedules a first calculation", func() {
-			var found bool
-			for _, mv := range envFake.movements {
-				if mv.Kind() == simulator.MovementKind(MvWaitingToCalculating) {
-					found = true
-					break
-				}
-			}
-			assert.True(t, found)
+		describe("scheduling the first waiting to calculation movement", func() {
+			it("is an autoscaler_calc movement", func() {
+				assert.Equal(t, simulator.MovementKind("autoscaler_calc"), envFake.movements[0].Kind())
+			})
+
+			it("OccursAt is based on KnativeAutoscalerConfig.TickInterval + 1ms", func() {
+				assert.Equal(t, startAt.Add(111*time.Second).Add(1*time.Millisecond), envFake.movements[0].OccursAt())
+			})
+
+			it("has a note about it being the first calculation", func() {
+				assert.Equal(t, "First calculation", envFake.movements[0].Notes()[0])
+			})
 		})
 
 		it("registers itself as a MovementListener", func() {
@@ -258,7 +261,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("When moving from calculating to waiting", func() {
 			it.Before(func() {
-				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{})
+				subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval: 999 * time.Second})
 				ttStock = &tickTock{}
 				asMovement = simulator.NewMovement(MvCalculatingToWaiting, theTime, ttStock, ttStock)
 
@@ -269,6 +272,11 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it("schedules a waiting -> calculating movement", func() {
 				next := envFake.movements[len(envFake.movements)-1]
 				assert.Equal(t, MvWaitingToCalculating, next.Kind())
+			})
+
+			it("chooses the OccursAt time based on KnativeAutoscalerConfig.TickInterval", func() {
+				next := envFake.movements[len(envFake.movements)-1]
+				assert.Equal(t, theTime.Add(999 * time.Second), next.OccursAt())
 			})
 		})
 

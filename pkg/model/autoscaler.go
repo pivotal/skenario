@@ -58,6 +58,7 @@ type knativeAutoscaler struct {
 	cluster    ClusterModel
 	autoscaler autoscaler.UniScaler
 	ctx        context.Context
+	config     KnativeAutoscalerConfig
 }
 
 func (kas *knativeAutoscaler) Env() simulator.Environment {
@@ -89,7 +90,7 @@ func (kas *knativeAutoscaler) OnMovement(movement simulator.Movement) error {
 
 		kas.env.AddToSchedule(simulator.NewMovement(MvCalculatingToWaiting, movement.OccursAt().Add(1*time.Millisecond), kas.tickTock, kas.tickTock))
 	case MvCalculatingToWaiting:
-		kas.env.AddToSchedule(simulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(2*time.Second), kas.tickTock, kas.tickTock))
+		kas.env.AddToSchedule(simulator.NewMovement(MvWaitingToCalculating, movement.OccursAt().Add(kas.config.TickInterval), kas.tickTock, kas.tickTock))
 	}
 
 	return nil
@@ -107,10 +108,11 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 		cluster:    cluster,
 		autoscaler: kpa,
 		ctx:        ctx,
+		config:     config,
 	}
 
 	kas.tickTock.Add(simulator.NewEntity("Autoscaler", "Autoscaler"))
-	firstCalculation := simulator.NewMovement(MvWaitingToCalculating, startAt.Add(2001*time.Millisecond), kas.tickTock, kas.tickTock)
+	firstCalculation := simulator.NewMovement(MvWaitingToCalculating, startAt.Add(config.TickInterval).Add(1*time.Millisecond), kas.tickTock, kas.tickTock)
 	firstCalculation.AddNote("First calculation")
 
 	env.AddToSchedule(firstCalculation)
