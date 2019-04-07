@@ -46,7 +46,7 @@ type KnativeAutoscalerConfig struct {
 	MaxScaleUpRate              float64
 }
 
-type KnativeAutoscaler interface {
+type KnativeAutoscalerModel interface {
 	Model
 }
 
@@ -59,7 +59,7 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 	return kas.env
 }
 
-func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscaler {
+func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
 	logger := newLogger()
 	ctx := newLoggedCtx(logger)
 	epiSource := cluster.(EndpointInformerSource)

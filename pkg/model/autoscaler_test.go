@@ -103,7 +103,7 @@ func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
 }
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
-	var subject KnativeAutoscaler
+	var subject KnativeAutoscalerModel
 	var rawSubject *knativeAutoscaler
 	var envFake *fakeEnvironment
 	var cluster ClusterModel
