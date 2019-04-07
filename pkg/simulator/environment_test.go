@@ -228,10 +228,6 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			it("Add()s to the 'to' stock", func() {
 				toMock.AssertCalled(t, "Add", e)
 			})
-
-			it.Pend("updates the simulation time", func() {
-
-			})
 		})
 
 		describe("results", func() {
