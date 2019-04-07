@@ -179,7 +179,7 @@ func (r *runner) ClusterConfig() model.ClusterConfig {
 
 func NewRunner() Runner {
 	logger := newLogger()
-	ctx := newLoggedCtx(logger)
+	ctx := logging.WithLogger(context.Background(), logger)
 
 	return &runner{
 		env: simulator.NewEnvironment(ctx, startAt, *simDuration),
@@ -188,16 +188,13 @@ func NewRunner() Runner {
 
 func newLogger() *zap.SugaredLogger {
 	devCfg := zap.NewDevelopmentConfig()
-	devCfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	devCfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
 	devCfg.OutputPaths = []string{"stdout"}
 	devCfg.ErrorOutputPaths = []string{"stderr"}
 	unsugaredLogger, err := devCfg.Build()
 	if err != nil {
 		panic(err.Error())
 	}
-	return unsugaredLogger.Sugar()
+	return unsugaredLogger.Named("skenario").Sugar()
 }
 
-func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
-	return logging.WithLogger(context.Background(), logger)
-}

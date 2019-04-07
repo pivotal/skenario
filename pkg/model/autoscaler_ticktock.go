@@ -62,7 +62,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	currentTime := asts.env.CurrentMovementTime()
 
-	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime, asts.env.Context())
+	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime)
 	desired, _ := asts.autoscaler.Scale(context.Background(), currentTime)
 
 	asts.cluster.SetDesired(desired)

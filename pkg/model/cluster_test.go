@@ -16,7 +16,6 @@
 package model
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -451,7 +450,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		var rawSubject *clusterModel
 		var bufferRecorded autoscaler.Stat
 		var theTime = time.Now()
-		var ctx = context.Background()
 		var replicaFake *fakeReplica
 		envFake = new(fakeEnvironment)
 		recordOnce := 1
@@ -478,7 +476,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 
-			subject.RecordToAutoscaler(autoscalerFake, &theTime, ctx)
+			subject.RecordToAutoscaler(autoscalerFake, &theTime)
 			bufferRecorded = autoscalerFake.recorded[0]
 		})
 

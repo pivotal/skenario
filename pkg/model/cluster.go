@@ -16,7 +16,6 @@
 package model
 
 import (
-	"context"
 	"math/rand"
 	"time"
 
@@ -43,7 +42,7 @@ type ClusterModel interface {
 	SetDesired(int32)
 	CurrentLaunching() uint64
 	CurrentActive() uint64
-	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context)
+	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
 }
 
 type EndpointInformerSource interface {
@@ -138,9 +137,9 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time, ctx context.Context) {
+func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
 	// first report for the buffer
-	scaler.Record(ctx, autoscaler.Stat{
+	scaler.Record(cm.env.Context(), autoscaler.Stat{
 		Time:                      atTime,
 		PodName:                   "Buffer",
 		AverageConcurrentRequests: float64(cm.requestsInBuffer.Count()),
@@ -152,7 +151,7 @@ func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *
 		r := (*e).(ReplicaEntity)
 		stat := r.Stat()
 
-		scaler.Record(ctx, stat)
+		scaler.Record(cm.env.Context(), stat)
 	}
 }
 
