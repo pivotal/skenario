@@ -109,5 +109,10 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 		it("tells the Replica entity that it is terminating", func() {
 			assert.True(t, replicaFake.deactivateCalled)
 		})
+
+		it("returns nil if it is empty", func() {
+			assert.Zero(t, subject.Count())
+			assert.Nil(t, subject.Remove())
+		})
 	})
 }
