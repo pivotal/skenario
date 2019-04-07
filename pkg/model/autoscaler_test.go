@@ -40,18 +40,12 @@ func TestAutoscaler(t *testing.T) {
 
 type fakeEnvironment struct {
 	movements []simulator.Movement
-	listeners []simulator.MovementListener
 	theTime   time.Time
 }
 
 func (fe *fakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
 	fe.movements = append(fe.movements, movement)
 	return true
-}
-
-func (fe *fakeEnvironment) AddMovementListener(listener simulator.MovementListener) error {
-	fe.listeners = append(fe.listeners, listener)
-	return nil
 }
 
 func (fe *fakeEnvironment) Run() (completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, err error) {
@@ -114,7 +108,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		config = ClusterConfig{}
 		envFake = &fakeEnvironment{
 			movements: make([]simulator.Movement, 0),
-			listeners: make([]simulator.MovementListener, 0),
 			theTime:   startAt,
 		}
 		cluster = NewCluster(envFake, config)

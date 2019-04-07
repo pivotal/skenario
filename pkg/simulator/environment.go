@@ -30,7 +30,6 @@ const (
 
 type Environment interface {
 	AddToSchedule(movement Movement) (added bool)
-	AddMovementListener(listener MovementListener) error
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
 	HaltTime() time.Time
@@ -59,7 +58,6 @@ type environment struct {
 	futureMovements   MovementPriorityQueue
 	completed         []CompletedMovement
 	ignored           []IgnoredMovement
-	movementListeners []MovementListener
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -96,11 +94,6 @@ func (env *environment) AddToSchedule(movement Movement) (added bool) {
 	return schedulable
 }
 
-func (env *environment) AddMovementListener(listener MovementListener) error {
-	env.movementListeners = append(env.movementListeners, listener)
-	return nil
-}
-
 func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 	for {
 		var err error
@@ -115,14 +108,6 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 		}
 
 		env.current = movement.OccursAt()
-
-		for _, ml := range env.movementListeners {
-			err = ml.OnMovement(movement)
-			if err != nil {
-				// TODO: panic might be overkill
-				panic(err.Error())
-			}
-		}
 
 		moved := movement.From().Remove()
 		if moved == nil {
@@ -165,7 +150,6 @@ func newEnvironment(startAt time.Time, runFor time.Duration, pqueue MovementPrio
 		futureMovements:   pqueue,
 		completed:         make([]CompletedMovement, 0),
 		ignored:           make([]IgnoredMovement, 0),
-		movementListeners: make([]MovementListener, 0),
 	}
 
 	env = setupScenarioMovements(env, startAt, env.haltAt, env.beforeScenario, env.runningScenario, env.haltedScenario)
