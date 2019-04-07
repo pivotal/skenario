@@ -17,7 +17,6 @@ package model
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/knative/pkg/logging"
@@ -49,49 +48,15 @@ type KnativeAutoscalerConfig struct {
 
 type KnativeAutoscaler interface {
 	Model
-	simulator.MovementListener
 }
 
 type knativeAutoscaler struct {
 	env        simulator.Environment
 	tickTock   AutoscalerTicktockStock
-	cluster    ClusterModel
-	autoscaler autoscaler.UniScaler
-	ctx        context.Context
-	config     KnativeAutoscalerConfig
 }
 
 func (kas *knativeAutoscaler) Env() simulator.Environment {
 	return kas.env
-}
-
-func (kas *knativeAutoscaler) OnMovement(movement simulator.Movement) error {
-	switch movement.Kind() {
-	case MvWaitingToCalculating:
-		occursAt := movement.OccursAt()
-		kas.cluster.RecordToAutoscaler(kas.autoscaler, &occursAt, kas.ctx)
-
-		currentlyActive := int32(kas.cluster.CurrentActive())
-
-		desired, ok := kas.autoscaler.Scale(kas.ctx, movement.OccursAt())
-		if !ok {
-			movement.AddNote("autoscaler.Scale() was unsuccessful")
-		} else {
-			if desired > currentlyActive {
-				movement.AddNote(fmt.Sprintf("%d ⇑ %d", currentlyActive, desired))
-
-				kas.cluster.SetDesired(desired)
-			} else if desired < currentlyActive {
-				movement.AddNote(fmt.Sprintf("%d ⥥ %d", currentlyActive, desired))
-
-				kas.cluster.SetDesired(desired)
-			}
-		}
-	case MvCalculatingToWaiting:
-		// do nothing
-	}
-
-	return nil
 }
 
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscaler {
@@ -104,14 +69,10 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 
 	kas := &knativeAutoscaler{
 		env:        env,
-		tickTock:   NewAutoscalerTicktockStock(autoscalerEntity),
-		cluster:    cluster,
-		autoscaler: kpa,
-		ctx:        ctx,
-		config:     config,
+		tickTock:   NewAutoscalerTicktockStock(env, autoscalerEntity, kpa, cluster, ctx),
 	}
 
-	for theTime := startAt.Add(config.TickInterval).Add(1*time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
+	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
 		kas.env.AddToSchedule(simulator.NewMovement(
 			MvWaitingToCalculating,
 			theTime,
@@ -125,11 +86,6 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 			kas.tickTock,
 			kas.tickTock,
 		))
-	}
-
-	err := env.AddMovementListener(kas)
-	if err != nil {
-		panic(err.Error())
 	}
 
 	return kas

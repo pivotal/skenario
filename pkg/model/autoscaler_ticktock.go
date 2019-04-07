@@ -16,7 +16,10 @@
 package model
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/knative/serving/pkg/autoscaler"
 
 	"knative-simulator/pkg/simulator"
 )
@@ -26,7 +29,11 @@ type AutoscalerTicktockStock interface {
 }
 
 type autoscalerTicktockStock struct {
+	env              simulator.Environment
+	cluster          ClusterModel
+	ctx              context.Context
 	autoscalerEntity simulator.Entity
+	autoscaler       autoscaler.UniScaler
 }
 
 func (asts *autoscalerTicktockStock) Name() simulator.StockName {
@@ -53,11 +60,23 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	if asts.autoscalerEntity != entity {
 		return fmt.Errorf("'%+v' is different from the entity given at creation time, '%+v'", entity, asts.autoscalerEntity)
 	}
+
+	currentTime := asts.env.CurrentMovementTime()
+
+	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime, asts.ctx)
+	desired, _ := asts.autoscaler.Scale(context.Background(), currentTime)
+
+	asts.cluster.SetDesired(desired)
+
 	return nil
 }
 
-func NewAutoscalerTicktockStock(scalerEntity simulator.Entity) AutoscalerTicktockStock {
+func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, scaler autoscaler.UniScaler, cluster ClusterModel, ctx context.Context) AutoscalerTicktockStock {
 	return &autoscalerTicktockStock{
+		env:              env,
+		cluster:          cluster,
+		ctx:              ctx,
 		autoscalerEntity: scalerEntity,
+		autoscaler:       scaler,
 	}
 }
