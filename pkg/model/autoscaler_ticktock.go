@@ -16,7 +16,6 @@
 package model
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -63,7 +62,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	currentTime := asts.env.CurrentMovementTime()
 
 	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime)
-	desired, _ := asts.autoscaler.Scale(context.Background(), currentTime)
+	desired, _ := asts.autoscaler.Scale(asts.env.Context(), currentTime)
 
 	asts.cluster.SetDesired(desired)
 
