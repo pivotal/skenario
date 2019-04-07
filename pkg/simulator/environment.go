@@ -16,6 +16,7 @@
 package simulator
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -33,6 +34,7 @@ type Environment interface {
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
 	HaltTime() time.Time
+	Context() context.Context
 }
 
 type CompletedMovement struct {
@@ -47,6 +49,8 @@ type IgnoredMovement struct {
 }
 
 type environment struct {
+	ctx context.Context
+
 	current time.Time
 	startAt time.Time
 	haltAt  time.Time
@@ -55,9 +59,9 @@ type environment struct {
 	runningScenario ThroughStock
 	haltedScenario  ThroughStock
 
-	futureMovements   MovementPriorityQueue
-	completed         []CompletedMovement
-	ignored           []IgnoredMovement
+	futureMovements MovementPriorityQueue
+	completed       []CompletedMovement
+	ignored         []IgnoredMovement
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -129,27 +133,32 @@ func (env *environment) HaltTime() time.Time {
 	return env.haltAt
 }
 
-func NewEnvironment(startAt time.Time, runFor time.Duration) Environment {
-	pqueue := NewMovementPriorityQueue()
-	return newEnvironment(startAt, runFor, pqueue)
+func (env *environment) Context() context.Context {
+	return env.ctx
 }
 
-func newEnvironment(startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue) *environment {
+func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration) Environment {
+	pqueue := NewMovementPriorityQueue()
+	return newEnvironment(ctx, startAt, runFor, pqueue)
+}
+
+func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue) *environment {
 	beforeStock := NewThroughStock("BeforeScenario", "Scenario")
 	runningStock := NewThroughStock("RunningScenario", "Scenario")
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
+		ctx:     ctx,
 		current: startAt.Add(-1 * time.Nanosecond), // make temporary space for the Start Scenario movement
 		startAt: startAt,
 		haltAt:  startAt.Add(runFor),
 
-		beforeScenario:    beforeStock,
-		runningScenario:   runningStock,
-		haltedScenario:    haltingStock,
-		futureMovements:   pqueue,
-		completed:         make([]CompletedMovement, 0),
-		ignored:           make([]IgnoredMovement, 0),
+		beforeScenario:  beforeStock,
+		runningScenario: runningStock,
+		haltedScenario:  haltingStock,
+		futureMovements: pqueue,
+		completed:       make([]CompletedMovement, 0),
+		ignored:         make([]IgnoredMovement, 0),
 	}
 
 	env = setupScenarioMovements(env, startAt, env.haltAt, env.beforeScenario, env.runningScenario, env.haltedScenario)

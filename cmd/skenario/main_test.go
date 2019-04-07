@@ -17,12 +17,16 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"testing"
 	"time"
 
+	"github.com/knative/pkg/logging"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"knative-simulator/pkg/simulator"
 )
@@ -111,6 +115,34 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 			it("sets a NumberOfRequests value", func() {
 				assert.Equal(t, uint(10), subject.ClusterConfig().NumberOfRequests)
 			})
+		})
+	})
+
+	describe("newLogger()", func() {
+		var logger *zap.SugaredLogger
+
+		it.Before(func() {
+			logger = newLogger()
+			assert.NotNil(t, logger)
+		})
+
+		it("sets the log level to Info", func() {
+			dsl := logger.Desugar()
+			assert.True(t, dsl.Core().Enabled(zapcore.InfoLevel))
+		})
+	})
+
+	describe("newLoggedCtx()", func() {
+		var ctx context.Context
+		var lg *zap.SugaredLogger
+
+		it.Before(func() {
+			lg = newLogger()
+			ctx = newLoggedCtx(lg)
+		})
+
+		it("has stored the logger in the context", func() {
+			assert.Equal(t, lg, logging.FromContext(ctx))
 		})
 	})
 }

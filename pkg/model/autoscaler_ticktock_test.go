@@ -16,7 +16,6 @@
 package model
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -47,7 +46,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			scaleTimes: make([]time.Time, 0),
 		}
 		cluster = NewCluster(envFake, ClusterConfig{})
-		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "KnativeAutoscaler"), autoscalerFake, cluster, context.Background())
+		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "KnativeAutoscaler"), autoscalerFake, cluster)
 		rawSubject = subject.(*autoscalerTicktockStock)
 	})
 

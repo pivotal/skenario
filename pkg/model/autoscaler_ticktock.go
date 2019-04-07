@@ -31,7 +31,6 @@ type AutoscalerTicktockStock interface {
 type autoscalerTicktockStock struct {
 	env              simulator.Environment
 	cluster          ClusterModel
-	ctx              context.Context
 	autoscalerEntity simulator.Entity
 	autoscaler       autoscaler.UniScaler
 }
@@ -63,7 +62,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	currentTime := asts.env.CurrentMovementTime()
 
-	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime, asts.ctx)
+	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime, asts.env.Context())
 	desired, _ := asts.autoscaler.Scale(context.Background(), currentTime)
 
 	asts.cluster.SetDesired(desired)
@@ -71,11 +70,10 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	return nil
 }
 
-func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, scaler autoscaler.UniScaler, cluster ClusterModel, ctx context.Context) AutoscalerTicktockStock {
+func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, scaler autoscaler.UniScaler, cluster ClusterModel) AutoscalerTicktockStock {
 	return &autoscalerTicktockStock{
 		env:              env,
 		cluster:          cluster,
-		ctx:              ctx,
 		autoscalerEntity: scalerEntity,
 		autoscaler:       scaler,
 	}

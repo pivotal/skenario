@@ -16,12 +16,10 @@
 package model
 
 import (
-	"context"
 	"time"
 
 	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"knative-simulator/pkg/simulator"
 
@@ -51,8 +49,8 @@ type KnativeAutoscalerModel interface {
 }
 
 type knativeAutoscaler struct {
-	env        simulator.Environment
-	tickTock   AutoscalerTicktockStock
+	env      simulator.Environment
+	tickTock AutoscalerTicktockStock
 }
 
 func (kas *knativeAutoscaler) Env() simulator.Environment {
@@ -60,16 +58,16 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 }
 
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
-	logger := newLogger()
-	ctx := newLoggedCtx(logger)
+	logger := logging.FromContext(env.Context())
+
 	epiSource := cluster.(EndpointInformerSource)
 	kpa := newKpa(logger, epiSource, config)
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
 	kas := &knativeAutoscaler{
-		env:        env,
-		tickTock:   NewAutoscalerTicktockStock(env, autoscalerEntity, kpa, cluster, ctx),
+		env:      env,
+		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, kpa, cluster),
 	}
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
@@ -89,22 +87,6 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 	}
 
 	return kas
-}
-
-func newLogger() *zap.SugaredLogger {
-	devCfg := zap.NewDevelopmentConfig()
-	devCfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	devCfg.OutputPaths = []string{"stdout"}
-	devCfg.ErrorOutputPaths = []string{"stderr"}
-	unsugaredLogger, err := devCfg.Build()
-	if err != nil {
-		panic(err.Error())
-	}
-	return unsugaredLogger.Sugar()
-}
-
-func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
-	return logging.WithLogger(context.Background(), logger)
 }
 
 func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig KnativeAutoscalerConfig) *autoscaler.Autoscaler {

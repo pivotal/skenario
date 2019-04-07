@@ -16,6 +16,7 @@
 package simulator
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -97,6 +98,7 @@ func TestEnvironment(t *testing.T) {
 func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	var (
 		subject   Environment
+		ctx       context.Context
 		movement  Movement
 		fromStock SourceStock
 		toStock   SinkStock
@@ -105,6 +107,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
+		ctx = context.Background()
 		startTime = time.Unix(222222, 0)
 		runFor = 555555 * time.Second
 		fromStock = &echoSourceStockType{
@@ -122,7 +125,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		ignoredNotes := make([]string, 0)
 
 		it.Before(func() {
-			subject = NewEnvironment(startTime, runFor)
+			subject = NewEnvironment(ctx, startTime, runFor)
 			assert.NotNil(t, subject)
 
 			completed, ignored, err = subject.Run()
@@ -158,7 +161,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("AddToSchedule()", func() {
 		it.Before(func() {
-			subject = NewEnvironment(startTime, runFor)
+			subject = NewEnvironment(ctx, startTime, runFor)
 			assert.NotNil(t, subject)
 		})
 
@@ -205,7 +208,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 			var err error
 
 			it.Before(func() {
-				subject = NewEnvironment(startTime, runFor)
+				subject = NewEnvironment(ctx, startTime, runFor)
 				assert.NotNil(t, subject)
 
 				fromMock = new(mockStockType)
@@ -238,7 +241,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					var err error
 
-					subject = NewEnvironment(startTime, runFor)
+					subject = NewEnvironment(ctx, startTime, runFor)
 					assert.NotNil(t, subject)
 
 					first = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock)
@@ -271,7 +274,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				var ignored []IgnoredMovement
 
 				it.Before(func() {
-					subject = NewEnvironment(startTime, runFor)
+					subject = NewEnvironment(ctx, startTime, runFor)
 					assert.NotNil(t, subject)
 
 					nilStock = NewThroughStock("NilStock", "test movement kind")
@@ -324,7 +327,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("CurrentMovementTime()", func() {
 		it.Before(func() {
-			subject = NewEnvironment(startTime, runFor)
+			subject = NewEnvironment(ctx, startTime, runFor)
 			assert.NotNil(t, subject)
 		})
 
@@ -337,7 +340,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("HaltTime()", func() {
 		it.Before(func() {
-			subject = NewEnvironment(startTime, runFor)
+			subject = NewEnvironment(ctx, startTime, runFor)
 			assert.NotNil(t, subject)
 		})
 
@@ -346,19 +349,34 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
+	describe("Context()", func() {
+		it.Before(func() {
+			subject = NewEnvironment(ctx, startTime, runFor)
+			assert.NotNil(t, subject)
+		})
+
+		it("returns the context given at creation", func() {
+			assert.Equal(t, ctx, subject.Context())
+		})
+	})
+
 	describe("helper funcs", func() {
 		describe("newEnvironment()", func() {
-			var env *environment
+			var rawSubject *environment
 			var mpq MovementPriorityQueue
 
 			it.Before(func() {
 				mpq = NewMovementPriorityQueue()
-				env = newEnvironment(time.Unix(0, 0), time.Minute, mpq)
+				rawSubject = newEnvironment(ctx, time.Unix(0, 0), time.Minute, mpq)
 			})
 
 			it("configures the halted scenario stock to use haltingStock", func() {
-				assert.Equal(t, env.haltedScenario.Name(), StockName("HaltedScenario"))
-				assert.IsType(t, &haltingSink{}, env.haltedScenario)
+				assert.Equal(t, rawSubject.haltedScenario.Name(), StockName("HaltedScenario"))
+				assert.IsType(t, &haltingSink{}, rawSubject.haltedScenario)
+			})
+
+			it("sets a context", func() {
+				assert.Equal(t, ctx, rawSubject.ctx)
 			})
 		})
 	}, spec.Nested())

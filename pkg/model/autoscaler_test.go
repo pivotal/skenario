@@ -20,13 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/knative/pkg/logging"
 	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/informers/core/v1"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
@@ -58,6 +56,10 @@ func (fe *fakeEnvironment) CurrentMovementTime() time.Time {
 
 func (fe *fakeEnvironment) HaltTime() time.Time {
 	return fe.theTime.Add(1 * time.Hour)
+}
+
+func (fe *fakeEnvironment) Context() context.Context {
+	return context.Background()
 }
 
 type fakeAutoscaler struct {
@@ -155,7 +157,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				for _, mv := range waitMovements {
 					theTime = theTime.Add(tickInterval)
 
-					assert.Equal(t, theTime.Add(1 * time.Millisecond), mv.OccursAt())
+					assert.Equal(t, theTime.Add(1*time.Millisecond), mv.OccursAt())
 				}
 			})
 		})
@@ -169,34 +171,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, simulator.StockName("Autoscaler Ticktock"), rawSubject.tickTock.Name())
 		})
 
-		describe("newLogger()", func() {
-			var logger *zap.SugaredLogger
-
-			it.Before(func() {
-				logger = newLogger()
-				assert.NotNil(t, logger)
-			})
-
-			it("sets the log level to Info", func() {
-				dsl := logger.Desugar()
-				assert.True(t, dsl.Core().Enabled(zapcore.InfoLevel))
-			})
-		})
-
-		describe("newLoggedCtx()", func() {
-			var ctx context.Context
-			var lg *zap.SugaredLogger
-
-			it.Before(func() {
-				lg = newLogger()
-				ctx = newLoggedCtx(lg)
-			})
-
-			it("has stored the logger in the context", func() {
-				assert.Equal(t, lg, logging.FromContext(ctx))
-			})
-		})
-
 		describe("newKpa() helper", func() {
 			var as *autoscaler.Autoscaler
 			var conf *autoscaler.Config
@@ -205,7 +179,9 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				epiFake = new(fakeEndpointsInformerSource)
 
-				as = newKpa(newLogger(), epiFake, KnativeAutoscalerConfig{
+				lg, err := zap.NewDevelopment()
+				assert.NoError(t, err)
+				as = newKpa(lg.Sugar(), epiFake, KnativeAutoscalerConfig{
 					TickInterval:                11 * time.Second,
 					StableWindow:                22 * time.Second,
 					PanicWindow:                 33 * time.Second,

@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -23,7 +24,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/knative/pkg/logging"
 	"github.com/logrusorgru/aurora"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -174,7 +178,26 @@ func (r *runner) ClusterConfig() model.ClusterConfig {
 }
 
 func NewRunner() Runner {
+	logger := newLogger()
+	ctx := newLoggedCtx(logger)
+
 	return &runner{
-		env: simulator.NewEnvironment(startAt, *simDuration),
+		env: simulator.NewEnvironment(ctx, startAt, *simDuration),
 	}
+}
+
+func newLogger() *zap.SugaredLogger {
+	devCfg := zap.NewDevelopmentConfig()
+	devCfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	devCfg.OutputPaths = []string{"stdout"}
+	devCfg.ErrorOutputPaths = []string{"stderr"}
+	unsugaredLogger, err := devCfg.Build()
+	if err != nil {
+		panic(err.Error())
+	}
+	return unsugaredLogger.Sugar()
+}
+
+func newLoggedCtx(logger *zap.SugaredLogger) context.Context {
+	return logging.WithLogger(context.Background(), logger)
 }
