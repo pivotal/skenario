@@ -196,18 +196,6 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
-
-		describe.Pend("Schedule listeners", func() {
-			it("calls OnSchedule() on registered listeners", func() {
-
-			})
-		})
-	}, spec.Nested())
-
-	describe.Pend("AddScheduleListener()", func() {
-		it("adds a registered listener", func() {
-
-		})
 	}, spec.Nested())
 
 	describe("Run()", func() {
