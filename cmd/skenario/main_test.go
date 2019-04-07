@@ -120,7 +120,7 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 		var logger *zap.SugaredLogger
 
 		it.Before(func() {
-			logger = newLogger()
+			logger = newLogger(new(bytes.Buffer))
 			assert.NotNil(t, logger)
 		})
 

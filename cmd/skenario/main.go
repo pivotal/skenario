@@ -16,6 +16,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -74,7 +75,8 @@ type Runner interface {
 }
 
 type runner struct {
-	env simulator.Environment
+	env    simulator.Environment
+	logbuf *bytes.Buffer
 }
 
 func (r *runner) RunAndReport(writer io.Writer) error {
@@ -149,6 +151,8 @@ func (r *runner) RunAndReport(writer io.Writer) error {
 		))
 	}
 	fmt.Fprint(writer, "\n")
+	fmt.Fprintln(writer, au.Bold(fmt.Sprintf("%-195s", "          Log output from Knative")).BgBlue())
+	fmt.Fprintln(writer, r.logbuf.String())
 
 	return nil
 }
@@ -178,23 +182,26 @@ func (r *runner) ClusterConfig() model.ClusterConfig {
 }
 
 func NewRunner() Runner {
-	logger := newLogger()
+	buf := new(bytes.Buffer)
+	logger := newLogger(buf)
 	ctx := logging.WithLogger(context.Background(), logger)
 
 	return &runner{
-		env: simulator.NewEnvironment(ctx, startAt, *simDuration),
+		env:    simulator.NewEnvironment(ctx, startAt, *simDuration),
+		logbuf: buf,
 	}
 }
 
-func newLogger() *zap.SugaredLogger {
-	devCfg := zap.NewDevelopmentConfig()
-	devCfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
-	devCfg.OutputPaths = []string{"stdout"}
-	devCfg.ErrorOutputPaths = []string{"stderr"}
-	unsugaredLogger, err := devCfg.Build()
-	if err != nil {
-		panic(err.Error())
-	}
+func newLogger(buf io.Writer) *zap.SugaredLogger {
+	sink := zapcore.AddSync(buf)
+
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
+		sink,
+		zap.InfoLevel,
+	)
+
+	unsugaredLogger := zap.New(core)
+
 	return unsugaredLogger.Named("skenario").Sugar()
 }
-
