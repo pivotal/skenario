@@ -19,13 +19,21 @@ import "time"
 
 type MovementKind string
 
-type Movement interface {
+type Annotateable interface {
+	Notes() []string
+	AddNote(note string)
+}
+
+type coreMovement interface {
 	Kind() MovementKind
 	OccursAt() time.Time
 	From() SourceStock
 	To() SinkStock
-	Notes() []string
-	AddNote(note string)
+}
+
+type Movement interface {
+	coreMovement
+	Annotateable
 }
 
 type move struct {
