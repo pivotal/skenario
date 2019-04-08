@@ -3,27 +3,7 @@
 Skenario is a simulator toolkit for Knative, originally created to assist
 with Autoscaler development. 
 
-The core concept of Skenario are:
-
-* **Entities**. These are discrete individual "things" in the simulation. Examples so far include Replicas and
-  Requests. Superficially these resemble Agents in an agent-based modelling (ABM) system, but they include
-  very little logic of their own. Instead, Entities are managed by:
-* **Stocks**. These are where entities exist between any advancement of the clock. Stocks are inspired by the
-  "stock-and-flow" concept from Systems Dynamics. Three basic subtypes are defined: Source, Sink and Through Stocks.
-  This is where most logic for the simulations is placed.
-* **Movements**. These are the instants where an Entity ceases to belong to one Stock and becomes resident in
-  another Stock. Movements are scheduled in the Environment by Stocks and Entities. Only one Movement occurs
-  at a time. Movements occur in temporal order.
-* **Environment**. This is the core execution logic for Skenario. It manages the schedule of Movements, including
-  maintaining the order of Movements. On each pass through the simulation loop, the Environment picks the next-soonest
-  Movement from a priority queue. It removes the Entity from the "From" Stock and adds it to the "To" Stock, recording
-  the outcome for later display.
-
-The Environment mimics the core logic of standard Discrete Event Simulators (specifically, next-event-time simulators).
-However the focus on Movements between Stocks is distinct.
-
-Only one Movement may occur at a time -- Skenario does not attempt parallel simulation. You'll notice I have not
-tried to make anything threadsafe.
+See [the Concepts document](docs/concepts.md) for a discussion of how Skenario is designed.
 
 See "[Implement workload simulator for autoscaler development](https://github.com/knative/serving/issues/1686)"
 for background and notes. 
