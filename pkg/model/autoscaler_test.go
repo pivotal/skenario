@@ -123,41 +123,27 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("scheduling calculations and waits", func() {
 			var tickInterval time.Duration
-			var calcMovements, waitMovements []simulator.Movement
+			var tickMovements []simulator.Movement
 
 			it.Before(func() {
 				tickInterval = 1 * time.Minute
-				calcMovements = []simulator.Movement{}
-				waitMovements = []simulator.Movement{}
+				tickMovements = []simulator.Movement{}
 
 				for _, mv := range envFake.movements {
-					if mv.Kind() == MvWaitingToCalculating {
-						calcMovements = append(calcMovements, mv)
-					} else if mv.Kind() == MvCalculatingToWaiting {
-						waitMovements = append(waitMovements, mv)
+					if mv.Kind() == "autoscaler_tick" {
+						tickMovements = append(tickMovements, mv)
 					}
 				}
 			})
 
-			it("schedules an autoscaler_calc movement to occur on each TickInterval", func() {
-				assert.Len(t, calcMovements, 59)
+			it("schedules an autoscaler_tick movement to occur on each TickInterval", func() {
+				assert.Len(t, tickMovements, 59)
 
 				theTime := startAt.Add(1 * time.Nanosecond)
-				for _, mv := range calcMovements {
+				for _, mv := range tickMovements {
 					theTime = theTime.Add(tickInterval)
 
 					assert.Equal(t, theTime, mv.OccursAt())
-				}
-			})
-
-			it("schedules an autoscaler_wait movement to occur 1ms after each autoscaler_calc", func() {
-				assert.Len(t, calcMovements, 59)
-
-				theTime := startAt.Add(1 * time.Nanosecond)
-				for _, mv := range waitMovements {
-					theTime = theTime.Add(tickInterval)
-
-					assert.Equal(t, theTime.Add(1*time.Millisecond), mv.OccursAt())
 				}
 			})
 		})

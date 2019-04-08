@@ -27,9 +27,6 @@ import (
 )
 
 const (
-	MvWaitingToCalculating simulator.MovementKind = "autoscaler_calc"
-	MvCalculatingToWaiting simulator.MovementKind = "autoscaler_wait"
-
 	testNamespace = "simulator-namespace"
 	testName      = "revisionService"
 )
@@ -72,15 +69,8 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
 		kas.env.AddToSchedule(simulator.NewMovement(
-			MvWaitingToCalculating,
+			"autoscaler_tick",
 			theTime,
-			kas.tickTock,
-			kas.tickTock,
-		))
-
-		kas.env.AddToSchedule(simulator.NewMovement(
-			MvCalculatingToWaiting,
-			theTime.Add(1*time.Millisecond),
 			kas.tickTock,
 			kas.tickTock,
 		))
