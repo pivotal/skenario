@@ -1,4 +1,4 @@
-module knative-simulator
+module skenario
 
 go 1.12
 

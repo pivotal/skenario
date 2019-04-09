@@ -21,7 +21,7 @@ import (
 	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 
 	"github.com/knative/serving/pkg/autoscaler"
 )

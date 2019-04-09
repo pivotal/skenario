@@ -24,7 +24,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 func TestRequestEntity(t *testing.T) {

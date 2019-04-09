@@ -30,7 +30,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 func TestReplicaEntity(t *testing.T) {

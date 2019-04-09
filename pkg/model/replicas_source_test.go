@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 func TestReplicasSource(t *testing.T) {

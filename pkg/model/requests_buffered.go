@@ -19,7 +19,7 @@ import (
 	"math/rand"
 	"time"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 type RequestsBufferedStock interface {

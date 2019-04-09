@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 func TestCmdMain(t *testing.T) {

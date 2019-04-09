@@ -20,7 +20,7 @@ import (
 
 	"github.com/knative/serving/pkg/autoscaler"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 type AutoscalerTicktockStock interface {

@@ -29,7 +29,7 @@ import (
 	"k8s.io/client-go/informers/core/v1"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 func TestAutoscaler(t *testing.T) {

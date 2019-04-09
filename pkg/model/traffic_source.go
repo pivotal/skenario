@@ -16,7 +16,7 @@
 package model
 
 import (
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 type TrafficSource interface {

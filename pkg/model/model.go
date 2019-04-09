@@ -15,7 +15,7 @@
 
 package model
 
-import "knative-simulator/pkg/simulator"
+import "skenario/pkg/simulator"
 
 type Model interface {
 	Env() simulator.Environment

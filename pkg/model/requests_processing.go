@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 type RequestsProcessingStock interface {

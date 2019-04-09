@@ -32,9 +32,9 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"knative-simulator/pkg/model"
+	"skenario/pkg/model"
 
-	"knative-simulator/pkg/simulator"
+	"skenario/pkg/simulator"
 )
 
 var (
