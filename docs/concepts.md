@@ -12,6 +12,35 @@ The motivation for Skenario is to present the Knative Pod Autoscaler with synthe
 inputs that lead to realistic reactions, so that its behaviour can be understood under
 various scenarios.
 
+Quoting from the [original issue](https://github.com/knative/serving/issues/1686):
+
+> Autoscaling is a surprisingly difficult problem with a number of nested and
+> overlapping problems to solve. In developing solutions, we can aim to validate
+> or invalidate our design hypotheses in three main ways:
+>
+> * Empirically
+>     * From production observations
+>     * From load & performance testing
+> * Theoretically
+>     * Applying control theory
+>     * Applying queueing theory
+> * With simulation
+>
+> ## Why simulation?
+>
+> Because each validation approach has different strengths and weaknesses. Empirical
+> validation is the final word, but is a slow-moving feedback loop (hours to months).
+> Theoretical validation can dramatically shrink the solution search space, but is less
+> accessible to each of our key personae (developers, operators, contributors) and does
+> not yet address problems that remain unsolved in the research literature.
+>
+> Simulation splits the difference: it is faster than empirical validation with the risk
+> of inaccuracy, simpler than theoretical validation with the cost of implementation.
+> Simulation is intended to provide contributors with the ability to rapidly explore the
+> design space and iterate on solutions. It is also intended to illuminate potential
+> problems in advance of implementation. Simulation will probably provide input into
+> autoscaling, routing, serving and upstream projects.
+
 ## The concept of time
 
 A Discrete Event Simulator, as the name suggests, updates the simulation based on
