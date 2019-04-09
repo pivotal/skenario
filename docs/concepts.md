@@ -166,16 +166,17 @@ Movement is to occur. When aggregated by time, Movements approximate a Flow.
 
 ### Models
 
-Models are "the rest" of the code. Typically these own Stocks, wire dependencies
-and potentially maintain other state.
+Models are "the rest" of the code. Typically these own Stocks, wire dependencies and
+potentially maintain other state.
 
-In Skenario the main toplevel Models are the KnativeAutoscaler and the Cluster.
-These establish the various initial Stocks (eg. RequestsBuffered, ReplicasLaunching)
-that are used during the life of the simulation.
+In Skenario the Models provided are the KnativeAutoscaler and the Cluster. These
+establish the various initial Stocks (eg. RequestsBuffered, ReplicasLaunching) that are
+used during the life of the simulation.
 
-Generally speaking, keep logic out of Models. Everything that can be expressed
+Generally speaking, logic should be kept out of Models. Everything that can be expressed
 as a Movement ought to be; special-case logic should be placed in `Add()` or
-`Remove()`.
+`Remove()`. For example, the logic for scaling up or down is expressed mostly as
+Movements between Stocks, rather than as variables manipulated by the Models.
 
 ### Environment
 
@@ -201,16 +202,19 @@ select the next Movement from a queue and execute it.
 
 Ordering is by the `OccursAt` time of Movements. Internally, the Environment is
 relying on a `MovementPriorityQueue` to maintain orderly records; ultimately this is
-a basic heap.
+relies on [an ordered heap](https://godoc.org/k8s.io/client-go/tools/cache#Heap) to
+maintain Movement ordering. Ordering is strict and total: only one Movement can occupy
+any given `OccursAt` time.
 
 Once a Movement has been dequeued, the simulation's current time is advanced to
 the `OccursAt` value of the Movement. The Environment then calls the `Remove()` method
 of the `From()` Stock to retrieve an Entity. If that call is successful, it then
 `Add()`s that Entity to the `To()` stock.
 
-On each iteration, Movements that occurred without error are captured in the
-`CompletedMovements` array for later display. Movements that encountered an error are
-stored in the `IgnoredMovements` instead.
+On each iteration, Movements that occurred successfully are captured in the
+`CompletedMovements` array for later display. Movements that were not successful, most
+often because of an empty `From()` stock, are captured in the `IgnoredMovements`
+instead.
 
 ### `AddToSchedule()`
 
@@ -224,12 +228,23 @@ time and it will reject events that would occur after the halt time. Such Moveme
 are added to the `IgnoredMovements` array.
 
 The Environment also rejects new Movements when an existing Movement is already
-scheduled to `OccurAt` that time. This is partly due to the underlying implementation,
-which requires a strict ordering of entries in the heap. But it also reflects that
-events -- Movements -- are _discrete_, that one and only one change to the world is
-occurring at a time. Practically speaking this means that some logic is needed in
-callers to reduce the odds of collision. In future I think it will be better for the
-Environment to handle the schedule-shifting itself.
+scheduled to `OccursAt` that time. This is partly due to the underlying implementation,
+which uses the `OccursAt` value as the key for ordering of Movements. This underlying
+data structure allows existing values for a given key to be modified, meaning that
+without guarding against scheduling collisions, Movements could be overwritten without
+warning.
+
+The design also reflects that events -- Movements -- are _discrete_. One and only one
+change to the world can occur at a time. Put another way: the simulation is intended to
+be strictly deterministic.
+
+In practical terms, the fact that the Environment will ignore Movements that have
+schedule collisions with another Movement means that some logic is needed in callers to
+reduce the odds of collision. In future I think it will be better for the Environment
+to handle the schedule-shifting itself.
+
+For debugging purposes, the CLI shows a table of ignored Movements and the reason why
+they were ignored.
 
 ### Example: Autoscaler Ticktock
 
@@ -275,7 +290,7 @@ API that the KPA consults to determine the current number of Replicas running.
 
 ### Example: Requests
 
-Indirectly, Requests are signal that the Knative Pod Autoscaler is trying to respond
+Indirectly, Requests are the signal that the Knative Pod Autoscaler is trying to respond
 to. In a traditional simulation these are called "arrivals". Unlike traditional
 simulation, the configuration of the simulated system varies throughout the simulation
 as the KPA changes its desired Replica count.
@@ -300,21 +315,32 @@ The diagram shows five possible Movements:
 * `buffer_backoff`, from RequestsBuffered back into itself to simulate Activator behaviour
 * `exhausted_attempts`, from RequestsBuffered to RequestsFailed, representing a timeout
 
-In the happy path (`arrive_at_buffer`, `send_to_replica`, `complete_request`), this
-is a linear path. However, this is true only in aggregate: the exact path for each
-Request can vary. While all Requests will come from the TrafficSource and all of them
-will spend at least one Movement in RequestsBuffered, the precise RequestsProcessing /
-RequestsComplete stocks are not known when the original Request arrival is scheduled.
-There are multiple RequestsProcessing stocks, each belonging to a Replica.
+The happy path (`arrive_at_buffer`, `send_to_replica`, `complete_request`) is linear.
+However, this is true only in aggregate: the exact path for each Request can vary. While
+all Requests will come from the TrafficSource and all of them will spend at least one
+Movement in RequestsBuffered, the precise RequestsProcessing / RequestsComplete stocks
+are not known when the original Request arrival is scheduled. There are multiple
+RequestsProcessing stocks, each belonging to a Replica.
 
-In the unhappy path, the RequestsBuffer recreates Activator logic by scheduling
-Movements back into itself in an exponential backoff pattern. On each such Movement it
-checks to see if any Replicas are in the ReplicasActive stock. If it finds any, it will
-pick one with a round-robin scheme and schedule a Movement of the Request to its
-RequestsProcessing. The RequestsProcessing stock will itself schedule a Movement
-into RequestsComplete. 
+There are two alternative paths.
 
-This is probably the second major influence on Autoscaler behaviour. By Little's
-Law, a longer time to process a Request will mean that more Requests are being
-processed at any given time. The problem is that this signal itself takes time to
-build up, especially if processing time is very long but arrivals are infrequent.
+Initially, if a Request arrives but cannot find an active Replica, the RequestsBuffer
+emulates Activator logic by scheduling Movements back into itself with exponential
+backoffs. On each such Movement it checks to see if any Replicas are in the
+ReplicasActive stock. If it finds any, it will pick one with a round-robin scheme and
+schedule a Movement of the Request to its RequestsProcessing. The RequestsProcessing
+stock will itself schedule a Movement into RequestsComplete.
+
+If the Request does not find any active Replicas, it is repeatedly rescheduled for the
+`buffer_backoff` Movement. After 18 such Movements -- 18 attempts is the hardcoded figure
+in the Activator -- the RequestsBuffer stock will instead schedule a Movement into
+RequestsFailed, representing timeouts.
+
+This is probably the second major influence on Autoscaler behaviour. By
+[Little's Law](http://web.mit.edu/~sgraves/www/papers/Little%27s%20Law-Published.pdf),
+a longer time to process a Request will mean that more Requests are being processed at
+any given time. The problem is that this signal itself takes time to build up,
+especially if processing time is very long but arrivals are infrequent.
+
+This is a good example of the System Dynamics principle that Stocks create delays and
+that these delays can lead to counter-intuitive non-linear dynamics.
