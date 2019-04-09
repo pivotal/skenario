@@ -43,27 +43,36 @@ Quoting from the [original issue](https://github.com/knative/serving/issues/1686
 
 ## The concept of time
 
-A Discrete Event Simulator, as the name suggests, updates the simulation based on
-messages, commands, objects or some other representation of an "event" that mutates
-the state of the simulated world. In Systems Dynamics, time is instead a continuous
-variable.
+In Skenario, simulation begins at time zero (the Epoch) and changes occur with
+nanosecond resolution.
+
+A Discrete Event Simulation (DES), as the name suggests, updates the simulation based
+on messages, commands, objects or some other representation of an "event" that mutates
+the state of the simulated world. In Discrete Event Simulation, time is discrete.
+
+By contrast, in Systems Dynamics, time is a continuous variable. There are no
+discrete "events", rather there are "Flows" that represents rates of change.
 
 The DES approach enables a key computational shortcut. When an event occurs, the
-overall simulation clock advances to that occurrence time. Times _between_ events
-are not simulated. To an outside observer the clock "skips" from event to event.
-By contrast, to simulate a continuous system, it will typically be necessary to
+overall simulation clock can be advanced to that occurrence time. Times _between_
+events need not be simulated. To an outside observer the clock "skips" from event
+to event. This design is known in DES terminology as a "next-event" simulation.
+
+By contrast, to simulate a continuous system, it will usually be necessary to
 numerically solve integral calculus equations. This means iteratively computing
-fixed slices of time.
+fixed slices of time. In DES terminology this is a "fixed-interval" simulation,
+alternatively "continuous-time" simulation.
 
-The DES approach does not need to calculate every time slice (in DES terminology
-this is called "fixed-interval" simulation). Instead it only simulates the system
-at points of change. Also simplified is the business of adding events in any order.
-This is particularly useful in setting up arrivals into the simulation from the
-"outside". For example, all the Requests that will arrive during a simulation
-are added to the schedule before the simulation scenario begins to execute.
+Next-event simulation has critical performance advantages. Simulations with
+very precise time do not need to be slower than simulations with imprecise time.
+Runtime scales with the order of all events to be simulated, rather than with
+the time-precision of the simulation.
 
-In Skenario time is recorded at nanosecond resolution. Each simulation begins at
-time zero -- the Epoch.
+Also convenient is that a DES model can allow events to be scheduled both before
+and during the simulation execution. This is particularly useful in setting up
+arrivals into the simulation from the "outside". For example, all the Requests
+that will arrive during a simulation are added to the schedule before the simulation
+scenario begins to execute.
 
 It is important to note that there is no parallelism in the design. In each pass
 through the simulation loop, time appears "frozen" until the relevant Movement has
@@ -93,6 +102,51 @@ As a design principle, you should place as little logic into an Entity as possib
 most of the logic of interest should be in the Stock which manages them. Think of
 Entities as being anonymous.
 
+#### Relationship to the Discrete Event Simulation concept of Process
+
+Mainstream DES literature tends to focus on building a list of events of known types,
+a loop that takes the next event from the list and then a switch statement that inspects
+the event type and updates a global model. Typical example implementations involve
+a collection of global arrays and flag variables (see for example 
+[the sample code](http://highered.mheducation.com/sites/0073401323/information_center_view0/programs_from_the_book.html)
+given for Averill M. Law's _Simulation Modeling and Analysis, 5th Ed_).
+
+This approach does not treat Entities as individual structures, but instead as
+numerical counts to be added an subtracted from variables in the model. In DES
+terminology this is the "job-oriented" approach. Each "job" (eg, a simulated bank
+teller) is simulated, but the customers are represented merely as a tally that
+is added and subtracted from.
+
+The alternative approach is "process-oriented". A "process" (eg, the bank customer)
+can "occupy" a "resource" (eg, the bank teller). Instead of gather statistics on
+the jobs, the model collects statistics on the processes. Formally these are
+equivalent, one can be converted to the other.
+
+Literature and examples of the process-oriented approach are frustratingly thin
+on the ground compared ot the job-oriented approach. I suspect this is due to the
+long history of DES, dating as it does to the early Fortran era. The process-oriented
+approach, by contrast, essentially escaped into the broader community as
+object-oriented programming via Simula.
+
+An early design for Skenario attempted a process-oriented approach, where Entities
+embedded in Events (called "Subjects" of the event) were responsible for all the
+logic of reacting to an event. This broke down because Entities would need to listen
+for events of interest, even if those events were not directly in their own scope of
+responsibility. For example, a Request would need to listen for the activation of
+Replicas, so that it could schedule itself to switch to the RequestProcessing state.
+
+#### Relationship to the Agent-Based Modelling concept of Agent
+
+[Agent-Based Modelling](https://en.wikipedia.org/wiki/Agent-based_model) (ABM) is a
+third distinct paradigm of simulation, probably recognisable to many mainstream
+programmers as a message-passing design. From ABM, Skenario takes the idea that
+Entities may have their own logic. However it does not go as far as ABM in constructing
+all system behaviour from the interaction of many agents pursuing their own agenda.
+
+ABM systems are profoundly effective at modelling emergent behaviour of large
+populations, but less helpful in understanding the dynamics of movement in more
+constrained systems.
+
 ### Stocks
 
 Stocks are "where" an entity exists at the beginning of each simulation loop. The
@@ -119,7 +173,7 @@ These are the main methods for interacting with a Stock. In general, this is whe
 most special-case simulation logic should be placed, because these are the methods
 called during a Movement.
 
-Note that `Remove()` does not allow the called to select _which_ Entity to remove.
+Note that `Remove()` does not allow the caller to select _which_ Entity to remove.
 Only that they will receive _an_ Entity, of the Stock's choosing.
 
 These methods are the main extension points for Skenario. Several specialised
@@ -147,37 +201,32 @@ A Stock with both `Add()` and `Remove()` is a Through Stock.
 Movements are the main substitute for "events" in the DES meaning of the term. The
 core simulation loop iterates over Movements that have been Scheduled.
 
-Why not "events"? In the early designs for Skenario, "events" were the main
-organising concept and were used to drive finite-state machines for various
-simulated Entities. But this turned out to be problematic for two reasons.
-
-The first was that logic quickly became very tangled, with various simulated
-objects listening for events being scheduled or executed by other objects. The core
-of each simulated Entity became a large, hairy switch statement. The second problem
-was that FSMs and events could not easily represent that Replicas are created and
-destroyed during the life of the simulation. The assignment of Requests to Replicas
-is critical to provoking a realistic response from the Knative Pod Autoscaler.
-It is not enough to have an FSM representing "processing" as a state, it has to
-represent "processing on replica-4" as a state. But the existence and reachability
-of this state is contingent on the existence or non-existence of Replicas. This
-was easier to represent using Stocks and Movements that deal in Entities.
-
 Each Movement has four key values: Kind, OccursAt, From and To. The Kind is useful
 to group together Movements with different particulars. OccursAt is the point in
 simulation time at which the Movement is intended to occur. The "From" and "To"
 fields point to particular Stocks that the Environment will Remove() from and
 Add() to.
 
-Not included in Movement is any Entity. In the early "event" design for Skenario,
-the relationship was inverted so that Entities (called "Subjects" in an event)
-were responsible for all the logic of reacting to an event. This broke down because
-Entities would need to listen for events of interest, even if those events were
-not directly in their own scope of responsibility. For example, a Request would
-need to listen for the activation of Replicas, so that it could schedule itself
-to switch to the RequestProcessing state.
+Not included in Movement is a reference to a particular Entity. Instead, as noted
+above, the responsibility for selecting which Entity to move rests with the Source Stock.
 
-Instead, as noted above, the responsibility for selecting which Entity to move
-rests with the Source Stock.
+#### Relationship to the Discrete Event Simulation concept of Events
+
+Why not events? In the early designs for Skenario, events were the main organising
+concept and were used to drive finite-state machines for various simulated Entities.
+But this turned out to be problematic for two reasons.
+
+The first was that logic quickly became very tangled, with various simulated
+objects listening for events being scheduled or executed by other objects. The core
+of each simulated Entity became a large, hairy switch statement.
+
+The second problem was that FSMs and events could not easily represent that Replicas
+are created and destroyed during the life of the simulation. The assignment of Requests
+to Replicas is critical to provoking a realistic response from the Knative Pod Autoscaler.
+It is not enough to have an FSM representing "processing" as a state, it has to
+represent "processing on replica-4" as a state. But the existence and reachability
+of this state is contingent on the existence or non-existence of Replicas. This
+was easier to represent using Stocks and Movements that deal in Entities.
 
 #### Relationship to the Systems Dynamics concept of Flows
 
