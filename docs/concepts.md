@@ -118,7 +118,7 @@ teller) is simulated, but the customers are represented merely as a tally that
 is added and subtracted from.
 
 The alternative approach is "process-oriented". A "process" (eg, the bank customer)
-can "occupy" a "resource" (eg, the bank teller). Instead of gather statistics on
+can "occupy" a "resource" (eg, the bank teller). Instead of gathering statistics on
 the jobs, the model collects statistics on the processes. Formally these are
 equivalent, one can be converted to the other.
 
