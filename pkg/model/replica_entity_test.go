@@ -94,6 +94,10 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		it("sets its EndpointsAddress", func() {
 			assert.Equal(t, address, rawSubject.endpointAddress)
 		})
+
+		it("sets a RequestsComplete stock", func() {
+			assert.Equal(t, simulator.StockName("[replica-5] RequestsComplete"), rawSubject.requestsComplete.Name())
+		})
 	})
 
 	describe("Entity interface", func() {
