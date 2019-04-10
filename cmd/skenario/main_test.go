@@ -70,6 +70,10 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 		it("prints ignored", func() {
 			assert.Contains(t, rpt, "ignored movement")
 		})
+
+		it("prints logs", func() {
+			assert.Contains(t, rpt, "Log output from Knative")
+		})
 	})
 
 	describe("NewRunner()", func() {
