@@ -16,6 +16,7 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -96,7 +97,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		it("sets a RequestsComplete stock", func() {
-			assert.Equal(t, simulator.StockName("[replica-5] RequestsComplete"), rawSubject.requestsComplete.Name())
+			assert.Equal(t, simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", rawSubject.number)), rawSubject.requestsComplete.Name())
 		})
 	})
 
@@ -165,8 +166,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("RequestsProcessing()", func() {
 		it("returns the Requests Processing stock", func() {
-			assert.Contains(t, subject.RequestsProcessing().Name(), "[replica-")
-			assert.Contains(t, subject.RequestsProcessing().Name(), "] RequestsProcessing")
+			assert.Contains(t, subject.RequestsProcessing().Name(), "RequestsProcessing [")
 			assert.Equal(t, simulator.EntityKind("Request"), subject.RequestsProcessing().KindStocked())
 		})
 	})

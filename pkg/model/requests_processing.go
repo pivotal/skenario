@@ -30,13 +30,13 @@ type RequestsProcessingStock interface {
 type requestsProcessingStock struct {
 	env                  simulator.Environment
 	delegate             simulator.ThroughStock
-	replicaName          simulator.EntityName
+	replicaNumber        int
 	requestsComplete     simulator.SinkStock
 	numRequestsSinceLast int32
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
-	name := fmt.Sprintf("[%s] %s", rps.replicaName, rps.delegate.Name())
+	name := fmt.Sprintf("%s [%d]", rps.delegate.Name(), rps.replicaNumber)
 	return simulator.StockName(name)
 }
 
@@ -74,11 +74,11 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 	return rc
 }
 
-func NewRequestsProcessingStock(env simulator.Environment, replicaName simulator.EntityName, requestSink simulator.SinkStock) RequestsProcessingStock {
+func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestSink simulator.SinkStock) RequestsProcessingStock {
 	return &requestsProcessingStock{
 		env:              env,
 		delegate:         simulator.NewThroughStock("RequestsProcessing", "Request"),
-		replicaName:      replicaName,
+		replicaNumber:    replicaNumber,
 		requestsComplete: requestSink,
 	}
 }

@@ -136,8 +136,8 @@ func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, en
 		endpointsInformer: endpointsInformer,
 	}
 
-	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("[%s] RequestsComplete", re.Name())), "Request")
-	re.requestsProcessing = NewRequestsProcessingStock(env, re.Name(), re.requestsComplete)
+	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
+	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete)
 
 
 	re.endpointAddress = corev1.EndpointAddress{
