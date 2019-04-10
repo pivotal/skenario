@@ -48,14 +48,16 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 		subject.Env().AddToSchedule(ignoredMovement)
 	})
 
-	describe("RunAndReport()", func() {
+	describe("Report()", func() {
 		var w bytes.Buffer
 		var rpt string
-		var err error
 
 		it.Before(func() {
+			completed, ignored, err := subject.Env().Run()
+			assert.NoError(t, err)
+
 			w = bytes.Buffer{}
-			err = subject.RunAndReport(&w)
+			err = subject.Report(completed, ignored, &w)
 			rpt = w.String()
 			assert.NoError(t, err)
 		})

@@ -61,7 +61,12 @@ func main() {
 	cluster := model.NewCluster(r.Env(), r.ClusterConfig())
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 
-	err := r.RunAndReport(os.Stdout)
+	completed, ignored, err := r.Env().Run()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	err = r.Report(completed, ignored, os.Stdout)
 	if err != nil {
 		fmt.Printf("there was an error during simulation: %s", err.Error())
 	}
@@ -71,7 +76,7 @@ type Runner interface {
 	Env() simulator.Environment
 	AutoscalerConfig() model.KnativeAutoscalerConfig
 	ClusterConfig() model.ClusterConfig
-	RunAndReport(writer io.Writer) error
+	Report(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, writer io.Writer) error
 }
 
 type runner struct {
@@ -79,13 +84,8 @@ type runner struct {
 	logbuf *bytes.Buffer
 }
 
-func (r *runner) RunAndReport(writer io.Writer) error {
+func (r *runner) Report(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, writer io.Writer) error {
 	fmt.Fprint(writer, "Running simulation ... ")
-
-	completed, ignored, err := r.env.Run()
-	if err != nil {
-		return err
-	}
 
 	fmt.Fprintf(writer,
 		"%5s      %19s %-8d  %17s %-8d  %20s %-10s    %20s %-12s\n\n",
