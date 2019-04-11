@@ -3,6 +3,7 @@ module skenario
 go 1.12
 
 require (
+	github.com/bvinc/go-sqlite-lite v0.5.0
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
