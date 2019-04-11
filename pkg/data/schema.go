@@ -16,14 +16,15 @@
 package data
 
 // language=sql
-var Schema = `
-create table if not exists scenario_runs
+var Schema = `create table if not exists scenario_runs
 (
-    recorded                                 text not null,
+    id                                       integer primary key, -- aliases to rowid
 
-    origin                                   text not null,
+    recorded                                 text        not null,
 
-    traffic_pattern                          text not null,
+    origin                                   text        not null,
+
+    traffic_pattern                          text        not null,
 
     cluster_launch_delay                     big integer not null,
     cluster_terminate_delay                  big integer not null,
@@ -33,46 +34,46 @@ create table if not exists scenario_runs
     autoscaler_stable_window                 big integer not null,
     autoscaler_panic_window                  big integer not null,
     autoscaler_scale_to_zero_grace_period    big integer not null,
-    autoscaler_target_concurrency_default    real not null,
-    autoscaler_target_concurrency_percentage real not null,
-    autoscaler_max_scale_up_rate             real not null
+    autoscaler_target_concurrency_default    real        not null,
+    autoscaler_target_concurrency_percentage real        not null,
+    autoscaler_max_scale_up_rate             real        not null
 );
 
 create table if not exists stocks
 (
     name            text primary key,
-    kind_stocked    text not null,
+    kind_stocked    text    not null,
 
-    scenario_run_id integer not null references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_runs (id)
 );
 
 create table if not exists entities
 (
     name            text primary key,
-    kind            text not null,
+    kind            text    not null,
 
-    scenario_run_id integer not null references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_runs (id)
 );
 
 create table if not exists completed_movements
 (
-    occurs_at       unsigned integer primary key, -- unsigned int to avoid being an alias to rowid
+    occurs_at       unsigned big integer primary key, -- unsigned int to avoid being an alias to rowid
     kind            text    not null,
     moved           text    not null references entities (name),
     from_stock      text    not null references stocks (name),
     to_stock        text    not null references stocks (name),
 
-    scenario_run_id integer not null references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_runs (id)
 );
 
 create table if not exists ignored_movements
 (
-    occurs_at       unsigned integer primary key, -- unsigned int to avoid being an alias to rowid
+    occurs_at       unsigned big integer primary key, -- unsigned int to avoid being an alias to rowid
     kind            text    not null,
     from_stock      text    not null references stocks (name),
     to_stock        text    not null references stocks (name),
     reason          text    not null,
 
-    scenario_run_id integer not null references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_runs (id)
 )
 `

@@ -136,6 +136,12 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 	}
 	defer stockStmt.Close()
 
+	movementStmt, err := s.conn.Prepare(`insert into completed_movements(occurs_at, kind, moved, from_stock, to_stock, scenario_run_id) values (?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer movementStmt.Close()
+
 	for _, mv := range s.completed {
 		from := mv.Movement.From()
 		to := mv.Movement.To()
@@ -151,6 +157,18 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 		}
 
 		err = stockStmt.Exec(string(to.Name()), string(to.KindStocked()), scenarioRunId)
+		if err != nil {
+			return err
+		}
+
+		err = movementStmt.Exec(
+			mv.Movement.OccursAt().UnixNano(),
+			string(mv.Movement.Kind()),
+			string(mv.Moved.Name()),
+			string(from.Name()),
+			string(to.Name()),
+			scenarioRunId,
+		)
 		if err != nil {
 			return err
 		}

@@ -45,7 +45,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 	var kpaConf model.KnativeAutoscalerConfig
 
 	it.Before(func() {
-		startAt = time.Unix(0, 0)
+		startAt = time.Unix(0, 123456789)
 		runFor = 10 * time.Minute
 		env = simulator.NewEnvironment(context.Background(), startAt, runFor)
 
@@ -204,6 +204,41 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			it("inserts a kind", func() {
 				assert.Equal(t, "Scenario", kind)
+			})
+		})
+
+		describe("movement records", func() {
+			var movementsCount, occursAt int
+			var kind, moved, fromStock, toStock string
+			var numMovementsWithEmptySimulation = 2
+
+			it.Before(func() {
+				singleQuery(t, conn, `select count(1) from completed_movements`, &movementsCount)
+				singleQuery(t, conn, `select occurs_at, kind, moved, from_stock, to_stock from completed_movements`, &occursAt, &kind, &moved, &fromStock, &toStock)
+			})
+
+			it("inserts a record", func() {
+				assert.Equal(t, numMovementsWithEmptySimulation, movementsCount)
+			})
+
+			it("inserts the occurrence time", func() {
+				assert.Equal(t, 123456789, occursAt)
+			})
+
+			it("inserts the movement kind", func() {
+				assert.Equal(t, "start_to_running", kind)
+			})
+
+			it("inserts the moved entity", func() {
+				assert.Equal(t, "Scenario", moved)
+			})
+
+			it("inserts the 'from' stock", func() {
+				assert.Equal(t, "BeforeScenario", fromStock)
+			})
+
+			it("inserts the 'to' stock", func() {
+				assert.Equal(t, "RunningScenario", toStock)
 			})
 		})
 	})
