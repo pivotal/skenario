@@ -162,21 +162,48 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			})
 		})
 
-		describe("inserting trace records", func() {
-			it("inserts records into 'entities'", func() {
+		describe("entity records", func() {
+			var entityCount int
+			var name, kind string
 
+			it.Before(func() {
+				singleQuery(t, conn, `select count(1) from entities`, &entityCount)
+				singleQuery(t, conn, `select name, kind from entities`, &name, &kind)
 			})
 
-			it("inserts records into 'stocks'", func() {
-
+			it("inserts a record", func() {
+				assert.Equal(t, 1, entityCount)
 			})
 
-			it("inserts records into 'completed_movements'", func() {
-
+			it("inserts a name", func() {
+				assert.Equal(t, "Scenario", name)
 			})
 
-			it("inserts records into 'ignored_movements'", func() {
+			it("inserts a kind", func() {
+				assert.Equal(t, "Scenario", kind)
+			})
+		})
 
+		describe("stock records", func() {
+			var stocksCount int
+			var name, kind string
+			var numStocksWithEmptySimulation = 3
+
+			it.Before(func() {
+				singleQuery(t, conn, `select count(1) from stocks`, &stocksCount)
+				singleQuery(t, conn, `select name, kind_stocked from stocks`, &name, &kind)
+			})
+
+			it("inserts a record", func() {
+				assert.Equal(t, numStocksWithEmptySimulation, stocksCount)
+			})
+
+			it("inserts a name", func() {
+				assert.Equal(t, "BeforeScenario", name)
+			})
+
+			it("inserts a kind", func() {
+				assert.Equal(t, "Scenario", kind)
 			})
 		})
 	})

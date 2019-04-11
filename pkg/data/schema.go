@@ -43,7 +43,7 @@ create table if not exists stocks
     name            text primary key,
     kind_stocked    text not null,
 
-    scenario_run_id integer references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_run (ROWID)
 );
 
 create table if not exists entities
@@ -51,7 +51,7 @@ create table if not exists entities
     name            text primary key,
     kind            text not null,
 
-    scenario_run_id integer references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_run (ROWID)
 );
 
 create table if not exists completed_movements
@@ -62,7 +62,7 @@ create table if not exists completed_movements
     from_stock      text    not null references stocks (name),
     to_stock        text    not null references stocks (name),
 
-    scenario_run_id integer references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_run (ROWID)
 );
 
 create table if not exists ignored_movements
@@ -73,6 +73,6 @@ create table if not exists ignored_movements
     to_stock        text    not null references stocks (name),
     reason          text    not null,
 
-    scenario_run_id integer references scenario_run (ROWID)
+    scenario_run_id integer not null references scenario_run (ROWID)
 )
 `
