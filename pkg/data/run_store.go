@@ -209,3 +209,7 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 
 	return nil
 }
+
+func NewRunStore() RunStore {
+	return &storer{}
+}

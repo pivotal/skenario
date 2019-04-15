@@ -80,7 +80,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			os.Remove(dbPath)
 
-			subject = &storer{}
+			subject = NewRunStore()
 
 			env.AddToSchedule(simulator.NewMovement("Ignored", env.HaltTime().Add(10*time.Second), simulator.NewSourceStock("Source", "Entity"), simulator.NewSinkStock("Sink", "Entity")))
 
