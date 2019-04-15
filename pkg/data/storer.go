@@ -31,7 +31,7 @@ type Storer interface {
 		ignored []simulator.IgnoredMovement,
 		clusterConf model.ClusterConfig,
 		kpaConf model.KnativeAutoscalerConfig,
-	) error
+	) (scenarioRunId int64, err error)
 }
 
 type storer struct {
@@ -48,7 +48,7 @@ func (s *storer) Store(
 	ignored []simulator.IgnoredMovement,
 	clusterConf model.ClusterConfig,
 	kpaConf model.KnativeAutoscalerConfig,
-) error {
+) (scenarioRunId int64, err error) {
 	s.completed = completed
 	s.ignored = ignored
 	s.clusterConf = clusterConf
@@ -56,27 +56,27 @@ func (s *storer) Store(
 
 	conn, err := sqlite3.Open(dbFileName)
 	if err != nil {
-		return err
+		return scenarioRunId, err
 	}
 	s.conn = conn
 
 	err = s.conn.Exec(Schema)
 	if err != nil {
-		return err
+		return scenarioRunId, err
 	}
 	defer s.conn.Close()
 
-	scenarioRunId, err := s.scenarioRun()
+	scenarioRunId, err = s.scenarioRun()
 	if err != nil {
-		return err
+		return scenarioRunId, err
 	}
 
 	err = s.scenarioData(scenarioRunId)
 	if err != nil {
-		return err
+		return scenarioRunId, err
 	}
 
-	return nil
+	return scenarioRunId, nil
 }
 
 func (s *storer) scenarioRun() (scenarioRunId int64, err error) {

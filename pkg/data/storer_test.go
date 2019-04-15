@@ -69,6 +69,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 		var completed []simulator.CompletedMovement
 		var ignored []simulator.IgnoredMovement
 		var conn *sqlite3.Conn
+		var scenarioRunId int64
 		var err error
 
 		it.Before(func() {
@@ -86,7 +87,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			completed, ignored, err = env.Run()
 			assert.NoError(t, err)
 
-			err = subject.Store(dbPath, completed, ignored, clusterConf, kpaConf)
+			scenarioRunId, err = subject.Store(dbPath, completed, ignored, clusterConf, kpaConf)
 			assert.NoError(t, err)
 
 			conn, err = sqlite3.Open(dbPath)
@@ -96,6 +97,10 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 		it.After(func() {
 			err = conn.Close()
 			assert.NoError(t, err)
+		})
+
+		it("returns the scenario_run ID", func() {
+			assert.Equal(t, int64(1), scenarioRunId)
 		})
 
 		describe("scenario run metadata", func() {
