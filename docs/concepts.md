@@ -43,12 +43,10 @@ Quoting from the [original issue](https://github.com/knative/serving/issues/1686
 
 ## The concept of time
 
-In Skenario, simulation begins at time zero (the Epoch) and changes occur with
-nanosecond resolution.
-
 A Discrete Event Simulation (DES), as the name suggests, updates the simulation based
 on messages, commands, objects or some other representation of an "event" that mutates
-the state of the simulated world. In Discrete Event Simulation, time is discrete.
+the state of the simulated world. In Discrete Event Simulation, time is discrete: it
+is divided into units that cannot be further subdivided.
 
 By contrast, in Systems Dynamics, time is a continuous variable. There are no
 discrete "events", rather there are "Flows" that represents rates of change.
@@ -63,16 +61,19 @@ numerically solve integral calculus equations. This means iteratively computing
 fixed slices of time. In DES terminology this is a "fixed-interval" simulation,
 alternatively "continuous-time" simulation.
 
-Next-event simulation has critical performance advantages. Simulations with
+Being able to skip ahead has performance implications. Simulations of events in
 very precise time do not need to be slower than simulations with imprecise time.
-Runtime scales with the order of all events to be simulated, rather than with
-the time-precision of the simulation.
+Runtime scales with the number of events to be simulated, rather than with the
+number of events multiplied by the time-precision of the simulation.
 
 Also convenient is that a DES model can allow events to be scheduled both before
 and during the simulation execution. This is particularly useful in setting up
 arrivals into the simulation from the "outside". For example, all the Requests
 that will arrive during a simulation are added to the schedule before the simulation
 scenario begins to execute.
+
+In Skenario, simulation begins at time zero (the Epoch) and changes occur with
+nanosecond resolution.
 
 It is important to note that there is no parallelism in the design. In each pass
 through the simulation loop, time appears "frozen" until the relevant Movement has
@@ -112,7 +113,7 @@ a collection of global arrays and flag variables (see for example
 given for Averill M. Law's _Simulation Modeling and Analysis, 5th Ed_).
 
 This approach does not treat Entities as individual structures, but instead as
-numerical counts to be added an subtracted from variables in the model. In DES
+numerical counts to be added and subtracted from variables in the model. In DES
 terminology this is the "job-oriented" approach. Each "job" (eg, a simulated bank
 teller) is simulated, but the customers are represented merely as a tally that
 is added and subtracted from.
@@ -123,7 +124,7 @@ the jobs, the model collects statistics on the processes. Formally these are
 equivalent, one can be converted to the other.
 
 Literature and examples of the process-oriented approach are frustratingly thin
-on the ground compared ot the job-oriented approach. I suspect this is due to the
+on the ground compared to the job-oriented approach. I suspect this is due to the
 long history of DES, dating as it does to the early Fortran era. The process-oriented
 approach, by contrast, essentially escaped into the broader community as
 object-oriented programming via Simula.
@@ -157,7 +158,7 @@ like an integral or summation.
 The example often given is of a bathtub, which is a Stock of water. There is an
 flow into the bathtub (the tap) and a flow out of the bathtub (the drain). At any
 given point in time, the amount of water in the Stock is a function of the net rates
-of flow.
+of flow integrated or summed over the timespan of interest.
 
 Stocks are a central concept in Systems Dynamics because they introduce _delays_.
 In Discrete Event Simulation the almost universal concept of a Stock is the Queue,
@@ -298,7 +299,7 @@ instead.
 
 This method is how new Movements are scheduled for simulation. Any object with a
 reference to the Environment may call this method. It is the sole mechanism for
-inserting elements into the list.
+inserting elements into the queue of Movements.
 
 The Environment will only accept Movements which will occur during the remaining life
 of the simulation. This means it will reject Movements scheduled before the current
@@ -331,16 +332,16 @@ In its natural environment, the Knative Pod Autoscaler (KPA) is triggered on a
 statistics and recalculates its desired number of replicas.
 
 The `AutoscalerTicktockStock` is used to manage this regular behaviour. At creation
-time, Movements from the `AutoscalerTicktockStock` back into itself are scheduled.
-On each `Add()` the stock will drive the actual KPA, prompting it to update its
-statistics and calculate a new desired value.
+time, Movements from the `AutoscalerTicktockStock` back into itself are scheduled,
+so that `AutoscalerTicktockStock` is both of the `From()` and `To()` stocks in the
+Movements. On each `Add()` the stock will drive the actual KPA, prompting it to update
+its statistics and calculate a new desired value.
 
 ### Example: Replicas
 
 Replicas are the unit that the KPA is scaling up and down. The responsiveness of the
 overall system depends in no small part on how quickly Replicas can become active and
-able to process incoming traffic. Replicas follow what is essentially a simple FSM
-(though not modeled as such):
+able to process incoming traffic. The Movements graph for Replicas is:
 
 ```
                            +--------------------------------------+
