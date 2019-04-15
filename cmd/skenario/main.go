@@ -61,6 +61,8 @@ func main() {
 	cluster := model.NewCluster(r.Env(), r.ClusterConfig())
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 
+	fmt.Print("Running simulation ... ")
+
 	completed, ignored, err := r.Env().Run()
 	if err != nil {
 		panic(err.Error())
@@ -85,8 +87,6 @@ type runner struct {
 }
 
 func (r *runner) Report(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, writer io.Writer) error {
-	fmt.Fprint(writer, "Running simulation ... ")
-
 	fmt.Fprintf(writer,
 		"%5s      %19s %-8d  %17s %-8d  %20s %-10s    %20s %-12s\n\n",
 		au.Bold("Done."),
