@@ -174,5 +174,38 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 		}
 	}
 
+	ignoredStmt, err := s.conn.Prepare(`insert into ignored_movements(occurs_at, kind, from_stock, to_stock, reason, scenario_run_id) values (?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer ignoredStmt.Close()
+
+	for _, mv := range s.ignored {
+		from := mv.Movement.From()
+		to := mv.Movement.To()
+
+		err = stockStmt.Exec(string(from.Name()), string(from.KindStocked()), scenarioRunId)
+		if err != nil {
+			return err
+		}
+
+		err = stockStmt.Exec(string(to.Name()), string(to.KindStocked()), scenarioRunId)
+		if err != nil {
+			return err
+		}
+
+		err = ignoredStmt.Exec(
+			mv.Movement.OccursAt().UnixNano(),
+			string(mv.Movement.Kind()),
+			string(from.Name()),
+			string(to.Name()),
+			mv.Reason,
+			scenarioRunId,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

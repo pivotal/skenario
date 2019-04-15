@@ -81,6 +81,8 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			subject = &storer{}
 
+			env.AddToSchedule(simulator.NewMovement("Ignored", env.HaltTime().Add(10*time.Second), simulator.NewSourceStock("Source", "Entity"), simulator.NewSinkStock("Sink", "Entity")))
+
 			completed, ignored, err = env.Run()
 			assert.NoError(t, err)
 
@@ -188,6 +190,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			var stocksCount int
 			var name, kind string
 			var numStocksWithEmptySimulation = 3
+			var numStocksAddedInTest = 2
 
 			it.Before(func() {
 				singleQuery(t, conn, `select count(1) from stocks`, &stocksCount)
@@ -195,7 +198,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("inserts a record", func() {
-				assert.Equal(t, numStocksWithEmptySimulation, stocksCount)
+				assert.Equal(t, numStocksWithEmptySimulation+numStocksAddedInTest, stocksCount)
 			})
 
 			it("inserts a name", func() {
@@ -240,7 +243,43 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			it("inserts the 'to' stock", func() {
 				assert.Equal(t, "RunningScenario", toStock)
 			})
+
 		})
+
+		describe("ignored movement records", func() {
+			var ignoredCount, occursAt int
+			var kind, fromStock, toStock, reason string
+
+			it.Before(func() {
+				singleQuery(t, conn, `select count(1) from ignored_movements`, &ignoredCount)
+				singleQuery(t, conn, `select occurs_at, kind, from_stock, to_stock, reason from ignored_movements`, &occursAt, &kind, &fromStock, &toStock, &reason)
+			})
+
+			it("inserts a record", func() {
+				assert.Equal(t, 1, ignoredCount)
+			})
+
+			it("inserts the occurrence time", func() {
+				assert.Equal(t, env.HaltTime().Add(10 * time.Second).UnixNano(), int64(occursAt))
+			})
+
+			it("inserts the movement kind", func() {
+				assert.Equal(t, "Ignored", kind)
+			})
+
+			it("inserts the 'from' stock", func() {
+				assert.Equal(t, "Source", fromStock)
+			})
+
+			it("inserts the 'to' stock", func() {
+				assert.Equal(t, "Sink", toStock)
+			})
+
+			it("inserts a reason for why the movement was ignored", func() {
+				assert.Equal(t, "ScheduledToOccurAfterHalt", reason)
+			})
+		})
+
 	})
 }
 
