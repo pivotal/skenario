@@ -24,7 +24,7 @@ import (
 	"skenario/pkg/simulator"
 )
 
-type Storer interface {
+type RunStore interface {
 	Store(
 		dbFileName string,
 		completed []simulator.CompletedMovement,

@@ -32,12 +32,12 @@ import (
 	"skenario/pkg/simulator"
 )
 
-func TestStorer(t *testing.T) {
-	spec.Run(t, "Storer", testStorer, spec.Report(report.Terminal{}))
+func TestRunStore(t *testing.T) {
+	spec.Run(t, "RunStore", testStorer, spec.Report(report.Terminal{}))
 }
 
 func testStorer(t *testing.T, describe spec.G, it spec.S) {
-	var subject Storer
+	var subject RunStore
 	var env simulator.Environment
 	var startAt time.Time
 	var runFor time.Duration
