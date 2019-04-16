@@ -12,7 +12,6 @@ for background and notes.
 
 Basically:
 
-
 ```
 $ go run cmd/skenario/main.go -h
 
@@ -49,6 +48,12 @@ $ go run cmd/skenario/main.go -h
   -tickInterval duration
         Tick interval duration of the Autoscaler (default 2s)
 ```
+
+### Data collection
+
+The configuration and results for each run are collected in `skenario.db`. The schema lives in the `data` package.
+
+The CLI will create a skenario.db file if it doesn't already exist.
 
 ### Reading the output
 

@@ -61,6 +61,7 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 			rpt = w.String()
 			assert.NoError(t, err)
 		})
+
 		it("prints completed", func() {
 			assert.Contains(t, rpt, "BeforeScenario")
 			assert.Contains(t, rpt, "RunningScenario")

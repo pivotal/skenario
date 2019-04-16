@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"skenario/pkg/data"
 	"strings"
 	"time"
 
@@ -67,6 +68,14 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	store := data.NewRunStore()
+	scenarioRunId, err := store.Store("skenario.db", completed, ignored, r.ClusterConfig(), r.AutoscalerConfig())
+	if err != nil {
+		fmt.Printf("there was an error saving data: %s", err.Error())
+	}
+
+	fmt.Printf("#%d ", au.Bold(scenarioRunId))
 
 	err = r.Report(completed, ignored, os.Stdout)
 	if err != nil {

@@ -71,6 +71,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 		var conn *sqlite3.Conn
 		var scenarioRunId int64
 		var err error
+		var stock1, stock2 simulator.ThroughStock
 
 		it.Before(func() {
 			var dir string
@@ -82,6 +83,10 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			subject = NewRunStore()
 
+			stock1 = simulator.NewThroughStock("stock 1", "test entity")
+			stock2 = simulator.NewThroughStock("stock 2", "test entity")
+			env.AddToSchedule(simulator.NewMovement("stock 1 -> stock 2", startAt.Add(111*time.Second), stock1, stock2))
+			env.AddToSchedule(simulator.NewMovement("stock 1 -> stock 2", startAt.Add(222*time.Second), stock1, stock2))
 			env.AddToSchedule(simulator.NewMovement("Ignored", env.HaltTime().Add(10*time.Second), simulator.NewSourceStock("Source", "Entity"), simulator.NewSinkStock("Sink", "Entity")))
 
 			completed, ignored, err = env.Run()
@@ -195,7 +200,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			var stocksCount int
 			var name, kind string
 			var numStocksWithEmptySimulation = 3
-			var numStocksAddedInTest = 2
+			var numStocksAddedInTest = 4
 
 			it.Before(func() {
 				singleQuery(t, conn, `select count(1) from stocks`, &stocksCount)
@@ -261,7 +266,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("inserts a record", func() {
-				assert.Equal(t, 1, ignoredCount)
+				assert.Equal(t, 3, ignoredCount)
 			})
 
 			it("inserts the occurrence time", func() {

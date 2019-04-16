@@ -41,39 +41,48 @@ var Schema = `create table if not exists scenario_runs
 
 create table if not exists stocks
 (
-    name            text primary key,
+    id              integer primary key, -- aliases to rowid
+    name            text    not null,
     kind_stocked    text    not null,
 
     scenario_run_id integer not null references scenario_runs (id)
 );
+create unique index if not exists stocks_names_kind on stocks (name, kind_stocked);
 
 create table if not exists entities
 (
-    name            text primary key,
+    id              integer primary key, -- aliases to rowid
+    name            text    not null,
     kind            text    not null,
 
     scenario_run_id integer not null references scenario_runs (id)
 );
+create unique index if not exists entities_names_kind on entities (name, kind);
 
 create table if not exists completed_movements
 (
-    occurs_at       unsigned big integer primary key, -- unsigned int to avoid being an alias to rowid
+    id              integer primary key,  -- aliases to rowid
+    occurs_at       unsigned big integer, -- unsigned int to avoid being an alias to rowid
     kind            text    not null,
-    moved           text    not null references entities (name),
-    from_stock      text    not null references stocks (name),
-    to_stock        text    not null references stocks (name),
+
+    moved           text    not null references entities (id),
+    from_stock      text    not null references stocks (id),
+    to_stock        text    not null references stocks (id),
 
     scenario_run_id integer not null references scenario_runs (id)
 );
+create unique index if not exists move_once_per_run on completed_movements (occurs_at, scenario_run_id);
 
 create table if not exists ignored_movements
 (
-    occurs_at       unsigned big integer primary key, -- unsigned int to avoid being an alias to rowid
+    id              integer primary key,  -- aliases to rowid
+    occurs_at       unsigned big integer, -- unsigned int to avoid being an alias to rowid
     kind            text    not null,
-    from_stock      text    not null references stocks (name),
-    to_stock        text    not null references stocks (name),
+
+    from_stock      text    not null references stocks (id),
+    to_stock        text    not null references stocks (id),
     reason          text    not null,
 
     scenario_run_id integer not null references scenario_runs (id)
-)
-`
+);
+create unique index if not exists ignore_once_per_run on ignored_movements (occurs_at, scenario_run_id);`
