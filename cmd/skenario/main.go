@@ -53,6 +53,8 @@ var (
 	launchDelay                 = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
 	terminateDelay              = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
 	numberOfRequests            = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate")
+	showTrace                   = flag.Bool("showTrace", true, "Show simulation trace")
+	storeRun                    = flag.Bool("storeRun", true, "Store simulation run results in skenario.db")
 )
 
 func main() {
@@ -69,17 +71,21 @@ func main() {
 		panic(err.Error())
 	}
 
-	store := data.NewRunStore()
-	scenarioRunId, err := store.Store("skenario.db", completed, ignored, r.ClusterConfig(), r.AutoscalerConfig())
-	if err != nil {
-		fmt.Printf("there was an error saving data: %s", err.Error())
+	if *storeRun {
+		store := data.NewRunStore()
+		scenarioRunId, err := store.Store("skenario.db", completed, ignored, r.ClusterConfig(), r.AutoscalerConfig())
+		if err != nil {
+			fmt.Printf("there was an error saving data: %s", err.Error())
+		}
+
+		fmt.Printf("#%d ", au.Bold(scenarioRunId))
 	}
 
-	fmt.Printf("#%d ", au.Bold(scenarioRunId))
-
-	err = r.Report(completed, ignored, os.Stdout)
-	if err != nil {
-		fmt.Printf("there was an error during simulation: %s", err.Error())
+	if *showTrace {
+		err = r.Report(completed, ignored, os.Stdout)
+		if err != nil {
+			fmt.Printf("there was an error during simulation: %s", err.Error())
+		}
 	}
 }
 
