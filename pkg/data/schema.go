@@ -43,9 +43,7 @@ create table if not exists stocks
 (
     id              integer primary key, -- aliases to rowid
     name            text    not null,
-    kind_stocked    text    not null,
-
-    scenario_run_id integer not null references scenario_runs (id)
+    kind_stocked    text    not null
 );
 create unique index if not exists stocks_names_kind on stocks (name, kind_stocked);
 
@@ -53,9 +51,7 @@ create table if not exists entities
 (
     id              integer primary key, -- aliases to rowid
     name            text    not null,
-    kind            text    not null,
-
-    scenario_run_id integer not null references scenario_runs (id)
+    kind            text    not null
 );
 create unique index if not exists entities_names_kind on entities (name, kind);
 

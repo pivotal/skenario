@@ -16,6 +16,7 @@
 package data
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
@@ -124,17 +125,29 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 }
 
 func (s *storer) scenarioData(scenarioRunId int64) error {
-	entityStmt, err := s.conn.Prepare(`insert into entities(name, kind, scenario_run_id) values (?, ?, ?) on conflict do nothing`)
+	entityStmt, err := s.conn.Prepare(`insert into entities(name, kind) values (?, ?) on conflict do nothing`)
 	if err != nil {
 		return err
 	}
 	defer entityStmt.Close()
 
-	stockStmt, err := s.conn.Prepare(`insert into stocks(name, kind_stocked, scenario_run_id) values (?, ?, ?) on conflict do nothing`)
+	selectEntityStmt, err := s.conn.Prepare(`select id from entities where name = ? and kind = ?`)
+	if err != nil {
+		return err
+	}
+	defer selectEntityStmt.Close()
+
+	stockStmt, err := s.conn.Prepare(`insert into stocks(name, kind_stocked) values (?, ?) on conflict do nothing`)
 	if err != nil {
 		return err
 	}
 	defer stockStmt.Close()
+
+	selectStockStmt, err := s.conn.Prepare(`select id from stocks where name = ? and kind_stocked = ?`)
+	if err != nil {
+		return err
+	}
+	defer selectStockStmt.Close()
 
 	movementStmt, err := s.conn.Prepare(`insert into completed_movements(occurs_at, kind, moved, from_stock, to_stock, scenario_run_id) values (?, ?, ?, ?, ?, ?)`)
 	if err != nil {
@@ -143,30 +156,108 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 	defer movementStmt.Close()
 
 	for _, mv := range s.completed {
+		var entityId, fromStockId, toStockId int
+		var ok bool
 		from := mv.Movement.From()
 		to := mv.Movement.To()
 
-		err = entityStmt.Exec(string(mv.Moved.Name()), string(mv.Moved.Kind()), scenarioRunId)
+		// Entity
+		err = entityStmt.Exec(string(mv.Moved.Name()), string(mv.Moved.Kind()))
 		if err != nil {
 			return err
 		}
 
-		err = stockStmt.Exec(string(from.Name()), string(from.KindStocked()), scenarioRunId)
+		err = selectEntityStmt.Bind(string(mv.Moved.Name()), string(mv.Moved.Kind()))
 		if err != nil {
 			return err
 		}
 
-		err = stockStmt.Exec(string(to.Name()), string(to.KindStocked()), scenarioRunId)
+		_, err = selectEntityStmt.Step()
 		if err != nil {
 			return err
 		}
+
+		entityId, ok, err = selectEntityStmt.ColumnInt(0)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("could not find entityId in %s", selectEntityStmt.ColumnNames())
+		}
+
+		err = selectEntityStmt.Reset()
+		if err != nil {
+			return err
+		}
+
+		// Stock From
+
+		err = stockStmt.Exec(string(from.Name()), string(from.KindStocked()))
+		if err != nil {
+			return err
+		}
+
+		err = selectStockStmt.Bind(string(from.Name()), string(from.KindStocked()))
+		if err != nil {
+			return err
+		}
+
+		_, err = selectStockStmt.Step()
+		if err != nil {
+			return err
+		}
+
+		fromStockId, ok, err = selectStockStmt.ColumnInt(0)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("could not find fromStockId in %s", selectStockStmt.ColumnNames())
+		}
+
+		err = selectStockStmt.Reset()
+		if err != nil {
+			return err
+		}
+
+		// Stock To
+
+		err = stockStmt.Exec(string(to.Name()), string(to.KindStocked()))
+		if err != nil {
+			return err
+		}
+
+		err = selectStockStmt.Bind(string(to.Name()), string(to.KindStocked()))
+		if err != nil {
+			return err
+		}
+
+		_, err = selectStockStmt.Step()
+		if err != nil {
+			return err
+		}
+
+		toStockId, ok, err = selectStockStmt.ColumnInt(0)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("could not find toStockId in %s", selectStockStmt.ColumnNames())
+		}
+
+		err = selectStockStmt.Reset()
+		if err != nil {
+			return err
+		}
+
+		// Movement
 
 		err = movementStmt.Exec(
 			mv.Movement.OccursAt().UnixNano(),
 			string(mv.Movement.Kind()),
-			string(mv.Moved.Name()),
-			string(from.Name()),
-			string(to.Name()),
+			entityId,
+			fromStockId,
+			toStockId,
 			scenarioRunId,
 		)
 		if err != nil {
@@ -181,15 +272,67 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 	defer ignoredStmt.Close()
 
 	for _, mv := range s.ignored {
+		var fromStockId, toStockId int
+		var ok bool
 		from := mv.Movement.From()
 		to := mv.Movement.To()
 
-		err = stockStmt.Exec(string(from.Name()), string(from.KindStocked()), scenarioRunId)
+		// Stock From
+
+		err = stockStmt.Exec(string(from.Name()), string(from.KindStocked()))
 		if err != nil {
 			return err
 		}
 
-		err = stockStmt.Exec(string(to.Name()), string(to.KindStocked()), scenarioRunId)
+		err = selectStockStmt.Bind(string(from.Name()), string(from.KindStocked()))
+		if err != nil {
+			return err
+		}
+
+		_, err = selectStockStmt.Step()
+		if err != nil {
+			return err
+		}
+
+		fromStockId, ok, err = selectStockStmt.ColumnInt(0)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("could not find fromStockId in %s", selectStockStmt.ColumnNames())
+		}
+
+		err = selectStockStmt.Reset()
+		if err != nil {
+			return err
+		}
+
+		// Stock To
+
+		err = stockStmt.Exec(string(to.Name()), string(to.KindStocked()))
+		if err != nil {
+			return err
+		}
+
+		err = selectStockStmt.Bind(string(to.Name()), string(to.KindStocked()))
+		if err != nil {
+			return err
+		}
+
+		_, err = selectStockStmt.Step()
+		if err != nil {
+			return err
+		}
+
+		toStockId, ok, err = selectStockStmt.ColumnInt(0)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("could not find toStockId in %s", selectStockStmt.ColumnNames())
+		}
+
+		err = selectStockStmt.Reset()
 		if err != nil {
 			return err
 		}
@@ -197,8 +340,8 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 		err = ignoredStmt.Exec(
 			mv.Movement.OccursAt().UnixNano(),
 			string(mv.Movement.Kind()),
-			string(from.Name()),
-			string(to.Name()),
+			fromStockId,
+			toStockId,
 			mv.Reason,
 			scenarioRunId,
 		)

@@ -221,8 +221,9 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		describe("movement records", func() {
+			var kind string
 			var movementsCount, occursAt int
-			var kind, moved, fromStock, toStock string
+			var moved, fromStock, toStock int
 			var numMovementsWithEmptySimulation = 2
 
 			it.Before(func() {
@@ -243,22 +244,22 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("inserts the moved entity", func() {
-				assert.Equal(t, "Scenario", moved)
+				assert.Equal(t, 1, moved)
 			})
 
 			it("inserts the 'from' stock", func() {
-				assert.Equal(t, "BeforeScenario", fromStock)
+				assert.Equal(t, 1, fromStock)
 			})
 
 			it("inserts the 'to' stock", func() {
-				assert.Equal(t, "RunningScenario", toStock)
+				assert.Equal(t, 2, toStock)
 			})
 
 		})
 
 		describe("ignored movement records", func() {
-			var ignoredCount, occursAt int
-			var kind, fromStock, toStock, reason string
+			var ignoredCount, occursAt, fromStock, toStock int
+			var kind, reason string
 
 			it.Before(func() {
 				singleQuery(t, conn, `select count(1) from ignored_movements`, &ignoredCount)
@@ -278,18 +279,17 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("inserts the 'from' stock", func() {
-				assert.Equal(t, "Source", fromStock)
+				assert.Equal(t, 4, fromStock)
 			})
 
 			it("inserts the 'to' stock", func() {
-				assert.Equal(t, "Sink", toStock)
+				assert.Equal(t, 5, toStock)
 			})
 
 			it("inserts a reason for why the movement was ignored", func() {
 				assert.Equal(t, "ScheduledToOccurAfterHalt", reason)
 			})
 		})
-
 	})
 }
 
