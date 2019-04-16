@@ -36,8 +36,14 @@ $ go run cmd/skenario/main.go -h
   -scaleToZeroGrace duration
         Duration of the scale-to-zero grace period of the Autoscaler (default 30s)
 
+  -showTrace
+        Show simulation trace (default true)
+
   -stableWindow duration
         Duration of stable window of the Autoscaler (default 1m0s)
+
+  -storeRun
+        Store simulation run results in skenario.db (default true)
 
   -targetConcurrencyDefault float
         Default target concurrency of Replicas (default 1)
