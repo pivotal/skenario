@@ -68,14 +68,14 @@ func main() {
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 	trafficSource := model.NewTrafficSource(r.Env(), cluster.BufferStock())
 
+	var traffic trafficpatterns.Pattern
 	switch *trafficPattern {
 	case "uniform":
-		traffic := trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), int(*numberOfRequests))
-		traffic.Generate()
+		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), int(*numberOfRequests))
 	case "ramp":
-		traffic := trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), 1)
-		traffic.Generate()
+		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), 1)
 	}
+	traffic.Generate()
 
 	fmt.Print("Running simulation ... ")
 
@@ -86,7 +86,7 @@ func main() {
 
 	if *storeRun {
 		store := data.NewRunStore()
-		scenarioRunId, err := store.Store("skenario.db", completed, ignored, r.ClusterConfig(), r.AutoscalerConfig())
+		scenarioRunId, err := store.Store("skenario.db", completed, ignored, r.ClusterConfig(), r.AutoscalerConfig(), "skenario_cli", traffic.Name())
 		if err != nil {
 			fmt.Printf("there was an error saving data: %s", err.Error())
 		}

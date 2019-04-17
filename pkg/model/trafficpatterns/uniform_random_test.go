@@ -18,6 +18,7 @@ package trafficpatterns
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -41,6 +42,7 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = new(fakes.FakeEnvironment)
+		envFake.TheHaltTime = envFake.TheTime.Add(10*time.Second)
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake,bufferStock)
 		subject = NewUniformRandom(envFake, trafficSource, bufferStock, 1000)

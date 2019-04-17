@@ -32,28 +32,28 @@ type RunStore interface {
 		ignored []simulator.IgnoredMovement,
 		clusterConf model.ClusterConfig,
 		kpaConf model.KnativeAutoscalerConfig,
+		origin string,
+		trafficPattern string,
 	) (scenarioRunId int64, err error)
 }
 
 type storer struct {
-	conn        *sqlite3.Conn
-	clusterConf model.ClusterConfig
-	kpaConf     model.KnativeAutoscalerConfig
-	completed   []simulator.CompletedMovement
-	ignored     []simulator.IgnoredMovement
+	conn           *sqlite3.Conn
+	clusterConf    model.ClusterConfig
+	kpaConf        model.KnativeAutoscalerConfig
+	completed      []simulator.CompletedMovement
+	ignored        []simulator.IgnoredMovement
+	origin         string
+	trafficPattern string
 }
 
-func (s *storer) Store(
-	dbFileName string,
-	completed []simulator.CompletedMovement,
-	ignored []simulator.IgnoredMovement,
-	clusterConf model.ClusterConfig,
-	kpaConf model.KnativeAutoscalerConfig,
-) (scenarioRunId int64, err error) {
+func (s *storer) Store(dbFileName string, completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ) (scenarioRunId int64, err error) {
 	s.completed = completed
 	s.ignored = ignored
 	s.clusterConf = clusterConf
 	s.kpaConf = kpaConf
+	s.origin = origin
+	s.trafficPattern = trafficPattern
 
 	conn, err := sqlite3.Open(dbFileName)
 	if err != nil {
@@ -102,8 +102,8 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 
 	err = srStmt.Exec(
 		time.Now().Format(time.RFC3339),
-		"skenario_cli",
-		"golang_rand_uniform",
+		s.origin,
+		s.trafficPattern,
 		s.clusterConf.LaunchDelay.Nanoseconds(),
 		s.clusterConf.TerminateDelay.Nanoseconds(),
 		int(s.clusterConf.NumberOfRequests),

@@ -92,7 +92,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			completed, ignored, err = env.Run()
 			assert.NoError(t, err)
 
-			scenarioRunId, err = subject.Store(dbPath, completed, ignored, clusterConf, kpaConf)
+			scenarioRunId, err = subject.Store(dbPath, completed, ignored, clusterConf, kpaConf, "test_origin", "test_pattern")
 			assert.NoError(t, err)
 
 			conn, err = sqlite3.Open(dbPath)
@@ -125,12 +125,12 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 				assert.Contains(t, recorded, time.Now().Format(time.RFC3339))
 			})
 
-			it("sets the origin as 'skenario_cli'", func() {
-				assert.Equal(t, "skenario_cli", origin)
+			it("sets the origin as 'test_origin'", func() {
+				assert.Equal(t, "test_origin", origin)
 			})
 
-			it("sets the traffic pattern as 'golang_rand_uniform'", func() {
-				assert.Equal(t, "golang_rand_uniform", trafficPattern)
+			it("sets the traffic pattern as 'test_pattern'", func() {
+				assert.Equal(t, "test_pattern", trafficPattern)
 			})
 		})
 
