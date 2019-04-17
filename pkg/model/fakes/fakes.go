@@ -8,10 +8,10 @@ import (
 )
 
 type FakeEnvironment struct {
-	Movements []simulator.Movement
-	TheTime   time.Time
+	Movements   []simulator.Movement
+	TheTime     time.Time
+	TheHaltTime time.Time
 }
-
 
 func (fe *FakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
 	fe.Movements = append(fe.Movements, movement)
@@ -27,7 +27,7 @@ func (fe *FakeEnvironment) CurrentMovementTime() time.Time {
 }
 
 func (fe *FakeEnvironment) HaltTime() time.Time {
-	return fe.TheTime.Add(1 * time.Hour)
+	return fe.TheHaltTime
 }
 
 func (fe *FakeEnvironment) Context() context.Context {

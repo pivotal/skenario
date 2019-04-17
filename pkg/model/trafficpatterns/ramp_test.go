@@ -18,22 +18,22 @@ package trafficpatterns
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-
 
 	"skenario/pkg/model"
 	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
-func TestUniformRandom(t *testing.T) {
-	spec.Run(t, "Uniform random traffic pattern", testUniformRandom, spec.Report(report.Terminal{}))
+func TestRamp(t *testing.T) {
+	spec.Run(t, "Ramp traffic pattern", testRamp, spec.Report(report.Terminal{}))
 }
 
-func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
+func testRamp(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
 	var envFake *fakes.FakeEnvironment
 	var trafficSource model.TrafficSource
@@ -41,35 +41,34 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = new(fakes.FakeEnvironment)
+		envFake.TheHaltTime = envFake.TheTime.Add(4*time.Second)
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake,bufferStock)
-		subject = NewUniformRandom(envFake, trafficSource, bufferStock, 1000)
+
+		subject = NewRamp(envFake, trafficSource, bufferStock, 1)
 		subject.Generate()
 	})
 
 	describe("Name()", func() {
-		it("calls itself 'golang_rand_uniform'", func() {
-			assert.Equal(t, "golang_rand_uniform", subject.Name())
+		it("calls itself 'ramp'", func() {
+			assert.Equal(t, "ramp", subject.Name())
 		})
 	})
 
 	describe("Generate()", func() {
-		it("creates 1000 requests", func() {
-			assert.Len(t, envFake.Movements, 1000)
+		it("creates 1 request in the 1st second", func() {
+			assert.Equal(t, envFake.TheTime.Add(1*time.Second).Add(1*time.Nanosecond), envFake.Movements[0].OccursAt())
 		})
 
-		it("created 'arrive_at_buffer' movements", func() {
-			for _, mv := range envFake.Movements {
-				assert.Equal(t, simulator.MovementKind("arrive_at_buffer"), mv.Kind())
-			}
+		it("creates 2 requests in the 2nd second", func() {
+			assert.Equal(t, envFake.TheTime.Add(2*time.Second).Add(1*time.Nanosecond), envFake.Movements[1].OccursAt())
+			assert.Equal(t, envFake.TheTime.Add(2*time.Second).Add(2*time.Nanosecond), envFake.Movements[2].OccursAt())
 		})
 
-		it("moves from traffic source", func() {
-			assert.Equal(t, simulator.StockName("TrafficSource"), envFake.Movements[0].From().Name())
-		})
-
-		it("moves to buffer stock", func() {
-			assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
+		it("creates 3 requests in the 3rd second", func() {
+			assert.Equal(t, envFake.TheTime.Add(3*time.Second).Add(1*time.Nanosecond), envFake.Movements[3].OccursAt())
+			assert.Equal(t, envFake.TheTime.Add(3*time.Second).Add(2*time.Nanosecond), envFake.Movements[4].OccursAt())
+			assert.Equal(t, envFake.TheTime.Add(3*time.Second).Add(3*time.Nanosecond), envFake.Movements[5].OccursAt())
 		})
 	})
 }

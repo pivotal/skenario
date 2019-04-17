@@ -22,11 +22,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"skenario/pkg/data"
-	"skenario/pkg/model/trafficpatterns"
-
 	"strings"
 	"time"
+
+	"skenario/pkg/data"
+	"skenario/pkg/model/trafficpatterns"
 
 	"github.com/knative/pkg/logging"
 	"github.com/logrusorgru/aurora"
@@ -57,6 +57,7 @@ var (
 	numberOfRequests            = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate")
 	showTrace                   = flag.Bool("showTrace", true, "Show simulation trace")
 	storeRun                    = flag.Bool("storeRun", true, "Store simulation run results in skenario.db")
+	trafficPattern              = flag.String("trafficPattern", "uniform", "Traffic pattern. Options are 'uniform' and 'ramp'. -numberOfRequests is ignored by ramp.")
 )
 
 func main() {
@@ -66,8 +67,15 @@ func main() {
 	cluster := model.NewCluster(r.Env(), r.ClusterConfig())
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 	trafficSource := model.NewTrafficSource(r.Env(), cluster.BufferStock())
-	traffic := trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock())
-	traffic.Generate(int(*numberOfRequests))
+
+	switch *trafficPattern {
+	case "uniform":
+		traffic := trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), int(*numberOfRequests))
+		traffic.Generate()
+	case "ramp":
+		traffic := trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), 1)
+		traffic.Generate()
+	}
 
 	fmt.Print("Running simulation ... ")
 

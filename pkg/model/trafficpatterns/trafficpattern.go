@@ -18,5 +18,5 @@ package trafficpatterns
 
 type Pattern interface {
 	Name() string
-	Generate(numberOfRequests int)
+	Generate()
 }

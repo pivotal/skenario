@@ -53,6 +53,9 @@ $ go run cmd/skenario/main.go -h
 
   -tickInterval duration
         Tick interval duration of the Autoscaler (default 2s)
+
+  -trafficPattern string
+        Traffic pattern. Options are 'uniform' and 'ramp'. -numberOfRequests is ignored by ramp. (default "uniform")
 ```
 
 ### Data collection

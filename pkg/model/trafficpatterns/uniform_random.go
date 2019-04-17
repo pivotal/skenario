@@ -25,18 +25,19 @@ import (
 )
 
 type uniformRandom struct {
-	env    simulator.Environment
-	source model.TrafficSource
-	buffer model.RequestsBufferedStock
+	env              simulator.Environment
+	source           model.TrafficSource
+	buffer           model.RequestsBufferedStock
+	numberOfRequests int
 }
 
 func (ur *uniformRandom) Name() string {
 	return "golang_rand_uniform"
 }
 
-func (ur *uniformRandom) Generate(numberOfRequests int) {
+func (ur *uniformRandom) Generate() {
 	runsFor := ur.env.HaltTime().Sub(ur.env.CurrentMovementTime())
-	for i := 0; i < numberOfRequests; i++ {
+	for i := 0; i < ur.numberOfRequests; i++ {
 		r := rand.Int63n(runsFor.Nanoseconds())
 
 		ur.env.AddToSchedule(simulator.NewMovement(
@@ -48,10 +49,11 @@ func (ur *uniformRandom) Generate(numberOfRequests int) {
 	}
 }
 
-func NewUniformRandom(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock) Pattern {
+func NewUniformRandom(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, numberOfRequests int) Pattern {
 	return &uniformRandom{
 		env:    env,
 		source: source,
 		buffer: buffer,
+		numberOfRequests: numberOfRequests,
 	}
 }
