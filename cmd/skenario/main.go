@@ -23,6 +23,8 @@ import (
 	"io"
 	"os"
 	"skenario/pkg/data"
+	"skenario/pkg/model/trafficpatterns"
+
 	"strings"
 	"time"
 
@@ -63,6 +65,9 @@ func main() {
 
 	cluster := model.NewCluster(r.Env(), r.ClusterConfig())
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
+	trafficSource := model.NewTrafficSource(r.Env(), cluster.BufferStock())
+	traffic := trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock())
+	traffic.Generate(int(*numberOfRequests))
 
 	fmt.Print("Running simulation ... ")
 

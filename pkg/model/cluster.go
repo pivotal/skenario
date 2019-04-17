@@ -16,7 +16,6 @@
 package model
 
 import (
-	"math/rand"
 	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -43,6 +42,7 @@ type ClusterModel interface {
 	CurrentLaunching() uint64
 	CurrentActive() uint64
 	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
+	BufferStock() RequestsBufferedStock
 }
 
 type EndpointInformerSource interface {
@@ -159,6 +159,10 @@ func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
 	return cm.endpointsInformer
 }
 
+func (cm *clusterModel) BufferStock() RequestsBufferedStock {
+	return cm.requestsInBuffer
+}
+
 func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
@@ -179,19 +183,6 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	replicasActive := NewReplicasActiveStock()
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed)
-	trafficSource := NewTrafficSource(env, bufferStock)
-
-	runsFor := env.HaltTime().Sub(env.CurrentMovementTime())
-	for i := uint(0); i < config.NumberOfRequests; i++ {
-		r := rand.Int63n(runsFor.Nanoseconds())
-
-		env.AddToSchedule(simulator.NewMovement(
-			"arrive_at_buffer",
-			env.CurrentMovementTime().Add(time.Duration(r)*time.Nanosecond),
-			trafficSource,
-			bufferStock,
-		))
-	}
 
 	return &clusterModel{
 		env:                env,

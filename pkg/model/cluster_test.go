@@ -67,25 +67,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			assert.Len(t, endpoints.Subsets, 1)
 			assert.Len(t, endpoints.Subsets[0].Addresses, 0)
 		})
-
-		describe("scheduling request arrivals", func() {
-			defaultNumberOfArrivals := 10
-			it("schedules request arrivals", func() {
-				assert.Len(t, envFake.Movements, defaultNumberOfArrivals)
-			})
-
-			it("movements are kind 'arrive_at_buffer'", func() {
-				assert.Equal(t, simulator.MovementKind("arrive_at_buffer"), envFake.Movements[0].Kind())
-			})
-
-			it("movements from traffic source", func() {
-				assert.Equal(t, simulator.StockName("TrafficSource"), envFake.Movements[0].From().Name())
-			})
-
-			it("movement is to buffer stock", func() {
-				assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
-			})
-		})
 	})
 
 	describe("CurrentDesired()", func() {
@@ -509,6 +490,12 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			it("delegates Stat creation to the Replica", func() {
 				assert.True(t, replicaFake.statCalled)
 			})
+		})
+	})
+
+	describe("BufferStock()", func() {
+		it("returns the configured buffer stock", func() {
+			assert.Equal(t, rawSubject.requestsInBuffer, subject.BufferStock())
 		})
 	})
 }
