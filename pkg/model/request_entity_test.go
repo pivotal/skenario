@@ -24,6 +24,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -34,12 +35,12 @@ func TestRequestEntity(t *testing.T) {
 func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 	var subject RequestEntity
 	var rawSubject *requestEntity
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 	var bufferStock RequestsBufferedStock
 
 	it.Before(func() {
 		bufferStock = NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil)
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 		subject = NewRequestEntity(envFake, bufferStock)
 		rawSubject = subject.(*requestEntity)
 	})

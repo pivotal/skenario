@@ -22,6 +22,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -32,11 +33,11 @@ func TestTrafficSource(t *testing.T) {
 func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 	var subject TrafficSource
 	var rawSubject *trafficSource
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 
 	it.Before(func() {
 		requestsBuffered := NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"))
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 
 		subject = NewTrafficSource(envFake, requestsBuffered)
 		assert.NotNil(t, subject)

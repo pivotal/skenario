@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -37,12 +38,12 @@ func TestReplicasSource(t *testing.T) {
 func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 	var subject ReplicaSource
 	var rawSubject *replicaSource
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 	var fakeClient kubernetes.Interface
 	var endpointsInformer corev1informers.EndpointsInformer
 
 	it.Before(func() {
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 		fakeClient = fake.NewSimpleClientset()
 		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 		endpointsInformer = informerFactory.Core().V1().Endpoints()
@@ -110,7 +111,7 @@ func testIPV4Sequence(t *testing.T, describe spec.G, it spec.S) {
 	var rs ReplicaSource
 	var subject IPV4Sequence
 	var rawSubject *replicaSource
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 	var fakeClient kubernetes.Interface
 	var endpointsInformer corev1informers.EndpointsInformer
 

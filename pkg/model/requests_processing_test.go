@@ -23,6 +23,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -33,10 +34,10 @@ func TestRequestsProcessing(t *testing.T) {
 func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 	var subject RequestsProcessingStock
 	var rawSubject *requestsProcessingStock
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 
 	it.Before(func() {
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 		subject = NewRequestsProcessingStock(envFake, 99, simulator.NewSinkStock("RequestsComplete", "Request"))
 		rawSubject = subject.(*requestsProcessingStock)
 	})
@@ -78,11 +79,11 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("scheduling processing", func() {
 			it("schedules a movement from RequestsProcessing to RequestsComplete", func() {
-				assert.Equal(t, simulator.StockName("RequestsComplete"), envFake.movements[0].To().Name())
+				assert.Equal(t, simulator.StockName("RequestsComplete"), envFake.Movements[0].To().Name())
 			})
 
 			it("schedules the movement to occur after 1 second", func() {
-				assert.Equal(t, envFake.theTime.Add(1*time.Second), envFake.movements[0].OccursAt())
+				assert.Equal(t, envFake.TheTime.Add(1*time.Second), envFake.Movements[0].OccursAt())
 			})
 		})
 	})

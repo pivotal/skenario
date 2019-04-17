@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers/core/v1"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -39,7 +40,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var config ClusterConfig
 	var subject ClusterModel
 	var rawSubject *clusterModel
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 	var endpoints *corev1.Endpoints
 	var err error
 
@@ -55,7 +56,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("NewCluster()", func() {
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, subject.Env())
@@ -70,25 +71,25 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		describe("scheduling request arrivals", func() {
 			defaultNumberOfArrivals := 10
 			it("schedules request arrivals", func() {
-				assert.Len(t, envFake.movements, defaultNumberOfArrivals)
+				assert.Len(t, envFake.Movements, defaultNumberOfArrivals)
 			})
 
 			it("movements are kind 'arrive_at_buffer'", func() {
-				assert.Equal(t, simulator.MovementKind("arrive_at_buffer"), envFake.movements[0].Kind())
+				assert.Equal(t, simulator.MovementKind("arrive_at_buffer"), envFake.Movements[0].Kind())
 			})
 
 			it("movements from traffic source", func() {
-				assert.Equal(t, simulator.StockName("TrafficSource"), envFake.movements[0].From().Name())
+				assert.Equal(t, simulator.StockName("TrafficSource"), envFake.Movements[0].From().Name())
 			})
 
 			it("movement is to buffer stock", func() {
-				assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[0].To().Name())
+				assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
 			})
 		})
 	})
 
 	describe("CurrentDesired()", func() {
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 
 		it("defaults to 0", func() {
 			assert.Equal(t, int32(0), subject.CurrentDesired())
@@ -96,7 +97,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("SetDesired()", func() {
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 
 		describe("using ClusterConfig delay values", func() {
 			var firstLaunchAt, secondLaunchAt time.Time
@@ -106,38 +107,38 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("ClusterConfig.LaunchDelay", func() {
 				it.Before(func() {
-					envFake.theTime = time.Unix(0, 0)
+					envFake.TheTime = time.Unix(0, 0)
 
 					subject = NewCluster(envFake, config)
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]simulator.Movement, 0)
+					envFake.Movements = make([]simulator.Movement, 0)
 
-					firstLaunchAt = envFake.theTime.Add(rawSubject.config.LaunchDelay).Add(1 * time.Nanosecond)
+					firstLaunchAt = envFake.TheTime.Add(rawSubject.config.LaunchDelay).Add(1 * time.Nanosecond)
 					secondLaunchAt = firstLaunchAt.Add(1 * time.Nanosecond)
 
 					subject.SetDesired(2)
 				})
 
 				it("delays the first replica by the exact value", func() {
-					assert.Equal(t, firstLaunchAt, envFake.movements[0].OccursAt())
+					assert.Equal(t, firstLaunchAt, envFake.Movements[0].OccursAt())
 				})
 
 				it("adds a nanosecond to each subsequent replica launch to prevent collisions", func() {
-					assert.Equal(t, secondLaunchAt, envFake.movements[2].OccursAt())
+					assert.Equal(t, secondLaunchAt, envFake.Movements[2].OccursAt())
 				})
 			})
 
 			describe("ClusterConfig.TerminateDelay", func() {
 				it.Before(func() {
-					envFake.theTime = time.Unix(0, 0)
+					envFake.TheTime = time.Unix(0, 0)
 
 					subject = NewCluster(envFake, config)
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]simulator.Movement, 0)
+					envFake.Movements = make([]simulator.Movement, 0)
 
 					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching #1", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
@@ -148,7 +149,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					err = rawSubject.replicasActive.Add(NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "4.3.2.1"))
 					assert.NoError(t, err)
 
-					firstTerminateAt = envFake.theTime.Add(rawSubject.config.TerminateDelay)
+					firstTerminateAt = envFake.TheTime.Add(rawSubject.config.TerminateDelay)
 					secondTerminateAt = firstTerminateAt.Add(1 * time.Nanosecond)
 					thirdTerminateAt = secondTerminateAt.Add(1 * time.Nanosecond)
 					fourthTerminateAt = thirdTerminateAt.Add(1 * time.Nanosecond)
@@ -157,17 +158,17 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("delays the termination of the first launching replica by the exact amount", func() {
-					assert.Equal(t, firstTerminateAt, envFake.movements[0].OccursAt())
+					assert.Equal(t, firstTerminateAt, envFake.Movements[0].OccursAt())
 				})
 
 				it("delays the termination of the second launching replica by an additional nanosecond", func() {
-					assert.Equal(t, secondTerminateAt, envFake.movements[1].OccursAt())
+					assert.Equal(t, secondTerminateAt, envFake.Movements[1].OccursAt())
 				})
 
 				it("delays the termination of each active replicas by a nanosecond", func() {
 					// two examples to force a full pass through the loop for terminating active replicas
-					assert.Equal(t, thirdTerminateAt, envFake.movements[2].OccursAt())
-					assert.Equal(t, fourthTerminateAt, envFake.movements[3].OccursAt())
+					assert.Equal(t, thirdTerminateAt, envFake.Movements[2].OccursAt())
+					assert.Equal(t, fourthTerminateAt, envFake.Movements[3].OccursAt())
 				})
 			})
 		})
@@ -179,7 +180,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]simulator.Movement, 0)
+					envFake.Movements = make([]simulator.Movement, 0)
 
 					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
@@ -192,15 +193,15 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements of new entities from ReplicaSource to ReplicasLaunching", func() {
-					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.Movements[0].Kind())
 				})
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[9].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.Movements[9].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {
-					assert.Len(t, envFake.movements, 16)
+					assert.Len(t, envFake.Movements, 16)
 				})
 			})
 
@@ -210,7 +211,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]simulator.Movement, 0)
+					envFake.Movements = make([]simulator.Movement, 0)
 
 					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
@@ -223,8 +224,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements from ReplicasLaunching to ReplicasTerminating", func() {
-					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, simulator.MovementKind("terminate_launch"), envFake.movements[0].Kind())
+					assert.Len(t, envFake.Movements, 1)
+					assert.Equal(t, simulator.MovementKind("terminate_launch"), envFake.Movements[0].Kind())
 				})
 			})
 
@@ -234,7 +235,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]simulator.Movement, 0)
+					envFake.Movements = make([]simulator.Movement, 0)
 
 					err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching 1", simulator.EntityKind("Replica")))
 					assert.NoError(t, err)
@@ -258,7 +259,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.NotNil(t, subject)
 
 				rawSubject = subject.(*clusterModel)
-				envFake.movements = make([]simulator.Movement, 0)
+				envFake.Movements = make([]simulator.Movement, 0)
 
 				newReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "1.2.1.2")
 				err = rawSubject.replicasActive.Add(newReplica)
@@ -275,15 +276,15 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements of new entities from ReplicaSource to ReplicasLaunching", func() {
-					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.Movements[0].Kind())
 				})
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[1].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.Movements[1].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {
-					assert.Len(t, envFake.movements, 2)
+					assert.Len(t, envFake.Movements, 2)
 				})
 			})
 
@@ -297,8 +298,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
-					assert.Len(t, envFake.movements, 1)
-					assert.Equal(t, simulator.MovementKind("terminate_active"), envFake.movements[0].Kind())
+					assert.Len(t, envFake.Movements, 1)
+					assert.Equal(t, simulator.MovementKind("terminate_active"), envFake.Movements[0].Kind())
 				})
 			})
 
@@ -321,7 +322,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.NotNil(t, subject)
 
 				rawSubject = subject.(*clusterModel)
-				envFake.movements = make([]simulator.Movement, 0)
+				envFake.Movements = make([]simulator.Movement, 0)
 
 				newReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "3.4.3.4")
 				err := rawSubject.replicasActive.Add(newReplica)
@@ -340,15 +341,15 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules a movement from ReplicaSource to ReplicasLaunching", func() {
-					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.Movements[0].Kind())
 				})
 
 				it("adds another movement from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[1].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.Movements[1].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {
-					assert.Len(t, envFake.movements, 2)
+					assert.Len(t, envFake.Movements, 2)
 				})
 			})
 
@@ -362,9 +363,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
-					assert.Len(t, envFake.movements, 2)
-					assert.Equal(t, "terminate_launch", string(envFake.movements[0].Kind()))
-					assert.Equal(t, "terminate_active", string(envFake.movements[1].Kind()))
+					assert.Len(t, envFake.Movements, 2)
+					assert.Equal(t, "terminate_launch", string(envFake.Movements[0].Kind()))
+					assert.Equal(t, "terminate_active", string(envFake.Movements[1].Kind()))
 				})
 			})
 
@@ -389,7 +390,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NotNil(t, subject)
 
 					rawSubject = subject.(*clusterModel)
-					envFake.movements = make([]simulator.Movement, 0)
+					envFake.Movements = make([]simulator.Movement, 0)
 
 					subject.SetDesired(1)
 				})
@@ -399,22 +400,22 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules movements of new entities from ReplicaSource to ReplicasLaunching", func() {
-					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.movements[0].Kind())
+					assert.Equal(t, simulator.MovementKind("begin_launch"), envFake.Movements[0].Kind())
 				})
 
 				it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
-					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.movements[1].Kind())
+					assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.Movements[1].Kind())
 				})
 
 				it("adds a total number of movements that is 2x the desired gap", func() {
-					assert.Len(t, envFake.movements, 2)
+					assert.Len(t, envFake.Movements, 2)
 				})
 			})
 		})
 	})
 
 	describe("CurrentLaunching()", func() {
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -430,7 +431,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("CurrentActive()", func() {
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -451,7 +452,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		var bufferRecorded autoscaler.Stat
 		var theTime = time.Now()
 		var replicaFake *fakeReplica
-		envFake = new(fakeEnvironment)
+		envFake = new(fakes.FakeEnvironment)
 		recordOnce := 1
 		recordThrice := 3
 
@@ -516,7 +517,7 @@ func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
 	var config ClusterConfig
 	var subject EndpointInformerSource
 	var cluster ClusterModel
-	var envFake = new(fakeEnvironment)
+	var envFake = new(fakes.FakeEnvironment)
 
 	it.Before(func() {
 		config = ClusterConfig{}

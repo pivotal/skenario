@@ -23,6 +23,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -33,7 +34,7 @@ func TestRequestsBuffered(t *testing.T) {
 func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 	var subject RequestsBufferedStock
 	var rawSubject *requestsBufferedStock
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 	var replicaStock ReplicasActiveStock
 	var requestsFailedStock simulator.SinkStock
 	var replicaFake *fakeReplica
@@ -44,7 +45,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewRequestsBufferedStock()", func() {
 		it.Before(func() {
-			envFake = new(fakeEnvironment)
+			envFake = new(fakes.FakeEnvironment)
 			replicaStock = NewReplicasActiveStock()
 			subject = NewRequestsBufferedStock(envFake, replicaStock, nil)
 			rawSubject = subject.(*requestsBufferedStock)
@@ -62,7 +63,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("there are multiple replicas available to serve multiple requests", func() {
 			it.Before(func() {
-				envFake = new(fakeEnvironment)
+				envFake = new(fakes.FakeEnvironment)
 
 				replicaStock = NewReplicasActiveStock()
 
@@ -86,8 +87,8 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("assigns the Requests to Replicas using round robin", func() {
-				first := envFake.movements[1]
-				second := envFake.movements[2]
+				first := envFake.Movements[1]
+				second := envFake.Movements[2]
 
 				assert.Equal(t, simulator.MovementKind("send_to_replica"), first.Kind())
 				assert.Equal(t, simulator.MovementKind("send_to_replica"), second.Kind())
@@ -95,19 +96,19 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("adds some jitter to avoid schedule collisions", func() {
-				assert.NotEqual(t, envFake.theTime.Add(1*time.Millisecond), envFake.movements[1].OccursAt())
-				assert.WithinDuration(t, envFake.theTime.Add(1*time.Millisecond), envFake.movements[1].OccursAt(), 1*time.Millisecond)
+				assert.NotEqual(t, envFake.TheTime.Add(1*time.Millisecond), envFake.Movements[1].OccursAt())
+				assert.WithinDuration(t, envFake.TheTime.Add(1*time.Millisecond), envFake.Movements[1].OccursAt(), 1*time.Millisecond)
 			})
 
 			it("changes the jitter for each movement", func() {
-				assert.NotEqual(t, envFake.movements[1].OccursAt(), envFake.movements[2].OccursAt())
+				assert.NotEqual(t, envFake.Movements[1].OccursAt(), envFake.Movements[2].OccursAt())
 			})
 		})
 
 		describe("there are no other requests yet", func() {
 			describe("there is at least one Replica available to process the request", func() {
 				it.Before(func() {
-					envFake = new(fakeEnvironment)
+					envFake = new(fakes.FakeEnvironment)
 					request = NewRequestEntity(envFake, subject)
 
 					replicaStock = NewReplicasActiveStock()
@@ -120,15 +121,15 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules the Request to move to a Replica for processing", func() {
-					assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[0].From().Name())
-					assert.Contains(t, string(envFake.movements[0].To().Name()), "RequestsProcessing")
+					assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].From().Name())
+					assert.Contains(t, string(envFake.Movements[0].To().Name()), "RequestsProcessing")
 				})
 			})
 
 			describe("there are no Replicas active", func() {
 				describe("scheduling the first retry", func() {
 					it.Before(func() {
-						envFake = new(fakeEnvironment)
+						envFake = new(fakes.FakeEnvironment)
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
@@ -138,18 +139,18 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					})
 
 					it("schedules a movement from the Buffer back to itself", func() {
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[0].From().Name())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[0].To().Name())
+						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].From().Name())
+						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
 					})
 
 					it("schedules the first retry movement to occur in ~100ms", func() {
-						assert.WithinDuration(t, envFake.theTime.Add(100*time.Millisecond), envFake.movements[0].OccursAt(), time.Millisecond)
+						assert.WithinDuration(t, envFake.TheTime.Add(100*time.Millisecond), envFake.Movements[0].OccursAt(), time.Millisecond)
 					})
 				})
 
 				describe("scheduling subsequent retries", func() {
 					it.Before(func() {
-						envFake = new(fakeEnvironment)
+						envFake = new(fakes.FakeEnvironment)
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
@@ -160,20 +161,20 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					})
 
 					it("on each retry it schedules a movement from Buffer back into itself", func() {
-						assert.Equal(t, simulator.MovementKind("buffer_backoff"), envFake.movements[1].Kind())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[1].From().Name())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[1].To().Name())
+						assert.Equal(t, simulator.MovementKind("buffer_backoff"), envFake.Movements[1].Kind())
+						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[1].From().Name())
+						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[1].To().Name())
 					})
 
 					it("adds some jitter per request to avoid schedule collisions", func() {
-						assert.NotEqual(t, envFake.theTime.Add(130*time.Millisecond), envFake.movements[1].OccursAt())
-						assert.WithinDuration(t, envFake.theTime.Add(130*time.Millisecond), envFake.movements[1].OccursAt(), time.Millisecond)
+						assert.NotEqual(t, envFake.TheTime.Add(130*time.Millisecond), envFake.Movements[1].OccursAt())
+						assert.WithinDuration(t, envFake.TheTime.Add(130*time.Millisecond), envFake.Movements[1].OccursAt(), time.Millisecond)
 					})
 				})
 
 				describe("running out of retries", func() {
 					it.Before(func() {
-						envFake = new(fakeEnvironment)
+						envFake = new(fakes.FakeEnvironment)
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
@@ -185,13 +186,13 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					})
 
 					it("schedules a movement from Buffer into RequestsFailed", func() {
-						assert.Equal(t, simulator.MovementKind("exhausted_attempts"), envFake.movements[18].Kind())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.movements[18].From().Name())
-						assert.Equal(t, simulator.StockName("RequestsFailed"), envFake.movements[18].To().Name())
+						assert.Equal(t, simulator.MovementKind("exhausted_attempts"), envFake.Movements[18].Kind())
+						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[18].From().Name())
+						assert.Equal(t, simulator.StockName("RequestsFailed"), envFake.Movements[18].To().Name())
 					})
 
 					it("schedules the movement to occur as soon as possible, offset to prevent collisions", func() {
-						assert.Equal(t, envFake.theTime.Add(1*time.Nanosecond), envFake.movements[18].OccursAt())
+						assert.Equal(t, envFake.TheTime.Add(1*time.Nanosecond), envFake.Movements[18].OccursAt())
 					})
 				})
 			})

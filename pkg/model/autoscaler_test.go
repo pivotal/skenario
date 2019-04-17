@@ -29,37 +29,12 @@ import (
 	"k8s.io/client-go/informers/core/v1"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
 func TestAutoscaler(t *testing.T) {
 	spec.Run(t, "KnativeAutoscaler model", testAutoscaler, spec.Report(report.Terminal{}))
-}
-
-type fakeEnvironment struct {
-	movements []simulator.Movement
-	theTime   time.Time
-}
-
-func (fe *fakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
-	fe.movements = append(fe.movements, movement)
-	return true
-}
-
-func (fe *fakeEnvironment) Run() (completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, err error) {
-	return nil, nil, nil
-}
-
-func (fe *fakeEnvironment) CurrentMovementTime() time.Time {
-	return fe.theTime
-}
-
-func (fe *fakeEnvironment) HaltTime() time.Time {
-	return fe.theTime.Add(1 * time.Hour)
-}
-
-func (fe *fakeEnvironment) Context() context.Context {
-	return context.Background()
 }
 
 type fakeAutoscaler struct {
@@ -101,16 +76,16 @@ func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	var subject KnativeAutoscalerModel
 	var rawSubject *knativeAutoscaler
-	var envFake *fakeEnvironment
+	var envFake *fakes.FakeEnvironment
 	var cluster ClusterModel
 	var config ClusterConfig
 	startAt := time.Unix(0, 0)
 
 	it.Before(func() {
 		config = ClusterConfig{}
-		envFake = &fakeEnvironment{
-			movements: make([]simulator.Movement, 0),
-			theTime:   startAt,
+		envFake = &fakes.FakeEnvironment{
+			Movements: make([]simulator.Movement, 0),
+			TheTime:   startAt,
 		}
 		cluster = NewCluster(envFake, config)
 	})
@@ -129,7 +104,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				tickInterval = 1 * time.Minute
 				tickMovements = []simulator.Movement{}
 
-				for _, mv := range envFake.movements {
+				for _, mv := range envFake.Movements {
 					if mv.Kind() == "autoscaler_tick" {
 						tickMovements = append(tickMovements, mv)
 					}

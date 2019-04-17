@@ -23,6 +23,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
+	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -56,7 +57,7 @@ func (fr *fakeReplica) Deactivate() {
 
 func (fr *fakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.requestsProcessingCalled = true
-	return NewRequestsProcessingStock(new(fakeEnvironment), fr.fakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"))
+	return NewRequestsProcessingStock(new(fakes.FakeEnvironment), fr.fakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"))
 }
 
 func (fr *fakeReplica) Stat() autoscaler.Stat {
