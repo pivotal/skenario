@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.10.2 // indirect
+	github.com/NYTimes/gziphandler v1.1.1
 	github.com/bvinc/go-sqlite-lite v0.5.0
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
@@ -23,7 +24,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/sclevine/spec v1.2.0
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/stretchr/testify v1.2.2
+	github.com/stretchr/testify v1.3.0
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1

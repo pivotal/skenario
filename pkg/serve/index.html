@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!--
+  Copyright (C) 2019-Present Pivotal Software, Inc. All rights reserved.
+
+  This program and the accompanying materials are made available under the terms
+  of the Apache License, Version 2.0 (the "License”); you may not use this file
+  except in compliance with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software distributed
+  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+  CONDITIONS OF ANY KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations under the License.
+-->
+
+<head>
+    <meta charset="UTF-8">
+    <title>Skenario</title>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@4"></script>
+
+</head>
+<body>
+
+<h1>Skenario</h1>
+
+<div id="view">Loading...</div>
+<script>
+    chart = {
+        $schema: "https://vega.github.io/schema/vega-lite/v3.json",
+        height: 1100,
+        width: 1600,
+        data: {
+            values: []
+        },
+
+        layer: [
+            {
+                transform: [
+                    {
+                        fold: [
+                            "requests_buffered",
+                            "requests_processing"
+                        ]
+                    }
+                ],
+                mark: {
+                    type: "area"
+                },
+                encoding: {
+                    color: {
+                        field: "key",
+                        type: "nominal"
+                    },
+                    x: {
+                        field: "occurs_at",
+                        type: "quantitative"
+                    },
+                    y: {
+                        field: "value",
+                        type: "quantitative",
+                        scale: {domain: [0, 10]}
+                    },
+                    tooltip: [
+                        {field: "requests_buffered", type: "quantitative"},
+                        {field: "requests_processing", type: "quantitative"},
+                        {field: "replicas_launching", type: "quantitative"},
+                        {field: "replicas_active", type: "quantitative"}
+                    ]
+                }
+            },
+            {
+                transform: [
+                    {
+                        fold: [
+                            "replicas_launching",
+                            "replicas_active"
+                        ]
+                    }
+                ],
+                mark: {
+                    type: "line"
+                },
+                encoding: {
+                    color: {
+                        field: "key",
+                        type: "nominal"
+                    },
+                    x: {
+                        field: "occurs_at",
+                        type: "quantitative"
+                    },
+                    y: {
+                        field: "value",
+                        type: "quantitative"
+                    },
+                    tooltip: [
+                        {field: "requests_buffered", type: "quantitative"},
+                        {field: "requests_processing", type: "quantitative"},
+                        {field: "replicas_launching", type: "quantitative"},
+                        {field: "replicas_active", type: "quantitative"}
+                    ]
+                }
+            },
+        ],
+        resolve: {scale: {y: "independent"}}
+    };
+
+    fetch("http://localhost:3000/run").then((response) => {
+        return response.json().then((responseJson) => {
+            chart.data.values = responseJson["values"];
+
+            vegaEmbed(
+                '#view',
+                chart,
+                {theme: 'dark'}
+            );
+        })
+    });
+
+
+</script>
+</body>
+</html>
