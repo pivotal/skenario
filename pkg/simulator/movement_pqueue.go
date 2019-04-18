@@ -48,7 +48,6 @@ func (mpq *movementPQ) EnqueueMovement(movement Movement) (wasShifted bool, sche
 		if exists {
 			i++
 			wasShifted = true
-			continue
 		} else {
 			break
 		}

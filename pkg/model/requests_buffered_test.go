@@ -94,15 +94,6 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, simulator.MovementKind("send_to_replica"), second.Kind())
 				assert.NotEqual(t, first.To(), second.To())
 			})
-
-			it("adds some jitter to avoid schedule collisions", func() {
-				assert.NotEqual(t, envFake.TheTime.Add(1*time.Millisecond), envFake.Movements[1].OccursAt())
-				assert.WithinDuration(t, envFake.TheTime.Add(1*time.Millisecond), envFake.Movements[1].OccursAt(), 1*time.Millisecond)
-			})
-
-			it("changes the jitter for each movement", func() {
-				assert.NotEqual(t, envFake.Movements[1].OccursAt(), envFake.Movements[2].OccursAt())
-			})
 		})
 
 		describe("there are no other requests yet", func() {
@@ -164,11 +155,6 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 						assert.Equal(t, simulator.MovementKind("buffer_backoff"), envFake.Movements[1].Kind())
 						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[1].From().Name())
 						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[1].To().Name())
-					})
-
-					it("adds some jitter per request to avoid schedule collisions", func() {
-						assert.NotEqual(t, envFake.TheTime.Add(130*time.Millisecond), envFake.Movements[1].OccursAt())
-						assert.WithinDuration(t, envFake.TheTime.Add(130*time.Millisecond), envFake.Movements[1].OccursAt(), time.Millisecond)
 					})
 				})
 

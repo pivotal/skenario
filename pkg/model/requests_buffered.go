@@ -16,7 +16,6 @@
 package model
 
 import (
-	"math/rand"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -60,16 +59,14 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 
 	rbs.countRequests++
 
-	var jitter time.Duration
 	countReplicas := rbs.replicas.Count()
 	if countReplicas > 0 {
 		replicas := rbs.replicas.EntitiesInStock()
 		replica := (*replicas[uint64(rbs.countRequests)%countReplicas]).(ReplicaEntity)
-		jitter = time.Duration(rand.Intn(int(time.Millisecond)))
 
 		rbs.env.AddToSchedule(simulator.NewMovement(
 			"send_to_replica",
-			rbs.env.CurrentMovementTime().Add(jitter),
+			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
 			rbs,
 			replica.RequestsProcessing(),
 		))
@@ -84,10 +81,9 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 				rbs.requestsFailed,
 			))
 		} else {
-			jitter = time.Duration(rand.Intn(int(time.Millisecond)))
 			rbs.env.AddToSchedule(simulator.NewMovement(
 				"buffer_backoff",
-				rbs.env.CurrentMovementTime().Add(backoff).Add(jitter),
+				rbs.env.CurrentMovementTime().Add(backoff).Add(1*time.Nanosecond),
 				rbs,
 				rbs,
 			))

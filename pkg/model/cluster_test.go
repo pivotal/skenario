@@ -81,8 +81,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		envFake = new(fakes.FakeEnvironment)
 
 		describe("using ClusterConfig delay values", func() {
-			var firstLaunchAt, secondLaunchAt time.Time
-			var firstTerminateAt, secondTerminateAt, thirdTerminateAt, fourthTerminateAt time.Time
+			var firstLaunchAt time.Time
+			var firstTerminateAt time.Time
 			config.LaunchDelay = 11 * time.Second
 			config.TerminateDelay = 22 * time.Second
 
@@ -97,17 +97,12 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					envFake.Movements = make([]simulator.Movement, 0)
 
 					firstLaunchAt = envFake.TheTime.Add(rawSubject.config.LaunchDelay).Add(1 * time.Nanosecond)
-					secondLaunchAt = firstLaunchAt.Add(1 * time.Nanosecond)
 
 					subject.SetDesired(2)
 				})
 
 				it("delays the first replica by the exact value", func() {
 					assert.Equal(t, firstLaunchAt, envFake.Movements[0].OccursAt())
-				})
-
-				it("adds a nanosecond to each subsequent replica launch to prevent collisions", func() {
-					assert.Equal(t, secondLaunchAt, envFake.Movements[2].OccursAt())
 				})
 			})
 
@@ -131,25 +126,12 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 					assert.NoError(t, err)
 
 					firstTerminateAt = envFake.TheTime.Add(rawSubject.config.TerminateDelay)
-					secondTerminateAt = firstTerminateAt.Add(1 * time.Nanosecond)
-					thirdTerminateAt = secondTerminateAt.Add(1 * time.Nanosecond)
-					fourthTerminateAt = thirdTerminateAt.Add(1 * time.Nanosecond)
 
 					subject.SetDesired(0)
 				})
 
 				it("delays the termination of the first launching replica by the exact amount", func() {
 					assert.Equal(t, firstTerminateAt, envFake.Movements[0].OccursAt())
-				})
-
-				it("delays the termination of the second launching replica by an additional nanosecond", func() {
-					assert.Equal(t, secondTerminateAt, envFake.Movements[1].OccursAt())
-				})
-
-				it("delays the termination of each active replicas by a nanosecond", func() {
-					// two examples to force a full pass through the loop for terminating active replicas
-					assert.Equal(t, thirdTerminateAt, envFake.Movements[2].OccursAt())
-					assert.Equal(t, fourthTerminateAt, envFake.Movements[3].OccursAt())
 				})
 			})
 		})

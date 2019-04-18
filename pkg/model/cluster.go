@@ -79,12 +79,11 @@ func (cm *clusterModel) SetDesired(desired int32) {
 	desireDelta := desired - (launching + active)
 
 	if desireDelta > 0 {
-		offset := 1 * time.Nanosecond
 		nextLaunch := cm.env.CurrentMovementTime().Add(cm.config.LaunchDelay)
 		for ; desireDelta > 0; desireDelta-- {
 			cm.env.AddToSchedule(simulator.NewMovement(
 				"begin_launch",
-				cm.env.CurrentMovementTime().Add(offset),
+				cm.env.CurrentMovementTime().Add(1*time.Nanosecond),
 				cm.replicaSource,
 				cm.replicasLaunching,
 			))
@@ -95,9 +94,6 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				cm.replicasLaunching,
 				cm.replicasActive,
 			))
-
-			nextLaunch = nextLaunch.Add(offset)
-			offset++
 		}
 	} else if desireDelta < 0 {
 		nextTerminate := cm.env.CurrentMovementTime().Add(cm.config.TerminateDelay)
@@ -110,7 +106,6 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				cm.replicasLaunching,
 				cm.replicasTerminated,
 			))
-			nextTerminate = nextTerminate.Add(1 * time.Nanosecond)
 		}
 
 		for ; desireDelta < 0; desireDelta++ {
@@ -120,7 +115,6 @@ func (cm *clusterModel) SetDesired(desired int32) {
 				cm.replicasActive,
 				cm.replicasTerminated,
 			))
-			nextTerminate = nextTerminate.Add(1 * time.Nanosecond)
 		}
 	} else {
 		// No change.
