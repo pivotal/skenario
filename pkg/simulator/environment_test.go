@@ -24,42 +24,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-type mockStockType struct {
-	mock.Mock
-}
-
-func (mss *mockStockType) Name() StockName {
-	mss.Called()
-	return StockName("mock source")
-}
-
-func (mss *mockStockType) KindStocked() EntityKind {
-	mss.Called()
-	return EntityKind("mock kind")
-}
-
-func (mss *mockStockType) Count() uint64 {
-	mss.Called()
-	return uint64(0)
-}
-
-func (mss *mockStockType) EntitiesInStock() []*Entity {
-	mss.Called()
-	return []*Entity{}
-}
-
-func (mss *mockStockType) Remove() Entity {
-	mss.Called()
-	return NewEntity("test entity", "mock kind")
-}
-
-func (mss *mockStockType) Add(entity Entity) error {
-	mss.Called(entity)
-	return nil
-}
 
 // We hand-roll the echo source stock, otherwise the compiler will use ThroughStock,
 // leading to nil errors when we try to .Remove() a non-existent entry.
@@ -203,7 +168,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("Run()", func() {
 		describe("taking the next movement from the schedule", func() {
-			var fromMock, toMock *mockStockType
+			var fromMock, toMock *MockStockType
 			var e Entity
 			var err error
 
@@ -211,8 +176,8 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				subject = NewEnvironment(ctx, startTime, runFor)
 				assert.NotNil(t, subject)
 
-				fromMock = new(mockStockType)
-				toMock = new(mockStockType)
+				fromMock = new(MockStockType)
+				toMock = new(MockStockType)
 				e = NewEntity("test entity", "mock kind")
 				fromMock.On("Remove").Return(e)
 				toMock.On("Add", e).Return(nil)
