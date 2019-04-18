@@ -26,36 +26,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// We hand-roll the echo source stock, otherwise the compiler will use ThroughStock,
-// leading to nil errors when we try to .Remove() a non-existent entry.
-type echoSourceStockType struct {
-	name   StockName
-	kind   EntityKind
-	series int
-}
-
-func (es *echoSourceStockType) Name() StockName {
-	return es.name
-}
-
-func (es *echoSourceStockType) KindStocked() EntityKind {
-	return es.kind
-}
-
-func (es *echoSourceStockType) Count() uint64 {
-	return 0
-}
-
-func (es *echoSourceStockType) EntitiesInStock() []*Entity {
-	return []*Entity{}
-}
-
-func (es *echoSourceStockType) Remove() Entity {
-	name := EntityName(fmt.Sprintf("entity-%d", es.series))
-	es.series++
-	return NewEntity(name, es.kind)
-}
-
 func TestEnvironment(t *testing.T) {
 	spec.Run(t, "Environment spec", testEnvironment, spec.Report(report.Terminal{}))
 }
@@ -75,7 +45,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 		ctx = context.Background()
 		startTime = time.Unix(222222, 0)
 		runFor = 555555 * time.Second
-		fromStock = &echoSourceStockType{
+		fromStock = &EchoSourceStockType{
 			name: "from stock",
 			kind: "test entity kind",
 		}

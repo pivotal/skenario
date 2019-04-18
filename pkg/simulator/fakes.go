@@ -17,6 +17,8 @@
 package simulator
 
 import (
+	"fmt"
+
 	"github.com/stretchr/testify/mock"
 )
 
@@ -54,3 +56,32 @@ func (mss *MockStockType) Add(entity Entity) error {
 	return nil
 }
 
+// We hand-roll the echo source stock, otherwise the compiler will use ThroughStock,
+// leading to nil errors when we try to .Remove() a non-existent entry.
+type EchoSourceStockType struct {
+	name   StockName
+	kind   EntityKind
+	series int
+}
+
+func (es *EchoSourceStockType) Name() StockName {
+	return es.name
+}
+
+func (es *EchoSourceStockType) KindStocked() EntityKind {
+	return es.kind
+}
+
+func (es *EchoSourceStockType) Count() uint64 {
+	return 0
+}
+
+func (es *EchoSourceStockType) EntitiesInStock() []*Entity {
+	return []*Entity{}
+}
+
+func (es *EchoSourceStockType) Remove() Entity {
+	name := EntityName(fmt.Sprintf("entity-%d", es.series))
+	es.series++
+	return NewEntity(name, es.kind)
+}
