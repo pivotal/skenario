@@ -29,6 +29,8 @@ type uniformRandom struct {
 	source           model.TrafficSource
 	buffer           model.RequestsBufferedStock
 	numberOfRequests int
+	startAt          time.Time
+	runFor           time.Duration
 }
 
 func (ur *uniformRandom) Name() string {
@@ -36,24 +38,25 @@ func (ur *uniformRandom) Name() string {
 }
 
 func (ur *uniformRandom) Generate() {
-	runsFor := ur.env.HaltTime().Sub(ur.env.CurrentMovementTime())
 	for i := 0; i < ur.numberOfRequests; i++ {
-		r := rand.Int63n(runsFor.Nanoseconds())
+		r := rand.Int63n(ur.runFor.Nanoseconds())
 
 		ur.env.AddToSchedule(simulator.NewMovement(
 			"arrive_at_buffer",
-			ur.env.CurrentMovementTime().Add(time.Duration(r)*time.Nanosecond),
+			ur.startAt.Add(time.Duration(r)*time.Nanosecond),
 			ur.source,
 			ur.buffer,
 		))
 	}
 }
 
-func NewUniformRandom(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, numberOfRequests int) Pattern {
+func NewUniformRandom(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, numberOfRequests int, startAt time.Time, runFor time.Duration) Pattern {
 	return &uniformRandom{
-		env:    env,
-		source: source,
-		buffer: buffer,
+		env:              env,
+		source:           source,
+		buffer:           buffer,
 		numberOfRequests: numberOfRequests,
+		startAt:          startAt,
+		runFor:           runFor,
 	}
 }

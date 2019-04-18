@@ -24,7 +24,6 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-
 	"skenario/pkg/model"
 	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
@@ -39,13 +38,18 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *fakes.FakeEnvironment
 	var trafficSource model.TrafficSource
 	var bufferStock model.RequestsBufferedStock
+	var startAt time.Time
+	var runFor time.Duration
 
 	it.Before(func() {
 		envFake = new(fakes.FakeEnvironment)
-		envFake.TheHaltTime = envFake.TheTime.Add(10*time.Second)
+		envFake.TheHaltTime = envFake.TheTime.Add(10 * time.Second)
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
-		trafficSource = model.NewTrafficSource(envFake,bufferStock)
-		subject = NewUniformRandom(envFake, trafficSource, bufferStock, 1000)
+		trafficSource = model.NewTrafficSource(envFake, bufferStock)
+		startAt = time.Unix(0, 1)
+		runFor = 1 * time.Second
+
+		subject = NewUniformRandom(envFake, trafficSource, bufferStock, 1000, startAt, runFor)
 		subject.Generate()
 	})
 
@@ -72,6 +76,12 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 
 		it("moves to buffer stock", func() {
 			assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
+		})
+
+		it("created movements between startAt and startAt+runFor", func() {
+			for _, mv := range envFake.Movements {
+				assert.WithinDuration(t, startAt, mv.OccursAt(), runFor)
+			}
 		})
 	})
 }
