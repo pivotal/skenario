@@ -29,9 +29,16 @@ select
       when exists(select id from stocks where name = 'RequestsBuffered' and id = to_stock) then 1
       else 0 end)
     over summation as requests_buffered
-
-  , sum(case (select id from stocks where name like 'RequestsProcessing%' ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as requests_processing
-  , sum(case (select id from stocks where name like 'RequestsComplete%'   ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as requests_completed
+  , sum(case
+      when exists(select id from stocks where name like 'RequestsProcessing%' and id = from_stock) then -1
+      when exists(select id from stocks where name like 'RequestsProcessing%' and id = to_stock) then 1
+      else 0 end)
+    over summation as requests_processing
+  , sum(case
+      when exists(select id from stocks where name like 'RequestsComplete%' and id = from_stock) then -1
+      when exists(select id from stocks where name like 'RequestsComplete%' and id = to_stock) then 1
+      else 0 end)
+    over summation as requests_completed
   , sum(case (select id from stocks where name    = 'ReplicasLaunching'   ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_launching
   , sum(case (select id from stocks where name    = 'ReplicasActive'      ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_active
   , sum(case (select id from stocks where name    = 'ReplicasTerminated'  ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_terminated
