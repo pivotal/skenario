@@ -39,14 +39,8 @@ func (r *ramp) Generate() {
 
 	startAt := r.env.CurrentMovementTime().Add(1*time.Second)
 	for t := startAt; t.Before(r.env.HaltTime()); t = t.Add(1 * time.Second) {
-		for i := 1; i <= nextAdd; i++ {
-			r.env.AddToSchedule(simulator.NewMovement(
-				"arrive_at_buffer",
-				t.Add(time.Duration(i)*time.Nanosecond),
-				r.source,
-				r.buffer,
-			))
-		}
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextAdd, t, 1*time.Second)
+		uniRand.Generate()
 		nextAdd = nextAdd + r.increaseRate
 	}
 }

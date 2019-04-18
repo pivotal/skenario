@@ -57,18 +57,18 @@ func testRamp(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("Generate()", func() {
 		it("creates 1 request in the 1st second", func() {
-			assert.Equal(t, envFake.TheTime.Add(1*time.Second).Add(1*time.Nanosecond), envFake.Movements[0].OccursAt())
+			assert.WithinDuration(t, envFake.TheTime.Add(time.Second), envFake.Movements[0].OccursAt(), 1*time.Second)
 		})
 
 		it("creates 2 requests in the 2nd second", func() {
-			assert.Equal(t, envFake.TheTime.Add(2*time.Second).Add(1*time.Nanosecond), envFake.Movements[1].OccursAt())
-			assert.Equal(t, envFake.TheTime.Add(2*time.Second).Add(2*time.Nanosecond), envFake.Movements[2].OccursAt())
+			assert.WithinDuration(t, envFake.TheTime.Add(2*time.Second), envFake.Movements[1].OccursAt(), 1*time.Second)
+			assert.WithinDuration(t, envFake.TheTime.Add(2*time.Second), envFake.Movements[2].OccursAt(), 1*time.Second)
 		})
 
 		it("creates 3 requests in the 3rd second", func() {
-			assert.Equal(t, envFake.TheTime.Add(3*time.Second).Add(1*time.Nanosecond), envFake.Movements[3].OccursAt())
-			assert.Equal(t, envFake.TheTime.Add(3*time.Second).Add(2*time.Nanosecond), envFake.Movements[4].OccursAt())
-			assert.Equal(t, envFake.TheTime.Add(3*time.Second).Add(3*time.Nanosecond), envFake.Movements[5].OccursAt())
+			assert.WithinDuration(t, envFake.TheTime.Add(3*time.Second), envFake.Movements[3].OccursAt(), 1*time.Second)
+			assert.WithinDuration(t, envFake.TheTime.Add(3*time.Second), envFake.Movements[4].OccursAt(), 1*time.Second)
+			assert.WithinDuration(t, envFake.TheTime.Add(3*time.Second), envFake.Movements[5].OccursAt(), 1*time.Second)
 		})
 	})
 }
