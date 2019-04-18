@@ -26,11 +26,12 @@ import (
 
 	"skenario/pkg/data"
 	"skenario/pkg/model"
+	"skenario/pkg/model/trafficpatterns"
 	"skenario/pkg/simulator"
 )
 
 var startAt = time.Unix(0, 0)
-var runFor = 5 * time.Minute
+var runFor = 30 * time.Second
 
 type totalLine struct {
 	OccursAt            int    `json:"occurs_at"`
@@ -55,7 +56,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	env := simulator.NewEnvironment(r.Context(), startAt, runFor)
 
 	clusterConf := model.ClusterConfig{
-		LaunchDelay:      1 * time.Second,
+		LaunchDelay:      100 * time.Millisecond,
 		TerminateDelay:   1 * time.Second,
 		NumberOfRequests: 1000,
 	}
@@ -67,11 +68,14 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		ScaleToZeroGracePeriod:      30 * time.Second,
 		TargetConcurrencyDefault:    1,
 		TargetConcurrencyPercentage: 0.5,
-		MaxScaleUpRate:              10,
+		MaxScaleUpRate:              100,
 	}
 
 	cluster := model.NewCluster(env, clusterConf)
 	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
+	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
+	traffic := trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), 1)
+	traffic.Generate()
 
 	completed, ignored, err := env.Run()
 	if err != nil {
@@ -79,7 +83,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	store := data.NewRunStore()
-	scenarioRunId, err := store.Store("skenario.db", completed, ignored, clusterConf, kpaConf)
+	scenarioRunId, err := store.Store("skenario.db", completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name())
 	if err != nil {
 		fmt.Printf("there was an error saving data: %s", err.Error())
 	}

@@ -38,6 +38,7 @@ select
 
 from completed_movements
 where scenario_run_id = ?
+and kind not in ('start_to_running', 'autoscaler_tick', 'running_to_halted')
 window summation as (order by occurs_at asc rows unbounded preceding)
 order by occurs_at
 ;

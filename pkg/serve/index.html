@@ -32,7 +32,7 @@
 <script>
     chart = {
         $schema: "https://vega.github.io/schema/vega-lite/v3.json",
-        height: 1100,
+        height: 1000,
         width: 1600,
         data: {
             values: []
@@ -46,10 +46,13 @@
                             "requests_buffered",
                             "requests_processing"
                         ]
+                    },
+                    {
+                        filter: {field: "value", gt: 0}
                     }
                 ],
                 mark: {
-                    type: "area"
+                    type: "point"
                 },
                 encoding: {
                     color: {
@@ -58,12 +61,12 @@
                     },
                     x: {
                         field: "occurs_at",
-                        type: "quantitative"
+                        type: "quantitative",
                     },
                     y: {
                         field: "value",
+                        title: "Requests",
                         type: "quantitative",
-                        scale: {domain: [0, 10]}
                     },
                     tooltip: [
                         {field: "requests_buffered", type: "quantitative"},
@@ -80,6 +83,9 @@
                             "replicas_launching",
                             "replicas_active"
                         ]
+                    },
+                    {
+                        filter: {field: "value", gt: 0}
                     }
                 ],
                 mark: {
@@ -96,14 +102,9 @@
                     },
                     y: {
                         field: "value",
+                        title: "Replicas",
                         type: "quantitative"
-                    },
-                    tooltip: [
-                        {field: "requests_buffered", type: "quantitative"},
-                        {field: "requests_processing", type: "quantitative"},
-                        {field: "replicas_launching", type: "quantitative"},
-                        {field: "replicas_active", type: "quantitative"}
-                    ]
+                    }
                 }
             },
         ],
@@ -117,7 +118,7 @@
             vegaEmbed(
                 '#view',
                 chart,
-                {theme: 'dark'}
+                {theme: 'fivethirtyeight'}
             );
         })
     });
