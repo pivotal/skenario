@@ -16,15 +16,15 @@
 package simulator
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"k8s.io/client-go/tools/cache"
 )
 
 type MovementPriorityQueue interface {
-	EnqueueMovement(movement Movement) error
+	EnqueueMovement(movement Movement) (wasShifted bool, scheduledAt time.Time, err error)
 	DequeueMovement() (movement Movement, err error, closed bool)
 	Close()
 	IsClosed() bool
@@ -34,26 +34,32 @@ type movementPQ struct {
 	heap *cache.Heap
 }
 
-func (mpq *movementPQ) EnqueueMovement(movement Movement) error {
-	key, err := occursAtToKey(movement)
-	if err != nil {
-		return fmt.Errorf("could not create a heap key for Movement %s: %s", movement.Kind(), err.Error())
+func (mpq *movementPQ) EnqueueMovement(movement Movement) (wasShifted bool, scheduledAt time.Time, err error) {
+	wasShifted = false
+	i := 0*time.Nanosecond
+	for {
+		key := occursAtToStr(movement.OccursAt().Add(i))
+
+		_, exists, err := mpq.heap.GetByKey(key)
+		if err != nil {
+			return false, time.Unix(0,-1), err
+		}
+
+		if exists {
+			i++
+			wasShifted = true
+			continue
+		} else {
+			break
+		}
 	}
 
-	_, exists, err := mpq.heap.GetByKey(key)
-	if err != nil {
-		return err
+	if wasShifted {
+		shiftedMovement := NewMovement(movement.Kind(), movement.OccursAt().Add(i), movement.From(), movement.To())
+		return true, shiftedMovement.OccursAt(), mpq.heap.Add(shiftedMovement)
 	}
 
-	if exists {
-		return fmt.Errorf(
-			"could not add Movement '%s' to run at '%d', there is already another movement scheduled at that time",
-			movement.Kind(),
-			movement.OccursAt().UnixNano(),
-		)
-	}
-
-	return mpq.heap.Add(movement)
+	return false, movement.OccursAt(), mpq.heap.Add(movement)
 }
 
 // DequeueMovement picks the next earliest movement from the queue.
@@ -85,16 +91,20 @@ func (mpq *movementPQ) IsClosed() bool {
 }
 
 func NewMovementPriorityQueue() MovementPriorityQueue {
-	heap := cache.NewHeap(occursAtToKey, leftMovementIsEarlier)
+	heap := cache.NewHeap(movementToKey, leftMovementIsEarlier)
 
 	return &movementPQ{
 		heap: heap,
 	}
 }
 
-func occursAtToKey(movement interface{}) (key string, err error) {
+func movementToKey(movement interface{}) (key string, err error) {
 	mv := movement.(Movement)
-	return strconv.FormatInt(mv.OccursAt().UnixNano(), 10), nil
+	return occursAtToStr(mv.OccursAt()), nil
+}
+
+func occursAtToStr(occursAt time.Time) string {
+	return strconv.FormatInt(occursAt.UnixNano(), 10)
 }
 
 func leftMovementIsEarlier(left interface{}, right interface{}) bool {

@@ -233,7 +233,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("contains the correct number of ignored movements", func() {
-					assert.Len(t, ignored, 4)
+					assert.Len(t, ignored, 3)
 				})
 
 				it("contains movements that were scheduled in the past", func() {
@@ -242,10 +242,6 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 				it("contains movements that were scheduled after the halt", func() {
 					assert.Contains(t, ignored, IgnoredMovement{Reason: OccursAfterHalt, Movement: tooLate})
-				})
-
-				it("contains movements that could not be scheduled due to a timing collision", func() {
-					assert.Contains(t, ignored, IgnoredMovement{Reason: OccursSimultaneouslyWithAnotherMovement, Movement: collides})
 				})
 
 				it("contains movements for which the entity was nil", func() {

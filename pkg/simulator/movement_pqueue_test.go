@@ -31,28 +31,51 @@ func TestMovementPQ(t *testing.T) {
 func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	var subject MovementPriorityQueue
 	var movement Movement
-	var theTime time.Time
+	var theTime, scheduledAt time.Time
+	var shifted bool
+	var err error
 
 	describe("EnqueueMovement()", func() {
 		it.Before(func() {
 			theTime = time.Now()
-			subject = NewMovementPriorityQueue()
 			movement = NewMovement("test movement kind", theTime, nil, nil)
 		})
 
-		it("adds Movements", func() {
-			err := subject.EnqueueMovement(movement)
-			assert.NoError(t, err)
+		describe("when there is an existing Movement scheduled at the same time", func() {
+			it.Before(func() {
+				subject = NewMovementPriorityQueue()
+
+				_, _, err = subject.EnqueueMovement(movement)
+				assert.NoError(t, err)
+
+				shifted, scheduledAt, err = subject.EnqueueMovement(movement)
+				assert.NoError(t, err)
+
+			})
+			it("time-shifts the Movement to the next free time", func() {
+				assert.Equal(t, theTime.Add(1*time.Nanosecond), scheduledAt)
+			})
+
+			it("indicates that time-shifting occurred", func() {
+				assert.True(t, shifted)
+			})
 		})
 
-		it("returns an error if a movement tries to schedule for the same time as another movement", func() {
-			err := subject.EnqueueMovement(movement)
-			sameTimeMovement := NewMovement("another movement kind", theTime, nil, nil)
+		describe("when no other Movement has been scheduled at the same time", func() {
+			it.Before(func() {
+				subject = NewMovementPriorityQueue()
 
-			err = subject.EnqueueMovement(sameTimeMovement)
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "could not add Movement")
-			assert.Contains(t, err.Error(), "there is already another movement scheduled at that time")
+				shifted, scheduledAt, err = subject.EnqueueMovement(movement)
+				assert.NoError(t, err)
+			})
+
+			it("does not time-shift the Movement", func() {
+				assert.Equal(t, theTime, scheduledAt)
+			})
+
+			it("indicates that time-shifting did not occur", func() {
+				assert.False(t, shifted)
+			})
 		})
 	})
 
@@ -65,7 +88,7 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 		it("returns Movements", func() {
 			var dqmv Movement
 			var err error
-			err = subject.EnqueueMovement(movement)
+			_, _, err = subject.EnqueueMovement(movement)
 			assert.NoError(t, err)
 
 			dqmv, err, _ = subject.DequeueMovement()
@@ -114,13 +137,13 @@ func testMovementPQ(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("helpers", func() {
-		describe("occursAtToKey()", func() {
+		describe("movementToKey()", func() {
 			it.Before(func() {
 				movement = NewMovement("test movement kind", time.Unix(0, 111000111), nil, nil)
 			})
 
 			it("returns the OccursAt() as a string", func() {
-				key, err := occursAtToKey(movement)
+				key, err := movementToKey(movement)
 				assert.NoError(t, err)
 				assert.Equal(t, "111000111", key)
 			})

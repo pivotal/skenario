@@ -18,7 +18,6 @@ package simulator
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -66,29 +65,20 @@ type environment struct {
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
 	occursAfterCurrent := movement.OccursAt().After(env.current)
-	occursAfterHalt := movement.OccursAt().After(env.haltAt)
+	occursBeforeHalt := movement.OccursAt().Before(env.haltAt)
 
-	schedulable := occursAfterCurrent && !occursAfterHalt
+	schedulable := occursAfterCurrent && occursBeforeHalt
 	if schedulable {
-		err := env.futureMovements.EnqueueMovement(movement)
+		_, _, err := env.futureMovements.EnqueueMovement(movement)
 		if err != nil {
-			if strings.Contains(err.Error(), "there is already another movement scheduled at that time") {
-				env.ignored = append(env.ignored, IgnoredMovement{
-					Reason:   OccursSimultaneouslyWithAnotherMovement,
-					Movement: movement,
-				})
-
-				return false
-			} else {
-				panic(fmt.Errorf("unknown error meant '%#v' was not added future movements: %s", movement, err.Error()))
-			}
+			panic(fmt.Errorf("unknown error meant '%#v' was not added future movements: %s", movement, err.Error()))
 		}
 	} else if !occursAfterCurrent {
 		env.ignored = append(env.ignored, IgnoredMovement{
 			Reason:   OccursInPast,
 			Movement: movement,
 		})
-	} else if occursAfterHalt {
+	} else if !occursBeforeHalt {
 		env.ignored = append(env.ignored, IgnoredMovement{
 			Reason:   OccursAfterHalt,
 			Movement: movement,
@@ -149,9 +139,9 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 
 	env := &environment{
 		ctx:     ctx,
-		current: startAt.Add(-1 * time.Nanosecond), // make temporary space for the Start Scenario movement
 		startAt: startAt,
-		haltAt:  startAt.Add(runFor),
+		haltAt:  startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
+		current: startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
 
 		beforeScenario:  beforeStock,
 		runningScenario: runningStock,
@@ -161,8 +151,9 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 		ignored:         make([]IgnoredMovement, 0),
 	}
 
-	env = setupScenarioMovements(env, startAt, env.haltAt, env.beforeScenario, env.runningScenario, env.haltedScenario)
+	env = setupScenarioMovements(env, startAt, env.haltAt.Add(-1*time.Nanosecond), env.beforeScenario, env.runningScenario, env.haltedScenario)
 	env.current = startAt // restore proper starting time
+	env.haltAt = env.haltAt.Add(-1 * time.Nanosecond)
 
 	return env
 }
