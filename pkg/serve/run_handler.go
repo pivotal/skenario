@@ -31,7 +31,7 @@ import (
 )
 
 var startAt = time.Unix(0, 0)
-var runFor = 30 * time.Second
+var runFor = 60 * time.Second
 
 type totalLine struct {
 	OccursAt            int    `json:"occurs_at"`
@@ -56,7 +56,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	env := simulator.NewEnvironment(r.Context(), startAt, runFor)
 
 	clusterConf := model.ClusterConfig{
-		LaunchDelay:      100 * time.Millisecond,
+		LaunchDelay:      5 * time.Second,
 		TerminateDelay:   1 * time.Second,
 		NumberOfRequests: 1000,
 	}
