@@ -46,6 +46,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			recorded:   make([]autoscaler.Stat, 0),
 			scaleTimes: make([]time.Time, 0),
 		}
+
 		cluster = NewCluster(envFake, ClusterConfig{})
 		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "KnativeAutoscaler"), autoscalerFake, cluster)
 		rawSubject = subject.(*autoscalerTicktockStock)
@@ -145,33 +146,49 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			describe("the autoscaler was able to make a recommendation", func() {
-				var rawCluster *clusterModel
-				var activeBefore uint64
+				var desiredBefore uint64
 
-				it.Before(func() {
-					autoscalerFake.scaleTo = 2
+				describe("to scale up", func() {
+					it.Before(func() {
+						autoscalerFake.scaleTo = 8
+						err := cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
+						assert.NoError(t, err)
 
-					rawCluster = cluster.(*clusterModel)
-					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "33.33.33.33")
-					err := rawCluster.replicasActive.Add(newReplica)
-					assert.NoError(t, err)
+						desiredBefore = cluster.Desired().Count()
+						ent := subject.Remove()
+						err = subject.Add(ent)
+						assert.NoError(t, err)
+					})
 
-					activeBefore = rawSubject.cluster.CurrentActive()
-					ent := subject.Remove()
-					err = subject.Add(ent)
-					assert.NoError(t, err)
+					it("adds to the ReplicasDesired stock", func() {
+						assert.NotEqual(t, desiredBefore, cluster.Desired().Count())
+						assert.Equal(t, uint64(8), cluster.Desired().Count())
+					})
 				})
 
-				it("sets the current desired on the cluster", func() {
-					assert.NotEqual(t, activeBefore, rawSubject.cluster.CurrentDesired())
-					assert.Equal(t, int32(2), rawSubject.cluster.CurrentDesired())
+				describe("to scale down", func() {
+					it.Before(func() {
+						autoscalerFake.scaleTo = 8
+						ent := subject.Remove()
+						err := subject.Add(ent)
+						assert.NoError(t, err)
+
+						autoscalerFake.scaleTo = 1
+						ent = subject.Remove()
+						err = subject.Add(ent)
+						assert.NoError(t, err)
+					})
+
+					it("adds to the ReplicasDesired stock", func() {
+						assert.Equal(t, uint64(1), cluster.Desired().Count())
+					})
 				})
+
 			})
 
 			describe.Pend("the autoscaler failed to make a recommendation", func() {
 				it.Before(func() {
 					autoscalerFake.cantDecide = true
-
 				})
 
 				it("notes that there was a problem", func() {

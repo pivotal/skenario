@@ -46,7 +46,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		replicasActive = simulator.NewThroughStock("ReplicasActive", "Replica")
 		replicasTerminated = simulator.NewThroughStock("ReplicasTerminated", "Replica")
 		replicaSource = NewReplicaSource(envFake, nil, nil)
-		config = ReplicasConfig{LaunchDelay: 1 * time.Second, TerminateDelay: 1 * time.Nanosecond}
+		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
 		envFake = new(fakes.FakeEnvironment)
 		envFake.Movements = make([]simulator.Movement, 0)
 
@@ -98,6 +98,10 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		it("schedules movements of new entities from ReplicasLaunching to ReplicasActive", func() {
 			assert.Equal(t, simulator.MovementKind("finish_launching"), envFake.Movements[1].Kind())
 		})
+
+		it("adds the LaunchDelay to the launch time", func() {
+			assert.Equal(t, envFake.TheTime.Add(111*time.Nanosecond), envFake.Movements[1].OccursAt())
+		})
 	})
 
 	describe("Remove()", func() {
@@ -113,6 +117,10 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				assert.Len(t, envFake.Movements, 1)
 				assert.Equal(t, simulator.MovementKind("terminate_launch"), envFake.Movements[0].Kind())
 			})
+
+			it("adds the TerminateDelay to the termination time", func() {
+				assert.Equal(t, envFake.TheTime.Add(222*time.Nanosecond), envFake.Movements[0].OccursAt())
+			})
 		})
 
 		describe("there are active replicas but no launching replicas", func() {
@@ -127,6 +135,10 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 			it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
 				assert.Len(t, envFake.Movements, 1)
 				assert.Equal(t, simulator.MovementKind("terminate_active"), envFake.Movements[0].Kind())
+			})
+
+			it("adds the TerminateDelay to the termination time", func() {
+				assert.Equal(t, envFake.TheTime.Add(222*time.Nanosecond), envFake.Movements[0].OccursAt())
 			})
 		})
 

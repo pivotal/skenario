@@ -37,8 +37,7 @@ type ClusterConfig struct {
 
 type ClusterModel interface {
 	Model
-	CurrentDesired() int32
-	SetDesired(int32)
+	Desired() ReplicasDesiredStock
 	CurrentLaunching() uint64
 	CurrentActive() uint64
 	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
@@ -52,7 +51,7 @@ type EndpointInformerSource interface {
 type clusterModel struct {
 	env                simulator.Environment
 	config             ClusterConfig
-	currentDesired     int32
+	replicasDesired    ReplicasDesiredStock
 	replicaSource      ReplicaSource
 	replicasLaunching  simulator.ThroughStock
 	replicasActive     simulator.ThroughStock
@@ -67,62 +66,9 @@ func (cm *clusterModel) Env() simulator.Environment {
 	return cm.env
 }
 
-// TODO: can we get rid of this and the variable?
-func (cm *clusterModel) CurrentDesired() int32 {
-	return cm.currentDesired
+func (cm *clusterModel) Desired() ReplicasDesiredStock {
+	return cm.replicasDesired
 }
-
-func (cm *clusterModel) SetDesired(desired int32) {
-	launching := int32(cm.replicasLaunching.Count())
-	active := int32(cm.replicasActive.Count())
-
-	desireDelta := desired - (launching + active)
-
-	if desireDelta > 0 {
-		nextLaunch := cm.env.CurrentMovementTime().Add(cm.config.LaunchDelay)
-		for ; desireDelta > 0; desireDelta-- {
-			cm.env.AddToSchedule(simulator.NewMovement(
-				"begin_launch",
-				cm.env.CurrentMovementTime().Add(1*time.Nanosecond),
-				cm.replicaSource,
-				cm.replicasLaunching,
-			))
-
-			cm.env.AddToSchedule(simulator.NewMovement(
-				"finish_launching",
-				nextLaunch,
-				cm.replicasLaunching,
-				cm.replicasActive,
-			))
-		}
-	} else if desireDelta < 0 {
-		nextTerminate := cm.env.CurrentMovementTime().Add(cm.config.TerminateDelay)
-		// for now I assume launching replicas are terminated before active replicas
-		desireDelta = desireDelta + launching
-		for ; launching > 0; launching-- {
-			cm.env.AddToSchedule(simulator.NewMovement(
-				"terminate_launch",
-				nextTerminate,
-				cm.replicasLaunching,
-				cm.replicasTerminated,
-			))
-		}
-
-		for ; desireDelta < 0; desireDelta++ {
-			cm.env.AddToSchedule(simulator.NewMovement(
-				"terminate_active",
-				nextTerminate,
-				cm.replicasActive,
-				cm.replicasTerminated,
-			))
-		}
-	} else {
-		// No change.
-	}
-
-	cm.currentDesired = desired
-}
-
 func (cm *clusterModel) CurrentLaunching() uint64 {
 	return cm.replicasLaunching.Count()
 }
@@ -178,7 +124,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed)
 
-	return &clusterModel{
+	cm := &clusterModel{
 		env:                env,
 		config:             config,
 		replicaSource:      NewReplicaSource(env, fakeClient, endpointsInformer),
@@ -190,4 +136,13 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 		kubernetesClient:   fakeClient,
 		endpointsInformer:  endpointsInformer,
 	}
+
+	desiredConf := ReplicasConfig{
+		LaunchDelay:    config.LaunchDelay,
+		TerminateDelay: config.TerminateDelay,
+	}
+
+	cm.replicasDesired = NewReplicasDesiredStock(env, desiredConf, cm.replicaSource, cm.replicasLaunching, cm.replicasActive, cm.replicasTerminated)
+
+	return cm
 }

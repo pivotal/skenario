@@ -62,9 +62,24 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	currentTime := asts.env.CurrentMovementTime()
 
 	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime)
-	desired, _ := asts.autoscaler.Scale(asts.env.Context(), currentTime)
+	autoscalerDesired, _ := asts.autoscaler.Scale(asts.env.Context(), currentTime)
 
-	asts.cluster.SetDesired(desired)
+	delta := autoscalerDesired - int32(asts.cluster.Desired().Count())
+
+	if delta > 0 {
+		for i := int32(0); i < delta; i++ {
+			err := asts.cluster.Desired().Add(simulator.NewEntity("Desired Replica", "Desired"))
+			if err != nil {
+				return err
+			}
+		}
+	} else if delta < 0 {
+		for i := delta; i < 0 ; i++ {
+			asts.cluster.Desired().Remove()
+		}
+	} else {
+		// do nothing
+	}
 
 	return nil
 }
