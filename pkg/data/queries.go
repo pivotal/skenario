@@ -39,6 +39,7 @@ select
       when exists(select id from stocks where name like 'RequestsComplete%' and id = to_stock) then 1
       else 0 end)
     over summation as requests_completed
+  , sum(case (select id from stocks where name    = 'ReplicasDesired'   ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_desired
   , sum(case (select id from stocks where name    = 'ReplicasLaunching'   ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_launching
   , sum(case (select id from stocks where name    = 'ReplicasActive'      ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_active
   , sum(case (select id from stocks where name    = 'ReplicasTerminated'  ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_terminated

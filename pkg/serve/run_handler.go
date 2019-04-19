@@ -40,6 +40,7 @@ type totalLine struct {
 	RequestsBuffered    int    `json:"requests_buffered"`
 	RequestsProcessing  int    `json:"requests_processing"`
 	RequestsCompleted   int    `json:"requests_completed"`
+	ReplicasDesired     int    `json:"replicas_desired"`
 	ReplicasLaunching   int    `json:"replicas_launching"`
 	ReplicasActive      int    `json:"replicas_active"`
 	ReplicasTerminating int    `json:"replicas_terminated"`
@@ -101,7 +102,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var occursAt, requestsBuffered, requestsProcessing, requestsCompleted, replicasLaunching, replicasActive, replicasTerminated int
+	var occursAt, requestsBuffered, requestsProcessing, requestsCompleted, replicasDesired, replicasLaunching, replicasActive, replicasTerminated int
 	var kind, moved string
 	var vds = vegaDataSeries{
 		Name:   "running_totals",
@@ -119,7 +120,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		err = totalStmt.Scan(&occursAt, &kind, &moved, &requestsBuffered, &requestsProcessing, &requestsCompleted, &replicasLaunching, &replicasActive, &replicasTerminated)
+		err = totalStmt.Scan(&occursAt, &kind, &moved, &requestsBuffered, &requestsProcessing, &requestsCompleted, &replicasDesired, &replicasLaunching, &replicasActive, &replicasTerminated)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -132,6 +133,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			RequestsBuffered:    requestsBuffered,
 			RequestsProcessing:  requestsProcessing,
 			RequestsCompleted:   requestsCompleted,
+			ReplicasDesired:     replicasDesired,
 			ReplicasLaunching:   replicasLaunching,
 			ReplicasActive:      replicasActive,
 			ReplicasTerminating: replicasTerminated,
