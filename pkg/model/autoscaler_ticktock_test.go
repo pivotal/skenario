@@ -146,41 +146,41 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			describe("the autoscaler was able to make a recommendation", func() {
-				var desiredBefore uint64
-
 				describe("to scale up", func() {
 					it.Before(func() {
 						autoscalerFake.scaleTo = 8
 						err := cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
 						assert.NoError(t, err)
 
-						desiredBefore = cluster.Desired().Count()
 						ent := subject.Remove()
 						err = subject.Add(ent)
 						assert.NoError(t, err)
 					})
 
-					it("adds to the ReplicasDesired stock", func() {
-						assert.NotEqual(t, desiredBefore, cluster.Desired().Count())
-						assert.Equal(t, uint64(8), cluster.Desired().Count())
+					it("schedules movements into the ReplicasDesired stock", func() {
+						assert.Equal(t, simulator.MovementKind("increase_desired"), envFake.Movements[8].Kind())
+						assert.Equal(t, simulator.StockName("DesiredSource"), envFake.Movements[8].From().Name())
+						assert.Equal(t, simulator.StockName("ReplicasDesired"), envFake.Movements[8].To().Name())
 					})
 				})
 
 				describe("to scale down", func() {
 					it.Before(func() {
-						autoscalerFake.scaleTo = 8
-						ent := subject.Remove()
-						err := subject.Add(ent)
+						err := cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
+						assert.NoError(t, err)
+						err = cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
 						assert.NoError(t, err)
 
 						autoscalerFake.scaleTo = 1
-						ent = subject.Remove()
+						ent := subject.Remove()
 						err = subject.Add(ent)
 						assert.NoError(t, err)
 					})
 
-					it("adds to the ReplicasDesired stock", func() {
-						assert.Equal(t, uint64(1), cluster.Desired().Count())
+					it("schedules movements out of the ReplicasDesired stock", func() {
+						assert.Equal(t, simulator.MovementKind("reduce_desired"), envFake.Movements[4].Kind())
+						assert.Equal(t, simulator.StockName("ReplicasDesired"), envFake.Movements[4].From().Name())
+						assert.Equal(t, simulator.StockName("DesiredSink"), envFake.Movements[4].To().Name())
 					})
 				})
 

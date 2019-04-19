@@ -17,6 +17,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
 
@@ -32,6 +33,8 @@ type autoscalerTicktockStock struct {
 	cluster          ClusterModel
 	autoscalerEntity simulator.Entity
 	autoscaler       autoscaler.UniScaler
+	desiredSource    simulator.ThroughStock
+	desiredSink      simulator.ThroughStock
 }
 
 func (asts *autoscalerTicktockStock) Name() simulator.StockName {
@@ -68,14 +71,26 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	if delta > 0 {
 		for i := int32(0); i < delta; i++ {
-			err := asts.cluster.Desired().Add(simulator.NewEntity("Desired Replica", "Desired"))
+			err := asts.desiredSource.Add(simulator.NewEntity("Desired", "Desired"))
 			if err != nil {
 				return err
 			}
+
+			asts.env.AddToSchedule(simulator.NewMovement(
+				"increase_desired",
+				currentTime.Add(1*time.Nanosecond),
+				asts.desiredSource,
+				asts.cluster.Desired(),
+			))
 		}
 	} else if delta < 0 {
-		for i := delta; i < 0 ; i++ {
-			asts.cluster.Desired().Remove()
+		for i := delta; i < 0; i++ {
+			asts.env.AddToSchedule(simulator.NewMovement(
+				"reduce_desired",
+				currentTime.Add(1*time.Nanosecond),
+				asts.cluster.Desired(),
+				asts.desiredSink,
+			))
 		}
 	} else {
 		// do nothing
@@ -90,5 +105,7 @@ func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulato
 		cluster:          cluster,
 		autoscalerEntity: scalerEntity,
 		autoscaler:       scaler,
+		desiredSource:    simulator.NewThroughStock("DesiredSource", "Desired"),
+		desiredSink:      simulator.NewThroughStock("DesiredSink", "Desired"),
 	}
 }
