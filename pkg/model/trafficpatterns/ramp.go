@@ -35,13 +35,22 @@ func (*ramp) Name() string {
 }
 
 func (r *ramp) Generate() {
+	var t time.Time
 	nextAdd := r.increaseRate
+	startAt := r.env.CurrentMovementTime()
+	rampUpDuration := r.env.HaltTime().Sub(r.env.CurrentMovementTime()) / 2
+	downAt := startAt.Add(rampUpDuration.Round(time.Second))
 
-	startAt := r.env.CurrentMovementTime().Add(1*time.Second)
-	for t := startAt; t.Before(r.env.HaltTime()); t = t.Add(1 * time.Second) {
+	for t = startAt; t.Before(downAt); t = t.Add(1 * time.Second) {
 		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextAdd, t, 1*time.Second)
 		uniRand.Generate()
 		nextAdd = nextAdd + r.increaseRate
+	}
+
+	for ; t.Before(r.env.HaltTime()); t = t.Add(1 * time.Second) {
+		nextAdd = nextAdd - r.increaseRate
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextAdd, t, 1*time.Second)
+		uniRand.Generate()
 	}
 }
 
