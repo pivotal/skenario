@@ -48,6 +48,12 @@ $ go run cmd/skenario/main.go -h
   -stableWindow duration
         Duration of stable window of the Autoscaler (default 1m0s)
 
+  -stepAfter duration
+        When using the step traffic pattern, wait this long until the step occurs (default 10s)
+
+  -stepRPS int
+        RPS of the step traffic pattern (default 50)
+
   -storeRun
         Store simulation run results in skenario.db (default true)
 
@@ -61,7 +67,7 @@ $ go run cmd/skenario/main.go -h
         Tick interval duration of the Autoscaler (default 2s)
 
   -trafficPattern string
-        Traffic pattern. Options are 'uniform' and 'ramp'. -numberOfRequests is ignored by ramp. (default "uniform")
+        Traffic pattern. Options are 'uniform', 'ramp' and 'step'. (default "uniform")
 ```
 
 ### Data collection

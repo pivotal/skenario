@@ -60,6 +60,8 @@ var (
 	trafficPattern              = flag.String("trafficPattern", "uniform", "Traffic pattern. Options are 'uniform' and 'ramp'")
 	rampDelta                   = flag.Int("rampDelta", 1, "RPS acceleration/deceleration rate")
 	rampMaxRPS                  = flag.Int("rampMaxRPS", 50, "Max RPS of the ramp traffic pattern. Ignored by uniform pattern")
+	stepRPS                     = flag.Int("stepRPS", 50, "RPS of the step traffic pattern")
+	stepAfter                   = flag.Duration("stepAfter", 10*time.Second, "When using the step traffic pattern, wait this long until the step occurs")
 )
 
 func main() {
@@ -76,6 +78,8 @@ func main() {
 		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), int(*numberOfRequests), startAt, *simDuration)
 	case "ramp":
 		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), *rampDelta, *rampMaxRPS)
+	case "step":
+		traffic = trafficpatterns.NewStepPattern(r.Env(), *stepRPS, *stepAfter, trafficSource, cluster.BufferStock())
 	}
 	traffic.Generate()
 
