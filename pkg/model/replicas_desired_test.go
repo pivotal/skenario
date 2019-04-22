@@ -105,6 +105,10 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Remove()", func() {
+		it.Before(func() {
+			rawSubject.delegate.Add(simulator.NewEntity("Removeable", "Desired"))
+		})
+
 		describe("there are launching replicas but no active replicas", func() {
 			it.Before(func() {
 				err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))

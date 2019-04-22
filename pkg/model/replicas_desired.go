@@ -59,9 +59,9 @@ func (rds *replicasDesiredStock) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rds *replicasDesiredStock) Remove() simulator.Entity {
-	err := rds.delegate.Remove()
-	if err != nil {
-		return err
+	ent := rds.delegate.Remove()
+	if ent == nil {
+		return nil
 	}
 
 	nextTerminate := rds.env.CurrentMovementTime().Add(rds.config.TerminateDelay)
@@ -81,7 +81,7 @@ func (rds *replicasDesiredStock) Remove() simulator.Entity {
 		))
 	}
 
-	return nil
+	return ent
 }
 
 func (rds *replicasDesiredStock) Add(entity simulator.Entity) error {
