@@ -57,7 +57,7 @@ func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, boo
 	return fa.scaleTo, true
 }
 
-func (fa *fakeAutoscaler) Update(autoscaler.MetricSpec) error {
+func (fa *fakeAutoscaler) Update(autoscaler.DeciderSpec) error {
 	panic("implement me")
 }
 
