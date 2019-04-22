@@ -31,7 +31,7 @@ import (
 )
 
 var startAt = time.Unix(0, 0)
-var runFor = 60 * time.Second
+var runFor = 600 * time.Second
 
 type totalLine struct {
 	OccursAt            int    `json:"occurs_at"`
@@ -75,7 +75,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	cluster := model.NewCluster(env, clusterConf)
 	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
 	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
-	traffic := trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), 1)
+	traffic := trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), 1, 100)
 	traffic.Generate()
 
 	completed, ignored, err := env.Run()

@@ -19,6 +19,7 @@ package main
 import (
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/NYTimes/gziphandler"
 
@@ -29,7 +30,7 @@ func main() {
 	index := http.FileServer(http.Dir("pkg/serve"))
 	http.Handle("/", index)
 
-	runHandler :=	http.HandlerFunc(serve.RunHandler)
+	runHandler := http.HandlerFunc(serve.RunHandler)
 	gzipRunHandler := gziphandler.GzipHandler(runHandler)
 	http.Handle("/run", gzipRunHandler)
 
