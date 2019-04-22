@@ -54,10 +54,12 @@ var (
 	maxScaleUpRate              = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
 	launchDelay                 = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
 	terminateDelay              = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
-	numberOfRequests            = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate")
+	numberOfRequests            = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate. Ignored by the ramp pattern")
 	showTrace                   = flag.Bool("showTrace", true, "Show simulation trace")
 	storeRun                    = flag.Bool("storeRun", true, "Store simulation run results in skenario.db")
-	trafficPattern              = flag.String("trafficPattern", "uniform", "Traffic pattern. Options are 'uniform' and 'ramp'. -numberOfRequests is ignored by ramp.")
+	trafficPattern              = flag.String("trafficPattern", "uniform", "Traffic pattern. Options are 'uniform' and 'ramp'")
+	rampDelta                   = flag.Int("rampDelta", 1, "RPS acceleration/deceleration rate")
+	rampMaxRPS                  = flag.Int("rampMaxRPS", 50, "Max RPS of the ramp traffic pattern. Ignored by uniform pattern")
 )
 
 func main() {
@@ -73,7 +75,7 @@ func main() {
 	case "uniform":
 		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), int(*numberOfRequests), startAt, *simDuration)
 	case "ramp":
-		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), 1)
+		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), *rampDelta, *rampMaxRPS)
 	}
 	traffic.Generate()
 

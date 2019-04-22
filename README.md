@@ -27,6 +27,12 @@ $ go run cmd/skenario/main.go -h
   -panicWindow duration
         Duration of panic window of the Autoscaler (default 6s)
 
+  -rampDelta int
+        RPS acceleration/deceleration rate (default 1)
+
+  -rampMaxRPS int
+        Max RPS of the ramp traffic pattern. Ignored by uniform pattern (default 50)
+
   -replicaLaunchDelay duration
         Time it takes a Replica to move from launching to active (default 1s)
 

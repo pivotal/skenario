@@ -24,10 +24,11 @@ import (
 )
 
 type ramp struct {
-	env          simulator.Environment
-	source       model.TrafficSource
-	buffer       model.RequestsBufferedStock
-	increaseRate int
+	env    simulator.Environment
+	source model.TrafficSource
+	buffer model.RequestsBufferedStock
+	deltaV int
+	maxRPS int
 }
 
 func (*ramp) Name() string {
@@ -36,29 +37,28 @@ func (*ramp) Name() string {
 
 func (r *ramp) Generate() {
 	var t time.Time
-	nextAdd := r.increaseRate
+	nextRPS := r.deltaV
 	startAt := r.env.CurrentMovementTime()
-	rampUpDuration := r.env.HaltTime().Sub(r.env.CurrentMovementTime()) / 2
-	downAt := startAt.Add(rampUpDuration.Round(time.Second))
 
-	for t = startAt; t.Before(downAt); t = t.Add(1 * time.Second) {
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextAdd, t, 1*time.Second)
+	for t = startAt; nextRPS <= r.maxRPS; t = t.Add(1 * time.Second) {
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextRPS, t, 1*time.Second)
 		uniRand.Generate()
-		nextAdd = nextAdd + r.increaseRate
+		nextRPS = nextRPS + r.deltaV
 	}
 
-	for ; t.Before(r.env.HaltTime()); t = t.Add(1 * time.Second) {
-		nextAdd = nextAdd - r.increaseRate
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextAdd, t, 1*time.Second)
+	for ; nextRPS > 0; t = t.Add(1 * time.Second) {
+		nextRPS = nextRPS - r.deltaV
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextRPS, t, 1*time.Second)
 		uniRand.Generate()
 	}
 }
 
-func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, increaseRate int) Pattern {
+func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, deltaV int, maxRPS int) Pattern {
 	return &ramp{
-		env:          env,
-		source:       source,
-		buffer:       buffer,
-		increaseRate: increaseRate,
+		env:    env,
+		source: source,
+		buffer: buffer,
+		deltaV: deltaV,
+		maxRPS: maxRPS,
 	}
 }

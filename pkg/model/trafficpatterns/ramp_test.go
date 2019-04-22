@@ -41,11 +41,11 @@ func testRamp(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = new(fakes.FakeEnvironment)
-		envFake.TheHaltTime = envFake.TheTime.Add(5 * time.Second)
+		envFake.TheHaltTime = envFake.TheTime.Add(15 * time.Second)
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
 
-		subject = NewRamp(envFake, trafficSource, bufferStock, 1)
+		subject = NewRamp(envFake, trafficSource, bufferStock, 1, 3)
 		subject.Generate()
 	})
 
@@ -56,12 +56,23 @@ func testRamp(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Generate()", func() {
-		describe("ramping up and down", func() {
-			it("creates a total of 11 requests in 5 seconds", func() {
-				assert.Len(t, envFake.Movements, 11)
+		describe("maximum RPS", func() {
+			it("reaches a maximum of 3 RPS over the 15 second simulation", func() {
+				assert.WithinDuration(t, envFake.TheTime.Add(2500*time.Millisecond), envFake.Movements[3].OccursAt(), 500*time.Millisecond)
+				assert.WithinDuration(t, envFake.TheTime.Add(2500*time.Millisecond), envFake.Movements[4].OccursAt(), 500*time.Millisecond)
+				assert.WithinDuration(t, envFake.TheTime.Add(2500*time.Millisecond), envFake.Movements[5].OccursAt(), 500*time.Millisecond)
+				assert.WithinDuration(t, envFake.TheTime.Add(3500*time.Millisecond), envFake.Movements[6].OccursAt(), 500*time.Millisecond)
+				assert.WithinDuration(t, envFake.TheTime.Add(3500*time.Millisecond), envFake.Movements[7].OccursAt(), 500*time.Millisecond)
+				assert.WithinDuration(t, envFake.TheTime.Add(3500*time.Millisecond), envFake.Movements[8].OccursAt(), 500*time.Millisecond)
+			})
+		})
+
+		describe("acceleration and deceleration", func() {
+			it("creates a total of 12 requests in 5 seconds of the 15 second simulation", func() {
+				assert.Len(t, envFake.Movements, 12)
 			})
 
-			describe("ramp up", func() {
+			describe("acceleration", func() {
 				it("creates 1 request in the 1st second", func() {
 					assert.WithinDuration(t, envFake.TheTime.Add(500*time.Millisecond), envFake.Movements[0].OccursAt(), 500*time.Millisecond)
 				})
@@ -78,7 +89,7 @@ func testRamp(t *testing.T, describe spec.G, it spec.S) {
 				})
 			})
 
-			describe("ramp down", func() {
+			describe("deceleration", func() {
 				it("creates 3 requests in the 4th second", func() {
 					assert.WithinDuration(t, envFake.TheTime.Add(3500*time.Millisecond), envFake.Movements[6].OccursAt(), 500*time.Millisecond)
 					assert.WithinDuration(t, envFake.TheTime.Add(3500*time.Millisecond), envFake.Movements[7].OccursAt(), 500*time.Millisecond)
@@ -88,6 +99,10 @@ func testRamp(t *testing.T, describe spec.G, it spec.S) {
 				it("creates 2 requests in the 5th second", func() {
 					assert.WithinDuration(t, envFake.TheTime.Add(4500*time.Millisecond), envFake.Movements[9].OccursAt(), 500*time.Millisecond)
 					assert.WithinDuration(t, envFake.TheTime.Add(4500*time.Millisecond), envFake.Movements[10].OccursAt(), 500*time.Millisecond)
+				})
+
+				it("creates 1 request in the 6th second", func() {
+					assert.WithinDuration(t, envFake.TheTime.Add(5500*time.Millisecond), envFake.Movements[11].OccursAt(), 500*time.Millisecond)
 				})
 			})
 		})
