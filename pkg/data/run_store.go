@@ -72,7 +72,9 @@ func (s *storer) Store(dbFileName string, completed []simulator.CompletedMovemen
 		return scenarioRunId, err
 	}
 
-	err = s.scenarioData(scenarioRunId)
+	err = s.conn.WithTx(func() error {
+		return s.scenarioData(scenarioRunId)
+	})
 	if err != nil {
 		return scenarioRunId, err
 	}
