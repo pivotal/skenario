@@ -73,7 +73,7 @@ $ go run cmd/skenario/main.go -h
         Tick interval duration of the Autoscaler (default 2s)
 
   -trafficPattern string
-        Traffic pattern. Options are 'uniform', 'ramp' and 'step'. (default "uniform")
+        Traffic pattern. Options are 'uniform', 'ramp', 'step' and 'sinusoidal'. (default "uniform")
 ```
 
 ### Data collection
