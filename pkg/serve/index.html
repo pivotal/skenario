@@ -36,7 +36,7 @@
         datasets: [],
         vconcat: [
             {
-                height: 900,
+                height: 800,
                 width: 1600,
                 layer: [
                     {
@@ -62,7 +62,7 @@
                                 field: "occurs_at_sec",
                                 type: "quantitative",
                                 title: "Occurs At (s)",
-                                scale: {domain: [0, 270]}
+                                scale: {domain: [0, 3600]}
                             },
                             y: {
                                 field: "value",
@@ -101,7 +101,7 @@
                                 field: "occurs_at_sec",
                                 type: "quantitative",
                                 title: "Occurs At (s)",
-                                scale: {domain: [0, 270]}
+                                scale: {domain: [0, 3600]}
                             },
                             y: {
                                 field: "value",
@@ -114,7 +114,7 @@
                 resolve: {scale: {y: "independent"}}
             },
             {
-                height: 300,
+                height: 200,
                 width: 1600,
                 data: {name: "response_times"},
                 transform: [
@@ -127,7 +127,7 @@
                         field: "completed_at_sec",
                         type: "quantitative",
                         title: "Completed At (s)",
-                        scale: {domain: [0, 270]}
+                        scale: {domain: [0, 3600]}
                     },
                     y: {
                         field: "response_time_ms",
