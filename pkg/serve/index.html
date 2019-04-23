@@ -48,6 +48,7 @@
                                     "requests_processing"
                                 ]
                             },
+                            {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
                         ],
                         mark: {
                             type: "line"
@@ -58,8 +59,10 @@
                                 type: "nominal"
                             },
                             x: {
-                                field: "occurs_at",
+                                field: "occurs_at_sec",
                                 type: "quantitative",
+                                title: "Occurs At (s)",
+                                scale: {domain: [0, 270]}
                             },
                             y: {
                                 field: "value",
@@ -84,9 +87,7 @@
                                     "replicas_active"
                                 ]
                             },
-                            // {
-                            //     filter: {field: "value", gt: 0}
-                            // }
+                            {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
                         ],
                         mark: {
                             type: "line"
@@ -97,8 +98,10 @@
                                 type: "nominal"
                             },
                             x: {
-                                field: "occurs_at",
-                                type: "quantitative"
+                                field: "occurs_at_sec",
+                                type: "quantitative",
+                                title: "Occurs At (s)",
+                                scale: {domain: [0, 270]}
                             },
                             y: {
                                 field: "value",
@@ -114,16 +117,22 @@
                 height: 300,
                 width: 1600,
                 data: {name: "response_times"},
+                transform: [
+                    {calculate: "datum.completed_at / 1000000000", as: "completed_at_sec"},
+                    {calculate: "datum.response_time / 1000000", as: "response_time_ms"}
+                ],
                 mark: {type: "line"},
                 encoding: {
                     x: {
-                        field: "completed_at",
-                        type: "quantitative"
+                        field: "completed_at_sec",
+                        type: "quantitative",
+                        title: "Completed At (s)",
+                        scale: {domain: [0, 270]}
                     },
                     y: {
-                        field: "response_time",
+                        field: "response_time_ms",
                         type: "quantitative",
-                        title: "Response time"
+                        title: "Response Time (ms)"
                     }
                 }
             }
