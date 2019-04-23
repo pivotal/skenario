@@ -51,3 +51,16 @@ window summation as (order by occurs_at asc rows unbounded preceding)
 order by occurs_at
 ;
 `
+
+var ResponseTimesQuery = `
+select
+    min(occurs_at) as arrived_at
+  , max(occurs_at) as completed_at
+  , max(occurs_at) - min(occurs_at) as response_time
+from completed_movements
+where moved in (select id from entities where entities.kind = 'Request')
+  and scenario_run_id = ?
+group by moved
+order by arrived_at
+;
+`

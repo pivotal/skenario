@@ -46,9 +46,15 @@ type totalLine struct {
 	ReplicasTerminating int    `json:"replicas_terminated"`
 }
 
+type responseTime struct {
+	ArrivedAt    int64 `json:"arrived_at"`
+	CompletedAt  int64 `json:"completed_at"`
+	ResponseTime int64 `json:"response_time"`
+}
+
 type vegaDataSeries struct {
-	Name   string      `json:"name"`
-	Values []totalLine `json:"values"`
+	TotalLines    []totalLine    `json:"total_lines"`
+	ResponseTimes []responseTime `json:"response_times"`
 }
 
 func RunHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,11 +108,18 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	responseStmt, err := conn.Prepare(data.ResponseTimesQuery, scenarioRunId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	var occursAt, requestsBuffered, requestsProcessing, requestsCompleted, replicasDesired, replicasLaunching, replicasActive, replicasTerminated int
+	var arrivedAt, completedAt, rTime int64
 	var kind, moved string
 	var vds = vegaDataSeries{
-		Name:   "running_totals",
-		Values: make([]totalLine, 0),
+		TotalLines:    make([]totalLine, 0),
+		ResponseTimes: make([]responseTime, 0),
 	}
 
 	for {
@@ -138,7 +151,32 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			ReplicasActive:      replicasActive,
 			ReplicasTerminating: replicasTerminated,
 		}
-		vds.Values = append(vds.Values, line)
+		vds.TotalLines = append(vds.TotalLines, line)
+	}
+
+	for {
+		hasRow, err := responseStmt.Step()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if !hasRow {
+			break
+		}
+
+		err = responseStmt.Scan(&arrivedAt, &completedAt, &rTime)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		var rt = responseTime{
+			ArrivedAt:    arrivedAt,
+			CompletedAt:  completedAt,
+			ResponseTime: rTime,
+		}
+		vds.ResponseTimes = append(vds.ResponseTimes, rt)
 	}
 
 	err = json.NewEncoder(w).Encode(vds)

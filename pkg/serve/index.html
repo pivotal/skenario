@@ -29,89 +29,114 @@
 <h1>Skenario</h1>
 
 <div id="view">Loading...</div>
+</body>
 <script>
     chart = {
         $schema: "https://vega.github.io/schema/vega-lite/v3.json",
-        height: 1000,
-        width: 1600,
-        data: {
-            values: []
-        },
-
-        layer: [
+        datasets: [],
+        vconcat: [
             {
-                transform: [
+                height: 900,
+                width: 1600,
+                layer: [
                     {
-                        fold: [
-                            "requests_buffered",
-                            "requests_processing"
-                        ]
+                        data: {name: "total_lines"},
+                        transform: [
+                            {
+                                fold: [
+                                    "requests_buffered",
+                                    "requests_processing"
+                                ]
+                            },
+                        ],
+                        mark: {
+                            type: "line"
+                        },
+                        encoding: {
+                            color: {
+                                field: "key",
+                                type: "nominal"
+                            },
+                            x: {
+                                field: "occurs_at",
+                                type: "quantitative",
+                            },
+                            y: {
+                                field: "value",
+                                title: "Requests",
+                                type: "quantitative",
+                            },
+                            tooltip: [
+                                {field: "requests_buffered", type: "quantitative"},
+                                {field: "requests_processing", type: "quantitative"},
+                                {field: "replicas_launching", type: "quantitative"},
+                                {field: "replicas_active", type: "quantitative"}
+                            ]
+                        }
+                    },
+                    {
+                        data: {name: "total_lines"},
+                        transform: [
+                            {
+                                fold: [
+                                    "replicas_desired",
+                                    "replicas_launching",
+                                    "replicas_active"
+                                ]
+                            },
+                            // {
+                            //     filter: {field: "value", gt: 0}
+                            // }
+                        ],
+                        mark: {
+                            type: "line"
+                        },
+                        encoding: {
+                            color: {
+                                field: "key",
+                                type: "nominal"
+                            },
+                            x: {
+                                field: "occurs_at",
+                                type: "quantitative"
+                            },
+                            y: {
+                                field: "value",
+                                title: "Replicas",
+                                type: "quantitative"
+                            }
+                        }
                     },
                 ],
-                mark: {
-                    type: "line"
-                },
-                encoding: {
-                    color: {
-                        field: "key",
-                        type: "nominal"
-                    },
-                    x: {
-                        field: "occurs_at",
-                        type: "quantitative",
-                    },
-                    y: {
-                        field: "value",
-                        title: "Requests",
-                        type: "quantitative",
-                    },
-                    tooltip: [
-                        {field: "requests_buffered", type: "quantitative"},
-                        {field: "requests_processing", type: "quantitative"},
-                        {field: "replicas_launching", type: "quantitative"},
-                        {field: "replicas_active", type: "quantitative"}
-                    ]
-                }
+                resolve: {scale: {y: "independent"}}
             },
             {
-                transform: [
-                    {
-                        fold: [
-                            "replicas_desired",
-                            "replicas_launching",
-                            "replicas_active"
-                        ]
-                    },
-                    // {
-                    //     filter: {field: "value", gt: 0}
-                    // }
-                ],
-                mark: {
-                    type: "line"
-                },
+                height: 300,
+                width: 1600,
+                data: {name: "response_times"},
+                mark: {type: "line"},
                 encoding: {
-                    color: {
-                        field: "key",
-                        type: "nominal"
-                    },
                     x: {
-                        field: "occurs_at",
+                        field: "completed_at",
                         type: "quantitative"
                     },
                     y: {
-                        field: "value",
-                        title: "Replicas",
-                        type: "quantitative"
+                        field: "response_time",
+                        type: "quantitative",
+                        title: "Response time"
                     }
                 }
-            },
+            }
         ],
-        resolve: {scale: {y: "independent"}}
+
     };
 
     fetch("http://localhost:3000/run").then((response) => {
         return response.json().then((responseJson) => {
-            chart.data.values = responseJson["values"];
+            chart.datasets = {
+                total_lines: responseJson["total_lines"],
+                response_times: responseJson["response_times"]
+            };
 
             vegaEmbed(
                 '#view',
