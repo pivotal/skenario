@@ -62,6 +62,8 @@ var (
 	rampMaxRPS                  = flag.Int("rampMaxRPS", 50, "Max RPS of the ramp traffic pattern. Ignored by uniform pattern")
 	stepRPS                     = flag.Int("stepRPS", 50, "RPS of the step traffic pattern")
 	stepAfter                   = flag.Duration("stepAfter", 10*time.Second, "When using the step traffic pattern, wait this long until the step occurs")
+	sineAmplitude               = flag.Int("sineAmplitude", 50, "Maximum RPS of the sinusoidal traffic pattern")
+	sinePeriod                  = flag.Duration("sinePeriod", 60*time.Second, "Time between sinusoidal RPS peaks")
 )
 
 func main() {
@@ -80,6 +82,8 @@ func main() {
 		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), *rampDelta, *rampMaxRPS)
 	case "step":
 		traffic = trafficpatterns.NewStepPattern(r.Env(), *stepRPS, *stepAfter, trafficSource, cluster.BufferStock())
+	case "sinusoidal":
+		traffic = trafficpatterns.NewSinusoidal(r.Env(), *sineAmplitude, *sinePeriod, trafficSource, cluster.BufferStock())
 	}
 	traffic.Generate()
 

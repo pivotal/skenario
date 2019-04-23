@@ -45,6 +45,12 @@ $ go run cmd/skenario/main.go -h
   -showTrace
         Show simulation trace (default true)
 
+  -sineAmplitude int
+        Maximum RPS of the sinusoidal traffic pattern (default 50)
+
+  -sinePeriod duration
+        Time between sinusoidal RPS peaks (default 1m0s)
+
   -stableWindow duration
         Duration of stable window of the Autoscaler (default 1m0s)
 
