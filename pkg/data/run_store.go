@@ -27,7 +27,6 @@ import (
 
 type RunStore interface {
 	Store(
-		dbFileName string,
 		completed []simulator.CompletedMovement,
 		ignored []simulator.IgnoredMovement,
 		clusterConf model.ClusterConfig,
@@ -47,25 +46,13 @@ type storer struct {
 	trafficPattern string
 }
 
-func (s *storer) Store(dbFileName string, completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ) (scenarioRunId int64, err error) {
+func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ) (scenarioRunId int64, err error) {
 	s.completed = completed
 	s.ignored = ignored
 	s.clusterConf = clusterConf
 	s.kpaConf = kpaConf
 	s.origin = origin
 	s.trafficPattern = trafficPattern
-
-	conn, err := sqlite3.Open(dbFileName)
-	if err != nil {
-		return scenarioRunId, err
-	}
-	s.conn = conn
-
-	err = s.conn.Exec(Schema)
-	if err != nil {
-		return scenarioRunId, err
-	}
-	defer s.conn.Close()
 
 	scenarioRunId, err = s.scenarioRun()
 	if err != nil {
@@ -355,6 +342,13 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 	return nil
 }
 
-func NewRunStore() RunStore {
-	return &storer{}
+func NewRunStore(conn *sqlite3.Conn) RunStore {
+	err := conn.Exec(Schema)
+	if err != nil {
+		panic(fmt.Errorf("could not apply skenario schema: %s", err.Error()))
+	}
+
+	return &storer{
+		conn: conn,
+	}
 }

@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/bvinc/go-sqlite-lite/sqlite3"
 	"io"
 	"os"
 	"strings"
@@ -95,8 +96,15 @@ func main() {
 	}
 
 	if *storeRun {
-		store := data.NewRunStore()
-		scenarioRunId, err := store.Store("skenario.db", completed, ignored, r.ClusterConfig(), r.AutoscalerConfig(), "skenario_cli", traffic.Name())
+		conn, err := sqlite3.Open("skenario.db")
+		if err != nil {
+			panic(fmt.Errorf("could not open database file '%s': %s", "skenario.db", err.Error()))
+		}
+		defer conn.Close()
+
+		store := data.NewRunStore(conn)
+
+		scenarioRunId, err := store.Store(completed, ignored, r.ClusterConfig(), r.AutoscalerConfig(), "skenario_cli", traffic.Name())
 		if err != nil {
 			fmt.Printf("there was an error saving data: %s", err.Error())
 		}

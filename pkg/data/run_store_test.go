@@ -81,7 +81,11 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			os.Remove(dbPath)
 
-			subject = NewRunStore()
+			conn, err = sqlite3.Open(dbPath)
+			assert.NoError(t, err)
+			assert.NotNil(t, conn)
+
+			subject = NewRunStore(conn)
 
 			stock1 = simulator.NewThroughStock("stock 1", "test entity")
 			stock2 = simulator.NewThroughStock("stock 2", "test entity")
@@ -92,15 +96,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			completed, ignored, err = env.Run()
 			assert.NoError(t, err)
 
-			scenarioRunId, err = subject.Store(dbPath, completed, ignored, clusterConf, kpaConf, "test_origin", "test_pattern")
-			assert.NoError(t, err)
-
-			conn, err = sqlite3.Open(dbPath)
-			require.NoError(t, err)
-		})
-
-		it.After(func() {
-			err = conn.Close()
+			scenarioRunId, err = subject.Store(completed, ignored, clusterConf, kpaConf, "test_origin", "test_pattern")
 			assert.NoError(t, err)
 		})
 
@@ -296,12 +292,14 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 func singleQuery(t *testing.T, conn *sqlite3.Conn, sql string, scanDst ...interface{}) {
 	selectStmt, err := conn.Prepare(sql)
 	require.NoError(t, err)
-	defer selectStmt.Close()
 
 	hasResult, err := selectStmt.Step()
 	require.True(t, hasResult)
 	require.NoError(t, err)
 
 	err = selectStmt.Scan(scanDst...)
+	require.NoError(t, err)
+
+	err = selectStmt.Close()
 	require.NoError(t, err)
 }
