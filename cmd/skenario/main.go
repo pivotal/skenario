@@ -58,7 +58,7 @@ var (
 	numberOfRequests            = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate. Ignored by the ramp pattern")
 	showTrace                   = flag.Bool("showTrace", true, "Show simulation trace")
 	storeRun                    = flag.Bool("storeRun", true, "Store simulation run results in skenario.db")
-	trafficPattern              = flag.String("trafficPattern", "uniform", "Traffic pattern. Options are 'uniform' and 'ramp'")
+	trafficPattern              = flag.String("trafficPattern", "uniform", "Options are 'uniform', 'ramp', 'step' and 'sinusoidal'")
 	rampDelta                   = flag.Int("rampDelta", 1, "RPS acceleration/deceleration rate")
 	rampMaxRPS                  = flag.Int("rampMaxRPS", 50, "Max RPS of the ramp traffic pattern. Ignored by uniform pattern")
 	stepRPS                     = flag.Int("stepRPS", 50, "RPS of the step traffic pattern")
