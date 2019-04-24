@@ -100,7 +100,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	case "golang_rand_uniform":
 		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.BufferStock(), 1000, startAt, runReq.RunFor)
 	case "step":
-		traffic = trafficpatterns.NewStepPattern(env, 10, time.Second, trafficSource, cluster.BufferStock())
+		traffic = trafficpatterns.NewStep(env, 10, time.Second, trafficSource, cluster.BufferStock())
 	case "ramp":
 		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), 1, 100)
 	case "sinusoidal":

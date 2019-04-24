@@ -29,7 +29,7 @@ func (s *step) Generate() {
 	}
 }
 
-func NewStepPattern(env simulator.Environment, rps int, stepAfter time.Duration, source model.TrafficSource, buffer model.RequestsBufferedStock) Pattern {
+func NewStep(env simulator.Environment, rps int, stepAfter time.Duration, source model.TrafficSource, buffer model.RequestsBufferedStock) Pattern {
 	return &step{
 		env:       env,
 		rps:       rps,

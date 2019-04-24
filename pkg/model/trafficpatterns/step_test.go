@@ -29,7 +29,7 @@ func testStep(t *testing.T, describe spec.G, it spec.S) {
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
 
-		subject = NewStepPattern(envFake, 10, 10*time.Second, trafficSource, bufferStock)
+		subject = NewStep(envFake, 10, 10*time.Second, trafficSource, bufferStock)
 	})
 
 	describe("Name()", func() {
