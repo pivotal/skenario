@@ -31,9 +31,8 @@ import (
 )
 
 var startAt = time.Unix(0, 0)
-var runFor =1*time.Hour
 
-type totalLine struct {
+type TotalLine struct {
 	OccursAt            int    `json:"occurs_at"`
 	MovementKind        string `json:"movement_kind"`
 	MovedEntity         string `json:"moved_entity"`
@@ -46,21 +45,35 @@ type totalLine struct {
 	ReplicasTerminating int    `json:"replicas_terminated"`
 }
 
-type responseTime struct {
+type ResponseTime struct {
 	ArrivedAt    int64 `json:"arrived_at"`
 	CompletedAt  int64 `json:"completed_at"`
 	ResponseTime int64 `json:"response_time"`
 }
 
-type vegaDataSeries struct {
-	TotalLines    []totalLine    `json:"total_lines"`
-	ResponseTimes []responseTime `json:"response_times"`
+type SkenarioRunResponse struct {
+	RanFor         time.Duration  `json:"ran_for"`
+	TrafficPattern string         `json:"traffic_pattern"`
+	TotalLines     []TotalLine    `json:"total_lines"`
+	ResponseTimes  []ResponseTime `json:"response_times"`
+}
+
+type SkenarioRunRequest struct {
+	RunFor           time.Duration `json:"run_for"`
+	TrafficPattern   string        `json:"traffic_pattern"`
+	InMemoryDatabase bool          `json:"in_memory_database,omitempty"`
 }
 
 func RunHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	env := simulator.NewEnvironment(r.Context(), startAt, runFor)
+	runReq := &SkenarioRunRequest{}
+	err := json.NewDecoder(r.Body).Decode(runReq)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
 
 	clusterConf := model.ClusterConfig{
 		LaunchDelay:      5 * time.Second,
@@ -81,8 +94,19 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	cluster := model.NewCluster(env, clusterConf)
 	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
 	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
-	//traffic := trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), 1, 100)
-	traffic := trafficpatterns.NewSinusoidal(env, 50, 60*time.Second, trafficSource, cluster.BufferStock())
+
+	var traffic trafficpatterns.Pattern
+	switch runReq.TrafficPattern {
+	case "golang_rand_uniform":
+		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.BufferStock(), 1000, startAt, runReq.RunFor)
+	case "step":
+		traffic = trafficpatterns.NewStepPattern(env, 10, time.Second, trafficSource, cluster.BufferStock())
+	case "ramp":
+		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), 1, 100)
+	case "sinusoidal":
+		traffic = trafficpatterns.NewSinusoidal(env, 50, 60*time.Second, trafficSource, cluster.BufferStock())
+	}
+
 	traffic.Generate()
 
 	completed, ignored, err := env.Run()
@@ -90,18 +114,24 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
-	store := data.NewRunStore()
-	scenarioRunId, err := store.Store("skenario.db", completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name())
+	var dbFileName string
+	if runReq.InMemoryDatabase {
+		dbFileName = ":memory:"
+	} else {
+		dbFileName = "skenario.db"
+	}
+
+	conn, err := sqlite3.Open(dbFileName)
+	if err != nil {
+		panic(fmt.Errorf("could not open database file '%s': %s", dbFileName, err.Error()))
+	}
+	defer conn.Close()
+
+	store := data.NewRunStore(conn)
+	scenarioRunId, err := store.Store(completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name())
 	if err != nil {
 		fmt.Printf("there was an error saving data: %s", err.Error())
 	}
-
-	conn, err := sqlite3.Open("skenario.db")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-	}
-	defer conn.Close()
 
 	totalStmt, err := conn.Prepare(data.RunningCountQuery, scenarioRunId)
 	if err != nil {
@@ -118,9 +148,11 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	var occursAt, requestsBuffered, requestsProcessing, requestsCompleted, replicasDesired, replicasLaunching, replicasActive, replicasTerminated int
 	var arrivedAt, completedAt, rTime int64
 	var kind, moved string
-	var vds = vegaDataSeries{
-		TotalLines:    make([]totalLine, 0),
-		ResponseTimes: make([]responseTime, 0),
+	var vds = SkenarioRunResponse{
+		RanFor:         env.HaltTime().Sub(startAt),
+		TrafficPattern: traffic.Name(),
+		TotalLines:     make([]TotalLine, 0),
+		ResponseTimes:  make([]ResponseTime, 0),
 	}
 
 	for {
@@ -140,7 +172,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		line := totalLine{
+		line := TotalLine{
 			OccursAt:            occursAt,
 			MovementKind:        kind,
 			MovedEntity:         moved,
@@ -172,7 +204,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var rt = responseTime{
+		var rt = ResponseTime{
 			ArrivedAt:    arrivedAt,
 			CompletedAt:  completedAt,
 			ResponseTime: rTime,

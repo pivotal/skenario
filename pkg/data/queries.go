@@ -52,6 +52,7 @@ order by occurs_at
 ;
 `
 
+// language=sql
 var ResponseTimesQuery = `
 select
     min(occurs_at) as arrived_at
