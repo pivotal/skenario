@@ -94,7 +94,10 @@ func main() {
 			StepAfter: *stepAfter,
 		})
 	case "sinusoidal":
-		traffic = trafficpatterns.NewSinusoidal(r.Env(), *sineAmplitude, *sinePeriod, trafficSource, cluster.BufferStock())
+		traffic = trafficpatterns.NewSinusoidal(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.SinusoidalConfig{
+			Amplitude: *sineAmplitude,
+			Period:    *sinePeriod,
+		})
 	}
 	traffic.Generate()
 

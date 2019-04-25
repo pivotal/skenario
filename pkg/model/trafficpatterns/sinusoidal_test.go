@@ -19,6 +19,7 @@ func TestSinusoidal(t *testing.T) {
 
 func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
+	var config SinusoidalConfig
 	var envFake *fakes.FakeEnvironment
 	var amplitude int
 	var period time.Duration
@@ -34,8 +35,11 @@ func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
-
-		subject = NewSinusoidal(envFake, amplitude, period, trafficSource, bufferStock)
+		config = SinusoidalConfig{
+			Amplitude: amplitude,
+			Period:    period,
+		}
+		subject = NewSinusoidal(envFake, trafficSource, bufferStock, config)
 	})
 
 	describe("Name()", func() {

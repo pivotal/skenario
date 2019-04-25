@@ -73,9 +73,10 @@ type SkenarioRunRequest struct {
 	TargetConcurrencyPercentage float64       `json:"target_concurrency_percentage"`
 	MaxScaleUpRate              float64       `json:"max_scale_up_rate"`
 
-	UniformConfig trafficpatterns.UniformConfig `json:"uniform_config,omitempty"`
-	RampConfig    trafficpatterns.RampConfig    `json:"ramp_config,omitempty"`
-	StepConfig    trafficpatterns.StepConfig    `json:"step_config,omitempty"`
+	UniformConfig    trafficpatterns.UniformConfig    `json:"uniform_config,omitempty"`
+	RampConfig       trafficpatterns.RampConfig       `json:"ramp_config,omitempty"`
+	StepConfig       trafficpatterns.StepConfig       `json:"step_config,omitempty"`
+	SinusoidalConfig trafficpatterns.SinusoidalConfig `json:"sinusoidal_config,omitempty"`
 }
 
 func RunHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +106,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	case "ramp":
 		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), runReq.RampConfig)
 	case "sinusoidal":
-		traffic = trafficpatterns.NewSinusoidal(env, 50, 60*time.Second, trafficSource, cluster.BufferStock())
+		traffic = trafficpatterns.NewSinusoidal(env, trafficSource, cluster.BufferStock(), runReq.SinusoidalConfig)
 	}
 
 	traffic.Generate()

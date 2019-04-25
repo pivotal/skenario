@@ -16,6 +16,11 @@ type sinusoidal struct {
 	buffer    model.RequestsBufferedStock
 }
 
+type SinusoidalConfig struct {
+	Amplitude int           `json:"amplitude"`
+	Period    time.Duration `json:"period"`
+}
+
 func (*sinusoidal) Name() string {
 	return "sinusoidal"
 }
@@ -39,11 +44,11 @@ func (s *sinusoidal) Generate() {
 	}
 }
 
-func NewSinusoidal(env simulator.Environment, amplitude int, period time.Duration, source model.TrafficSource, buffer model.RequestsBufferedStock) Pattern {
+func NewSinusoidal(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, config SinusoidalConfig) Pattern {
 	return &sinusoidal{
 		env:       env,
-		amplitude: amplitude,
-		period:    period,
+		amplitude: config.Amplitude,
+		period:    config.Period,
 		source:    source,
 		buffer:    buffer,
 	}
