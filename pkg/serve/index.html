@@ -156,7 +156,11 @@
             scale_to_zero_grace_period: 30 * second,
             target_concurrency_default: 1,
             target_concurrency_percentage: 0.5,
-            max_scale_up_rate: 100
+            max_scale_up_rate: 100,
+            ramp_config: {
+                delta_v: 1,
+                max_rps: 20,
+            }
         })
     };
 
