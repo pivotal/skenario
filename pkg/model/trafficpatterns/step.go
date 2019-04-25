@@ -24,7 +24,11 @@ func (s *step) Generate() {
 	startAt := s.env.CurrentMovementTime().Add(s.stepAfter)
 
 	for t = startAt; t.Before(s.env.HaltTime()); t = t.Add(1 * time.Second) {
-		uniRand := NewUniformRandom(s.env, s.source, s.buffer, s.rps, t, 1*time.Second)
+		uniRand := NewUniformRandom(s.env, s.source, s.buffer, UniformConfig{
+			NumberOfRequests: s.rps,
+			StartAt:          t,
+			RunFor:           time.Second,
+		})
 		uniRand.Generate()
 	}
 }

@@ -33,6 +33,12 @@ type uniformRandom struct {
 	runFor           time.Duration
 }
 
+type UniformConfig struct {
+	NumberOfRequests int           `json:"number_of_requests"`
+	StartAt          time.Time     `json:"start_at"`
+	RunFor           time.Duration `json:"run_for"`
+}
+
 func (ur *uniformRandom) Name() string {
 	return "golang_rand_uniform"
 }
@@ -50,13 +56,13 @@ func (ur *uniformRandom) Generate() {
 	}
 }
 
-func NewUniformRandom(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, numberOfRequests int, startAt time.Time, runFor time.Duration) Pattern {
+func NewUniformRandom(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, config UniformConfig) Pattern {
 	return &uniformRandom{
 		env:              env,
 		source:           source,
 		buffer:           buffer,
-		numberOfRequests: numberOfRequests,
-		startAt:          startAt,
-		runFor:           runFor,
+		numberOfRequests: config.NumberOfRequests,
+		startAt:          config.StartAt,
+		runFor:           config.RunFor,
 	}
 }

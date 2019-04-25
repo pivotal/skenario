@@ -78,7 +78,11 @@ func main() {
 	var traffic trafficpatterns.Pattern
 	switch *trafficPattern {
 	case "uniform":
-		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), int(*numberOfRequests), startAt, *simDuration)
+		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.UniformConfig{
+			NumberOfRequests: int(*numberOfRequests),
+			StartAt:          startAt,
+			RunFor:           *simDuration,
+		})
 	case "ramp":
 		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), *rampDelta, *rampMaxRPS)
 	case "step":

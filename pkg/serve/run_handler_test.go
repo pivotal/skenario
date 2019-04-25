@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"skenario/pkg/model"
+	"skenario/pkg/model/trafficpatterns"
 	"testing"
 	"time"
 )
@@ -45,9 +46,16 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 		describe("common behaviour", func() {
 			it.Before(func() {
 				skenarioRunRequest = &SkenarioRunRequest{
+					LaunchDelay:      time.Second,
+					TickInterval:     2 * time.Second,
 					RunFor:           20 * time.Second,
 					TrafficPattern:   "golang_rand_uniform",
 					InMemoryDatabase: true,
+					UniformConfig: trafficpatterns.UniformConfig{
+						NumberOfRequests: 10,
+						StartAt:          time.Unix(0, 0),
+						RunFor:           20 * time.Second,
+					},
 				}
 				var reqBody = new(bytes.Buffer)
 				err = json.NewEncoder(reqBody).Encode(skenarioRunRequest)
@@ -128,7 +136,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 			srr = &SkenarioRunRequest{
 				LaunchDelay:    11 * time.Second,
 				TerminateDelay: 22 * time.Second,
-				UniformConfig: UniformConfig{
+				UniformConfig: trafficpatterns.UniformConfig{
 					NumberOfRequests: 33,
 				},
 			}
@@ -155,6 +163,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			srr = &SkenarioRunRequest{
+				LaunchDelay:                 time.Second,
 				TickInterval:                11 * time.Second,
 				StableWindow:                22 * time.Second,
 				PanicWindow:                 33 * time.Second,
@@ -162,7 +171,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 				TargetConcurrencyDefault:    55,
 				TargetConcurrencyPercentage: 0.66,
 				MaxScaleUpRate:              77,
-				UniformConfig: UniformConfig{
+				UniformConfig: trafficpatterns.UniformConfig{
 					NumberOfRequests: 88,
 				},
 			}
@@ -205,6 +214,8 @@ func trafficPatternBefore(t *testing.T, pattern string) *SkenarioRunResponse {
 		RunFor:           20 * time.Second,
 		TrafficPattern:   pattern,
 		InMemoryDatabase: true,
+		TickInterval:     2 * time.Second,
+		LaunchDelay:      2 * time.Second,
 	}
 	var reqBody = new(bytes.Buffer)
 	err := json.NewEncoder(reqBody).Encode(skenarioRunRequest)

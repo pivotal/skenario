@@ -58,10 +58,6 @@ type SkenarioRunResponse struct {
 	ResponseTimes  []ResponseTime `json:"response_times"`
 }
 
-type UniformConfig struct {
-	NumberOfRequests uint `json:"number_of_requests"`
-}
-
 type SkenarioRunRequest struct {
 	RunFor           time.Duration `json:"run_for"`
 	TrafficPattern   string        `json:"traffic_pattern"`
@@ -77,7 +73,7 @@ type SkenarioRunRequest struct {
 	TargetConcurrencyPercentage float64       `json:"target_concurrency_percentage"`
 	MaxScaleUpRate              float64       `json:"max_scale_up_rate"`
 
-	UniformConfig UniformConfig `json:"uniform_config,omitempty"`
+	UniformConfig trafficpatterns.UniformConfig `json:"uniform_config,omitempty"`
 }
 
 func RunHandler(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +97,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	var traffic trafficpatterns.Pattern
 	switch runReq.TrafficPattern {
 	case "golang_rand_uniform":
-		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.BufferStock(), 1000, startAt, runReq.RunFor)
+		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.BufferStock(), runReq.UniformConfig)
 	case "step":
 		traffic = trafficpatterns.NewStep(env, 10, time.Second, trafficSource, cluster.BufferStock())
 	case "ramp":
@@ -226,7 +222,7 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 	return model.ClusterConfig{
 		LaunchDelay:      srr.LaunchDelay,
 		TerminateDelay:   srr.TerminateDelay,
-		NumberOfRequests: srr.UniformConfig.NumberOfRequests,
+		NumberOfRequests: uint(srr.UniformConfig.NumberOfRequests),
 	}
 }
 

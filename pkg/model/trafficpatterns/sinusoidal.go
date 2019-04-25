@@ -30,7 +30,11 @@ func (s *sinusoidal) Generate() {
 		tsec := float64(t.Second())
 
 		rps := ampl*math.Sin((2.0*math.Pi*tsec)/perd) + ampl
-		uniRand := NewUniformRandom(s.env, s.source, s.buffer, int(math.Round(rps)), t, 1*time.Second)
+		uniRand := NewUniformRandom(s.env, s.source, s.buffer, UniformConfig{
+			NumberOfRequests: int(math.Round(rps)),
+			StartAt:          t,
+			RunFor:           time.Second,
+		})
 		uniRand.Generate()
 	}
 }

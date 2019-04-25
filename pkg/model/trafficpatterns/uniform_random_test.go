@@ -35,6 +35,7 @@ func TestUniformRandom(t *testing.T) {
 
 func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
+	var config UniformConfig
 	var envFake *fakes.FakeEnvironment
 	var trafficSource model.TrafficSource
 	var bufferStock model.RequestsBufferedStock
@@ -49,7 +50,13 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 		startAt = time.Unix(0, 1)
 		runFor = 1 * time.Second
 
-		subject = NewUniformRandom(envFake, trafficSource, bufferStock, 1000, startAt, runFor)
+		config = UniformConfig{
+			NumberOfRequests: 1000,
+			StartAt:          startAt,
+			RunFor:           runFor,
+		}
+
+		subject = NewUniformRandom(envFake, trafficSource, bufferStock, config)
 		subject.Generate()
 	})
 

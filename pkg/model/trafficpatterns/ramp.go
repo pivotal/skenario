@@ -41,14 +41,22 @@ func (r *ramp) Generate() {
 	startAt := r.env.CurrentMovementTime()
 
 	for t = startAt; nextRPS <= r.maxRPS; t = t.Add(1 * time.Second) {
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextRPS, t, 1*time.Second)
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, UniformConfig{
+			NumberOfRequests: nextRPS,
+			StartAt:          t,
+			RunFor:           time.Second,
+		})
 		uniRand.Generate()
 		nextRPS = nextRPS + r.deltaV
 	}
 
 	for ; nextRPS > 0; t = t.Add(1 * time.Second) {
 		nextRPS = nextRPS - r.deltaV
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextRPS, t, 1*time.Second)
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, UniformConfig{
+			NumberOfRequests: nextRPS,
+			StartAt:          t,
+			RunFor:           time.Second,
+		})
 		uniRand.Generate()
 	}
 }
