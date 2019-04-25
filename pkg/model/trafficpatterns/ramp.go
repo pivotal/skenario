@@ -31,6 +31,11 @@ type ramp struct {
 	maxRPS int
 }
 
+type RampConfig struct {
+	DeltaV int `json:"delta_v"`
+	MaxRPS int `json:"max_rps"`
+}
+
 func (*ramp) Name() string {
 	return "ramp"
 }
@@ -61,12 +66,12 @@ func (r *ramp) Generate() {
 	}
 }
 
-func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, deltaV int, maxRPS int) Pattern {
+func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, config RampConfig) Pattern {
 	return &ramp{
 		env:    env,
 		source: source,
 		buffer: buffer,
-		deltaV: deltaV,
-		maxRPS: maxRPS,
+		deltaV: config.DeltaV,
+		maxRPS: config.MaxRPS,
 	}
 }

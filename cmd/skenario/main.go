@@ -84,7 +84,10 @@ func main() {
 			RunFor:           *simDuration,
 		})
 	case "ramp":
-		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), *rampDelta, *rampMaxRPS)
+		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.RampConfig{
+			DeltaV: *rampDelta,
+			MaxRPS: *rampMaxRPS,
+		})
 	case "step":
 		traffic = trafficpatterns.NewStep(r.Env(), *stepRPS, *stepAfter, trafficSource, cluster.BufferStock())
 	case "sinusoidal":

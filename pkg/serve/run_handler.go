@@ -74,6 +74,7 @@ type SkenarioRunRequest struct {
 	MaxScaleUpRate              float64       `json:"max_scale_up_rate"`
 
 	UniformConfig trafficpatterns.UniformConfig `json:"uniform_config,omitempty"`
+	RampConfig    trafficpatterns.RampConfig    `json:"ramp_config,omitempty"`
 }
 
 func RunHandler(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +102,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	case "step":
 		traffic = trafficpatterns.NewStep(env, 10, time.Second, trafficSource, cluster.BufferStock())
 	case "ramp":
-		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), 1, 100)
+		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), runReq.RampConfig)
 	case "sinusoidal":
 		traffic = trafficpatterns.NewSinusoidal(env, 50, 60*time.Second, trafficSource, cluster.BufferStock())
 	}
