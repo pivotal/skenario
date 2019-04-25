@@ -75,6 +75,7 @@ type SkenarioRunRequest struct {
 
 	UniformConfig trafficpatterns.UniformConfig `json:"uniform_config,omitempty"`
 	RampConfig    trafficpatterns.RampConfig    `json:"ramp_config,omitempty"`
+	StepConfig    trafficpatterns.StepConfig    `json:"step_config,omitempty"`
 }
 
 func RunHandler(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +101,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	case "golang_rand_uniform":
 		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.BufferStock(), runReq.UniformConfig)
 	case "step":
-		traffic = trafficpatterns.NewStep(env, 10, time.Second, trafficSource, cluster.BufferStock())
+		traffic = trafficpatterns.NewStep(env, trafficSource, cluster.BufferStock(), runReq.StepConfig)
 	case "ramp":
 		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), runReq.RampConfig)
 	case "sinusoidal":
