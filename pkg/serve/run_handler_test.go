@@ -148,6 +148,56 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, uint(33), subject.NumberOfRequests)
 		})
 	})
+
+	describe("buildKpaConfig()", func() {
+		var srr *SkenarioRunRequest
+		var subject model.KnativeAutoscalerConfig
+
+		it.Before(func() {
+			srr = &SkenarioRunRequest{
+				TickInterval:                11 * time.Second,
+				StableWindow:                22 * time.Second,
+				PanicWindow:                 33 * time.Second,
+				ScaleToZeroGracePeriod:      44 * time.Second,
+				TargetConcurrencyDefault:    55,
+				TargetConcurrencyPercentage: 0.66,
+				MaxScaleUpRate:              77,
+				UniformConfig: UniformConfig{
+					NumberOfRequests: 88,
+				},
+			}
+
+			subject = buildKpaConfig(srr)
+		})
+
+		it("sets a tick interval", func() {
+			assert.Equal(t, 11*time.Second, subject.TickInterval)
+		})
+
+		it("sets a stable window", func() {
+			assert.Equal(t, 22*time.Second, subject.StableWindow)
+		})
+
+		it("sets a panic window", func() {
+			assert.Equal(t, 33*time.Second, subject.PanicWindow)
+		})
+
+		it("sets a scale to zero grace period", func() {
+			assert.Equal(t, 44*time.Second, subject.ScaleToZeroGracePeriod)
+		})
+
+		it("sets a target concurrency default", func() {
+			assert.Equal(t, 55.0, subject.TargetConcurrencyDefault)
+		})
+
+		it("sets a target concurrency percentage", func() {
+			assert.Equal(t, 0.66, subject.TargetConcurrencyPercentage)
+		})
+
+		it("sets a max scale up rate", func() {
+			assert.Equal(t, 77.0, subject.MaxScaleUpRate)
+		})
+	})
 }
 
 func trafficPatternBefore(t *testing.T, pattern string) *SkenarioRunResponse {

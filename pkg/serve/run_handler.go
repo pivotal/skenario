@@ -67,8 +67,15 @@ type SkenarioRunRequest struct {
 	TrafficPattern   string        `json:"traffic_pattern"`
 	InMemoryDatabase bool          `json:"in_memory_database,omitempty"`
 
-	LaunchDelay    time.Duration `json:"launch_delay"`
-	TerminateDelay time.Duration `json:"terminate_delay"`
+	LaunchDelay                 time.Duration `json:"launch_delay"`
+	TerminateDelay              time.Duration `json:"terminate_delay"`
+	TickInterval                time.Duration `json:"tick_interval"`
+	StableWindow                time.Duration `json:"stable_window"`
+	PanicWindow                 time.Duration `json:"panic_window"`
+	ScaleToZeroGracePeriod      time.Duration `json:"scale_to_zero_grace_period"`
+	TargetConcurrencyDefault    float64       `json:"target_concurrency_default"`
+	TargetConcurrencyPercentage float64       `json:"target_concurrency_percentage"`
+	MaxScaleUpRate              float64       `json:"max_scale_up_rate"`
 
 	UniformConfig UniformConfig `json:"uniform_config,omitempty"`
 }
@@ -85,16 +92,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
 
 	clusterConf := buildClusterConfig(runReq)
-
-	kpaConf := model.KnativeAutoscalerConfig{
-		TickInterval:                2 * time.Second,
-		StableWindow:                60 * time.Second,
-		PanicWindow:                 6 * time.Second,
-		ScaleToZeroGracePeriod:      30 * time.Second,
-		TargetConcurrencyDefault:    1,
-		TargetConcurrencyPercentage: 0.5,
-		MaxScaleUpRate:              100,
-	}
+	kpaConf := buildKpaConfig(runReq)
 
 	cluster := model.NewCluster(env, clusterConf)
 	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
@@ -229,5 +227,17 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 		LaunchDelay:      srr.LaunchDelay,
 		TerminateDelay:   srr.TerminateDelay,
 		NumberOfRequests: srr.UniformConfig.NumberOfRequests,
+	}
+}
+
+func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
+	return model.KnativeAutoscalerConfig{
+		TickInterval:                srr.TickInterval,
+		StableWindow:                srr.StableWindow,
+		PanicWindow:                 srr.PanicWindow,
+		ScaleToZeroGracePeriod:      srr.ScaleToZeroGracePeriod,
+		TargetConcurrencyDefault:    srr.TargetConcurrencyDefault,
+		TargetConcurrencyPercentage: srr.TargetConcurrencyPercentage,
+		MaxScaleUpRate:              srr.MaxScaleUpRate,
 	}
 }
