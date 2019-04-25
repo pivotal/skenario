@@ -30,114 +30,115 @@
 
 <div id="view">Loading...</div>
 <script>
-    chart = {
-        $schema: "https://vega.github.io/schema/vega-lite/v3.json",
-        datasets: [],
-        vconcat: [
-            {
-                height: 800,
-                width: 1600,
-                layer: [
-                    {
-                        data: {name: "total_lines"},
-                        transform: [
-                            {
-                                fold: [
-                                    "requests_buffered",
-                                    "requests_processing"
+    function chart(scaleDomain, datasets) {
+        return {
+            $schema: "https://vega.github.io/schema/vega-lite/v3.json",
+            datasets: datasets,
+            vconcat: [
+                {
+                    height: 800,
+                    width: 1600,
+                    layer: [
+                        {
+                            data: {name: "total_lines"},
+                            transform: [
+                                {
+                                    fold: [
+                                        "requests_buffered",
+                                        "requests_processing"
+                                    ]
+                                },
+                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
+                            ],
+                            mark: {
+                                type: "line"
+                            },
+                            encoding: {
+                                color: {
+                                    field: "key",
+                                    type: "nominal"
+                                },
+                                x: {
+                                    field: "occurs_at_sec",
+                                    type: "quantitative",
+                                    title: "Occurs At (s)",
+                                    scale: {domain: scaleDomain}
+                                },
+                                y: {
+                                    field: "value",
+                                    title: "Requests",
+                                    type: "quantitative",
+                                },
+                                tooltip: [
+                                    {field: "requests_buffered", type: "quantitative"},
+                                    {field: "requests_processing", type: "quantitative"},
+                                    {field: "replicas_launching", type: "quantitative"},
+                                    {field: "replicas_active", type: "quantitative"}
                                 ]
-                            },
-                            {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
-                        ],
-                        mark: {
-                            type: "line"
-                        },
-                        encoding: {
-                            color: {
-                                field: "key",
-                                type: "nominal"
-                            },
-                            x: {
-                                field: "occurs_at_sec",
-                                type: "quantitative",
-                                title: "Occurs At (s)",
-                                scale: {domain: [0, 300]}
-                            },
-                            y: {
-                                field: "value",
-                                title: "Requests",
-                                type: "quantitative",
-                            },
-                            tooltip: [
-                                {field: "requests_buffered", type: "quantitative"},
-                                {field: "requests_processing", type: "quantitative"},
-                                {field: "replicas_launching", type: "quantitative"},
-                                {field: "replicas_active", type: "quantitative"}
-                            ]
-                        }
-                    },
-                    {
-                        data: {name: "total_lines"},
-                        transform: [
-                            {
-                                fold: [
-                                    "replicas_desired",
-                                    "replicas_launching",
-                                    "replicas_active"
-                                ]
-                            },
-                            {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
-                        ],
-                        mark: {
-                            type: "line"
-                        },
-                        encoding: {
-                            color: {
-                                field: "key",
-                                type: "nominal"
-                            },
-                            x: {
-                                field: "occurs_at_sec",
-                                type: "quantitative",
-                                title: "Occurs At (s)",
-                                scale: {domain: [0, 300]}
-                            },
-                            y: {
-                                field: "value",
-                                title: "Replicas",
-                                type: "quantitative"
                             }
+                        },
+                        {
+                            data: {name: "total_lines"},
+                            transform: [
+                                {
+                                    fold: [
+                                        "replicas_desired",
+                                        "replicas_launching",
+                                        "replicas_active"
+                                    ]
+                                },
+                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
+                            ],
+                            mark: {
+                                type: "line"
+                            },
+                            encoding: {
+                                color: {
+                                    field: "key",
+                                    type: "nominal"
+                                },
+                                x: {
+                                    field: "occurs_at_sec",
+                                    type: "quantitative",
+                                    title: "Occurs At (s)",
+                                    scale: {domain: scaleDomain}
+                                },
+                                y: {
+                                    field: "value",
+                                    title: "Replicas",
+                                    type: "quantitative"
+                                }
+                            }
+                        },
+                    ],
+                    resolve: {scale: {y: "independent"}}
+                },
+                {
+                    height: 200,
+                    width: 1600,
+                    data: {name: "response_times"},
+                    transform: [
+                        {calculate: "datum.completed_at / 1000000000", as: "completed_at_sec"},
+                        {calculate: "datum.response_time / 1000000", as: "response_time_ms"}
+                    ],
+                    mark: {type: "line"},
+                    encoding: {
+                        x: {
+                            field: "completed_at_sec",
+                            type: "quantitative",
+                            title: "Completed At (s)",
+                            scale: {domain: scaleDomain}
+                        },
+                        y: {
+                            field: "response_time_ms",
+                            type: "quantitative",
+                            title: "Response Time (ms)"
                         }
-                    },
-                ],
-                resolve: {scale: {y: "independent"}}
-            },
-            {
-                height: 200,
-                width: 1600,
-                data: {name: "response_times"},
-                transform: [
-                    {calculate: "datum.completed_at / 1000000000", as: "completed_at_sec"},
-                    {calculate: "datum.response_time / 1000000", as: "response_time_ms"}
-                ],
-                mark: {type: "line"},
-                encoding: {
-                    x: {
-                        field: "completed_at_sec",
-                        type: "quantitative",
-                        title: "Completed At (s)",
-                        scale: {domain: [0, 300]}
-                    },
-                    y: {
-                        field: "response_time_ms",
-                        type: "quantitative",
-                        title: "Response Time (ms)"
                     }
                 }
-            }
-        ],
-
-    };
+            ],
+        };
+    }
 
     let second = 1000000000;
     let fetchOpts = {
@@ -146,7 +147,7 @@
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            run_for: 300 * second,
+            run_for: 180 * second,
             traffic_pattern: "ramp",
             launch_delay: 5 * second,
             terminate_delay: second,
@@ -159,21 +160,24 @@
             max_scale_up_rate: 100,
             ramp_config: {
                 delta_v: 1,
-                max_rps: 20,
+                max_rps: 50,
             }
         })
     };
 
     fetch("http://localhost:3000/run", fetchOpts).then((response) => {
         return response.json().then((responseJson) => {
-            chart.datasets = {
+            let datasets = {
                 total_lines: responseJson["total_lines"],
                 response_times: responseJson["response_times"]
             };
 
+            let ranForSec = responseJson["ran_for"] / second;
+            let scaleDomain = [0, ranForSec];
+
             vegaEmbed(
                 '#view',
-                chart,
+                chart(scaleDomain, datasets),
                 {theme: 'fivethirtyeight'}
             );
         })
