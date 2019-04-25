@@ -58,10 +58,19 @@ type SkenarioRunResponse struct {
 	ResponseTimes  []ResponseTime `json:"response_times"`
 }
 
+type UniformConfig struct {
+	NumberOfRequests uint `json:"number_of_requests"`
+}
+
 type SkenarioRunRequest struct {
 	RunFor           time.Duration `json:"run_for"`
 	TrafficPattern   string        `json:"traffic_pattern"`
 	InMemoryDatabase bool          `json:"in_memory_database,omitempty"`
+
+	LaunchDelay    time.Duration `json:"launch_delay"`
+	TerminateDelay time.Duration `json:"terminate_delay"`
+
+	UniformConfig UniformConfig `json:"uniform_config,omitempty"`
 }
 
 func RunHandler(w http.ResponseWriter, r *http.Request) {
@@ -75,11 +84,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
 
-	clusterConf := model.ClusterConfig{
-		LaunchDelay:      5 * time.Second,
-		TerminateDelay:   1 * time.Second,
-		NumberOfRequests: 1000,
-	}
+	clusterConf := buildClusterConfig(runReq)
 
 	kpaConf := model.KnativeAutoscalerConfig{
 		TickInterval:                2 * time.Second,
@@ -216,5 +221,13 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+}
+
+func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
+	return model.ClusterConfig{
+		LaunchDelay:      srr.LaunchDelay,
+		TerminateDelay:   srr.TerminateDelay,
+		NumberOfRequests: srr.UniformConfig.NumberOfRequests,
 	}
 }

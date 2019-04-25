@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"skenario/pkg/model"
 	"testing"
 	"time"
 )
@@ -40,7 +41,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 	var mux *http.ServeMux
 	var skenarioRunRequest *SkenarioRunRequest
 
-	describe("RunHandler", func() {
+	describe("RunHandler()", func() {
 		describe("common behaviour", func() {
 			it.Before(func() {
 				skenarioRunRequest = &SkenarioRunRequest{
@@ -116,6 +117,35 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 					})
 				})
 			}
+		})
+	})
+
+	describe("buildClusterConfig()", func() {
+		var srr *SkenarioRunRequest
+		var subject model.ClusterConfig
+
+		it.Before(func() {
+			srr = &SkenarioRunRequest{
+				LaunchDelay:    11 * time.Second,
+				TerminateDelay: 22 * time.Second,
+				UniformConfig: UniformConfig{
+					NumberOfRequests: 33,
+				},
+			}
+
+			subject = buildClusterConfig(srr)
+		})
+
+		it("sets a launch delay", func() {
+			assert.Equal(t, 11*time.Second, subject.LaunchDelay)
+		})
+
+		it("sets a terminate delay", func() {
+			assert.Equal(t, 22*time.Second, subject.TerminateDelay)
+		})
+
+		it("sets a number of requests", func() {
+			assert.Equal(t, uint(33), subject.NumberOfRequests)
 		})
 	})
 }

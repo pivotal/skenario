@@ -140,7 +140,21 @@
 
     };
 
-    fetch("http://localhost:3000/run").then((response) => {
+    let second = 1000000000;
+    let fetchOpts = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            run_for: 300 * second,
+            traffic_pattern: "ramp",
+            launch_delay: 5 * second,
+            terminate_delay: second
+        })
+    };
+
+    fetch("http://localhost:3000/run", fetchOpts).then((response) => {
         return response.json().then((responseJson) => {
             chart.datasets = {
                 total_lines: responseJson["total_lines"],
