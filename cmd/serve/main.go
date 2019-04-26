@@ -17,23 +17,12 @@
 package main
 
 import (
-	"log"
-	"net/http"
 	_ "net/http/pprof"
-
-	"github.com/NYTimes/gziphandler"
 
 	"skenario/pkg/serve"
 )
 
 func main() {
-	index := http.FileServer(http.Dir("pkg/serve"))
-	http.Handle("/", index)
-
-	runHandler := http.HandlerFunc(serve.RunHandler)
-	gzipRunHandler := gziphandler.GzipHandler(runHandler)
-	http.Handle("/run", gzipRunHandler)
-
-	log.Println("Listening ...")
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	server := serve.SkenarioServer{}
+	server.Serve()
 }
