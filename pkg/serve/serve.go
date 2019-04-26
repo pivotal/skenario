@@ -1,9 +1,11 @@
 package serve
 
 import (
+	"context"
 	"github.com/NYTimes/gziphandler"
 	"log"
 	"net/http"
+	"time"
 )
 
 type SkenarioServer struct {
@@ -26,7 +28,20 @@ func (ss *SkenarioServer) Serve() {
 		Handler: ss.mux,
 	}
 
-	log.Println("Listening ...")
-	log.Fatal(ss.srv.ListenAndServe())
+	go func() {
+		log.Println("Listening ...")
+		log.Fatal(ss.srv.ListenAndServe())
+	}()
 }
 
+func (ss *SkenarioServer) Shutdown() {
+	log.Println("Shutting down ...")
+
+	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+	err := ss.srv.Shutdown(ctx)
+	if err != nil {
+		log.Fatalf("shutdown error: %s", err.Error())
+	}
+
+	log.Println("Done.")
+}

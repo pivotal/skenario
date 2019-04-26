@@ -18,11 +18,19 @@ package main
 
 import (
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
 
 	"skenario/pkg/serve"
 )
 
 func main() {
+	sighup := make(chan os.Signal, 1)
+	signal.Notify(sighup, os.Interrupt)
+
 	server := serve.SkenarioServer{}
 	server.Serve()
+
+	<-sighup
+	server.Shutdown()
 }
