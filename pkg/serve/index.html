@@ -30,10 +30,40 @@
 
 <form>
     <label for="runFor">Run For (seconds)</label>
-    <input type="number" id="runFor"/>
+    <input type="number" id="runFor" value="180"/>
+
+    <label for="launchDelay">Replica Launch Delay (seconds)</label>
+    <input type="number" id="launchDelay" value="5"/>
+
+    <label for="terminateDelay">Replica Terminate Delay (seconds)</label>
+    <input type="number" id="terminateDelay" value="1"/>
+
+    <label for="tickInterval">Tick Interval (seconds)</label>
+    <input type="number" id="tickInterval" value="2"/>
+
+    <label for="stableWindow">Stable Window (seconds)</label>
+    <input type="number" id="stableWindow" value="60"/>
+
+    <label for="panicWindow">Panic Window (seconds)</label>
+    <input type="number" id="panicWindow" value="6"/>
+
+    <label for="scaleToZeroGracePeriod">Scale to Zero Grace Period (seconds)</label>
+    <input type="number" id="scaleToZeroGracePeriod" value="30"/>
+
+    <label for="targetConcurrencyDefault">Target Concurrency Default</label>
+    <input type="number" id="targetConcurrencyDefault" value="1.0"/>
+
+    <label for="targetConcurrencyPercentage">Target Concurrency Percentage</label>
+    <input type="number" id="targetConcurrencyPercentage" value="0.5" step="0.01"/>
+
+    <label for="maxScaleUpRate">Max Scale Up Rate</label>
+    <input type="number" id="maxScaleUpRate" value="100.0"/>
+
+    <label for="rampConfigDeltaV">Ramp Delta V</label>
+    <input type="number" id="rampConfigDeltaV" value="1"/>
 
     <label for="rampConfigMaxRPS">Ramp Max RPS</label>
-    <input type="number" id="rampConfigMaxRPS"/>
+    <input type="number" id="rampConfigMaxRPS" value="50"/>
 
     <button type="button" onclick="doRun(event); return false">Execute simulation</button>
 </form>
@@ -159,23 +189,35 @@
         document.getElementById("loading").innerText = "Loading...";
 
         let runFor = parseInt(document.querySelector("input[id='runFor'").value);
+        let launchDelay = parseInt(document.querySelector("input[id='launchDelay']").value);
+        let terminateDelay = parseInt(document.querySelector("input[id='terminateDelay']").value);
+        let tickInterval = parseInt(document.querySelector("input[id='tickInterval']").value);
+        let stableWindow = parseInt(document.querySelector("input[id='stableWindow']").value);
+        let panicWindow = parseInt(document.querySelector("input[id='panicWindow']").value);
+        let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
+        let targetConcurrencyDefault = parseFloat(document.querySelector("input[id='targetConcurrencyDefault']").value);
+        let targetConcurrencyPercentage = parseFloat(document.querySelector("input[id='targetConcurrencyPercentage']").value);
+        let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
+
         let rampConfigMaxRPS = parseInt(document.querySelector("input[id='rampConfigMaxRPS']").value);
+        let rampConfigDeltaV = parseInt(document.querySelector("input[id='rampConfigDeltaV']").value);
 
         let second = 1000000000;
         let skenarioRunRequest = {
             run_for: runFor * second,
+            launch_delay: launchDelay * second,
+            terminate_delay: terminateDelay * second,
+            tick_interval: tickInterval * second,
+            stable_window: stableWindow * second,
+            panic_window: panicWindow * second,
+            scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
+            target_concurrency_default: targetConcurrencyDefault,
+            target_concurrency_percentage: targetConcurrencyPercentage,
+            max_scale_up_rate: maxScaleUpRate,
+
             traffic_pattern: "ramp",
-            launch_delay: 5 * second,
-            terminate_delay: second,
-            tick_interval: 2 * second,
-            stable_window: 60 * second,
-            panic_window: 6 * second,
-            scale_to_zero_grace_period: 30 * second,
-            target_concurrency_default: 1,
-            target_concurrency_percentage: 0.5,
-            max_scale_up_rate: 100,
             ramp_config: {
-                delta_v: 1,
+                delta_v: rampConfigDeltaV,
                 max_rps: rampConfigMaxRPS,
             }
         };

@@ -68,9 +68,27 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 func setParams(t *testing.T, page *agouti.Page) {
 	var err error
 
-	runFor := page.FindByID("runFor")
-	require.NotNil(t, runFor)
+	var settings = map[string]string{
+		"runFor":                      "10",
+		"launchDelay":                 "5",
+		"terminateDelay":              "1",
+		"tickInterval":                "2",
+		"stableWindow":                "60",
+		"panicWindow":                 "6",
+		"scaleToZeroGracePeriod":      "30",
+		"targetConcurrencyDefault":    "1",
+		"targetConcurrencyPercentage": "0.5",
+		"maxScaleUpRate":              "100",
 
-	err = runFor.Fill("10")
-	require.NoError(t, err)
+		"rampConfigMaxRPS": "10",
+		"rampConfigDeltaV": "1",
+	}
+
+	for name, value := range settings {
+		field := page.FindByID(name)
+		require.NotNil(t, field)
+		err = field.Fill(value)
+		require.NoError(t, err)
+	}
+
 }
