@@ -78,13 +78,26 @@ func main() {
 	var traffic trafficpatterns.Pattern
 	switch *trafficPattern {
 	case "uniform":
-		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), int(*numberOfRequests), startAt, *simDuration)
+		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.UniformConfig{
+			NumberOfRequests: int(*numberOfRequests),
+			StartAt:          startAt,
+			RunFor:           *simDuration,
+		})
 	case "ramp":
-		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), *rampDelta, *rampMaxRPS)
+		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.RampConfig{
+			DeltaV: *rampDelta,
+			MaxRPS: *rampMaxRPS,
+		})
 	case "step":
-		traffic = trafficpatterns.NewStepPattern(r.Env(), *stepRPS, *stepAfter, trafficSource, cluster.BufferStock())
+		traffic = trafficpatterns.NewStep(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.StepConfig{
+			RPS:       *stepRPS,
+			StepAfter: *stepAfter,
+		})
 	case "sinusoidal":
-		traffic = trafficpatterns.NewSinusoidal(r.Env(), *sineAmplitude, *sinePeriod, trafficSource, cluster.BufferStock())
+		traffic = trafficpatterns.NewSinusoidal(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.SinusoidalConfig{
+			Amplitude: *sineAmplitude,
+			Period:    *sinePeriod,
+		})
 	}
 	traffic.Generate()
 

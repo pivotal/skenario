@@ -31,6 +31,11 @@ type ramp struct {
 	maxRPS int
 }
 
+type RampConfig struct {
+	DeltaV int `json:"delta_v"`
+	MaxRPS int `json:"max_rps"`
+}
+
 func (*ramp) Name() string {
 	return "ramp"
 }
@@ -41,24 +46,32 @@ func (r *ramp) Generate() {
 	startAt := r.env.CurrentMovementTime()
 
 	for t = startAt; nextRPS <= r.maxRPS; t = t.Add(1 * time.Second) {
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextRPS, t, 1*time.Second)
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, UniformConfig{
+			NumberOfRequests: nextRPS,
+			StartAt:          t,
+			RunFor:           time.Second,
+		})
 		uniRand.Generate()
 		nextRPS = nextRPS + r.deltaV
 	}
 
 	for ; nextRPS > 0; t = t.Add(1 * time.Second) {
 		nextRPS = nextRPS - r.deltaV
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, nextRPS, t, 1*time.Second)
+		uniRand := NewUniformRandom(r.env, r.source, r.buffer, UniformConfig{
+			NumberOfRequests: nextRPS,
+			StartAt:          t,
+			RunFor:           time.Second,
+		})
 		uniRand.Generate()
 	}
 }
 
-func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, deltaV int, maxRPS int) Pattern {
+func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, config RampConfig) Pattern {
 	return &ramp{
 		env:    env,
 		source: source,
 		buffer: buffer,
-		deltaV: deltaV,
-		maxRPS: maxRPS,
+		deltaV: config.DeltaV,
+		maxRPS: config.MaxRPS,
 	}
 }

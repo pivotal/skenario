@@ -35,6 +35,7 @@ func TestRamp(t *testing.T) {
 
 func testRamp(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
+	var config RampConfig
 	var envFake *fakes.FakeEnvironment
 	var trafficSource model.TrafficSource
 	var bufferStock model.RequestsBufferedStock
@@ -45,7 +46,11 @@ func testRamp(t *testing.T, describe spec.G, it spec.S) {
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
 
-		subject = NewRamp(envFake, trafficSource, bufferStock, 1, 3)
+		config = RampConfig{
+			DeltaV: 1,
+			MaxRPS: 3,
+		}
+		subject = NewRamp(envFake, trafficSource, bufferStock, config)
 		subject.Generate()
 	})
 

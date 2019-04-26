@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!--
+  Copyright (C) 2019-Present Pivotal Software, Inc. All rights reserved.
+
+  This program and the accompanying materials are made available under the terms
+  of the Apache License, Version 2.0 (the "License”); you may not use this file
+  except in compliance with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software distributed
+  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+  CONDITIONS OF ANY KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations under the License.
+-->
+
+<head>
+    <meta charset="UTF-8">
+    <title>Skenario</title>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+</head>
+<body>
+
+<div class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Skenario</h1>
+        </div>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column is-one-fifth">
+        <form>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="runFor">Run For (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="runFor" value="180"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="launchDelay">Replica Launch Delay (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="launchDelay" value="5"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="terminateDelay">Replica Terminate Delay (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="terminateDelay" value="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="tickInterval">Tick Interval (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="tickInterval" value="2"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="stableWindow">Stable Window (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="stableWindow" value="60"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="panicWindow">Panic Window (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="panicWindow" value="6"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="scaleToZeroGracePeriod">Scale to Zero Grace Period (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="scaleToZeroGracePeriod" value="30"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="targetConcurrencyDefault">Target Concurrency Default</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="targetConcurrencyDefault" value="1.0"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="targetConcurrencyPercentage">Target Concurrency Percentage</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="targetConcurrencyPercentage" value="0.5" step="0
+                    .01"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="maxScaleUpRate">Max Scale Up Rate</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="maxScaleUpRate" value="100.0"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="rampConfigDeltaV">Ramp Delta V</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="rampConfigDeltaV" value="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="rampConfigMaxRPS">Ramp Max RPS</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="rampConfigMaxRPS" value="50"/>
+                </div>
+            </div>
+
+            <button class="button is-primary is-fullwidth" type="button" onclick="doRun(event); return false">Execute
+                simulation
+            </button>
+        </form>
+    </div>
+    <div id="view" class="column" style="overflow: auto">
+        <p id="loading"></p>
+    </div>
+</div>
+
+<script>
+    function chart(scaleDomain, datasets) {
+        return {
+            $schema: "https://vega.github.io/schema/vega-lite/v3.json",
+            datasets: datasets,
+            vconcat: [
+                {
+                    height: 800,
+                    width: 1600,
+                    layer: [
+                        {
+                            data: {name: "total_lines"},
+                            transform: [
+                                {
+                                    fold: [
+                                        "requests_buffered",
+                                        "requests_processing"
+                                    ]
+                                },
+                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
+                            ],
+                            mark: {
+                                type: "line"
+                            },
+                            encoding: {
+                                color: {
+                                    field: "key",
+                                    type: "nominal"
+                                },
+                                x: {
+                                    field: "occurs_at_sec",
+                                    type: "quantitative",
+                                    title: "Occurs At (s)",
+                                    scale: {domain: scaleDomain}
+                                },
+                                y: {
+                                    field: "value",
+                                    title: "Requests",
+                                    type: "quantitative",
+                                },
+                                tooltip: [
+                                    {field: "requests_buffered", type: "quantitative"},
+                                    {field: "requests_processing", type: "quantitative"},
+                                    {field: "replicas_launching", type: "quantitative"},
+                                    {field: "replicas_active", type: "quantitative"}
+                                ]
+                            }
+                        },
+                        {
+                            data: {name: "total_lines"},
+                            transform: [
+                                {
+                                    fold: [
+                                        "replicas_desired",
+                                        "replicas_launching",
+                                        "replicas_active"
+                                    ]
+                                },
+                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
+                            ],
+                            mark: {
+                                type: "line"
+                            },
+                            encoding: {
+                                color: {
+                                    field: "key",
+                                    type: "nominal"
+                                },
+                                x: {
+                                    field: "occurs_at_sec",
+                                    type: "quantitative",
+                                    title: "Occurs At (s)",
+                                    scale: {domain: scaleDomain}
+                                },
+                                y: {
+                                    field: "value",
+                                    title: "Replicas",
+                                    type: "quantitative"
+                                }
+                            }
+                        },
+                    ],
+                    resolve: {scale: {y: "independent"}}
+                },
+                {
+                    height: 200,
+                    width: 1600,
+                    data: {name: "response_times"},
+                    transform: [
+                        {calculate: "datum.completed_at / 1000000000", as: "completed_at_sec"},
+                        {calculate: "datum.response_time / 1000000", as: "response_time_ms"}
+                    ],
+                    mark: {type: "line"},
+                    encoding: {
+                        x: {
+                            field: "completed_at_sec",
+                            type: "quantitative",
+                            title: "Completed At (s)",
+                            scale: {domain: scaleDomain}
+                        },
+                        y: {
+                            field: "response_time_ms",
+                            type: "quantitative",
+                            title: "Response Time (ms)"
+                        }
+                    }
+                }
+            ],
+        };
+    }
+
+    function doRun(event) {
+        event.preventDefault();
+
+        document.getElementById("loading").innerText = "Loading...";
+
+        let runFor = parseInt(document.querySelector("input[id='runFor'").value);
+        let launchDelay = parseInt(document.querySelector("input[id='launchDelay']").value);
+        let terminateDelay = parseInt(document.querySelector("input[id='terminateDelay']").value);
+        let tickInterval = parseInt(document.querySelector("input[id='tickInterval']").value);
+        let stableWindow = parseInt(document.querySelector("input[id='stableWindow']").value);
+        let panicWindow = parseInt(document.querySelector("input[id='panicWindow']").value);
+        let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
+        let targetConcurrencyDefault = parseFloat(document.querySelector("input[id='targetConcurrencyDefault']").value);
+        let targetConcurrencyPercentage = parseFloat(document.querySelector("input[id='targetConcurrencyPercentage']").value);
+        let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
+
+        let rampConfigMaxRPS = parseInt(document.querySelector("input[id='rampConfigMaxRPS']").value);
+        let rampConfigDeltaV = parseInt(document.querySelector("input[id='rampConfigDeltaV']").value);
+
+        let second = 1000000000;
+        let skenarioRunRequest = {
+            run_for: runFor * second,
+            launch_delay: launchDelay * second,
+            terminate_delay: terminateDelay * second,
+            tick_interval: tickInterval * second,
+            stable_window: stableWindow * second,
+            panic_window: panicWindow * second,
+            scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
+            target_concurrency_default: targetConcurrencyDefault,
+            target_concurrency_percentage: targetConcurrencyPercentage,
+            max_scale_up_rate: maxScaleUpRate,
+
+            traffic_pattern: "ramp",
+            ramp_config: {
+                delta_v: rampConfigDeltaV,
+                max_rps: rampConfigMaxRPS,
+            }
+        };
+        let currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.get("inmemory")) {
+            skenarioRunRequest.in_memory_database = true
+        }
+
+        let fetchOpts = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(skenarioRunRequest)
+        };
+
+        fetch("http://localhost:3000/run", fetchOpts).then((response) => {
+            return response.json().then((responseJson) => {
+                let datasets = {
+                    total_lines: responseJson["total_lines"],
+                    response_times: responseJson["response_times"]
+                };
+
+                let ranForSec = responseJson["ran_for"] / second;
+                let scaleDomain = [0, ranForSec];
+
+                vegaEmbed(
+                    '#loading',
+                    chart(scaleDomain, datasets),
+                    {theme: 'fivethirtyeight'}
+                );
+            })
+        });
+    }
+</script>
+</body>
+</html>
