@@ -8,7 +8,25 @@ See [the Concepts document](docs/concepts.md) for a discussion of how Skenario i
 See "[Implement workload simulator for autoscaler development](https://github.com/knative/serving/issues/1686)"
 for background and notes. 
 
-## Usage
+## Web GUI Usage
+
+First, launch the server:
+
+```
+$ go run cmd/skenario/main.go
+```
+
+Then go to [https://localhost:3000](https://localhost:3000) to see the user interface.
+
+Adjust parameters using the form and click "Execute simulation" to submit the parameters to the server process.
+When the simulation is complete, a graph of the results will be displayed.
+
+As with the CLI, the server stores simulation results in `skenario.db`. To suppress this behaviour, add
+`?inmemory=true` to the URL.
+
+When you are finished, `Ctrl-C` to kill the running server.
+
+## CLI Usage
 
 Basically:
 
