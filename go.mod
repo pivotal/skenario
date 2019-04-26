@@ -7,6 +7,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/bvinc/go-sqlite-lite v0.5.0
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
+	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/go-containerregistry v0.0.0-20190222233527-d3e6a441f49f // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
@@ -22,17 +23,18 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
+	github.com/sclevine/agouti v3.0.0+incompatible
 	github.com/sclevine/spec v1.2.0
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.3.0
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190424203555-c05e17bb3b2d // indirect
+	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734 // indirect
 	golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6 // indirect
-	golang.org/x/sys v0.0.0-20190425145619-16072639606e // indirect
-	golang.org/x/text v0.3.1
-	golang.org/x/tools v0.0.0-20190425163242-31fd60d6bfdc // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
+	golang.org/x/sys v0.0.0-20190426135247-a129542de9ae // indirect
+	golang.org/x/text v0.3.2
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20190202010724-74b699b93c15

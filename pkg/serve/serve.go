@@ -2,29 +2,33 @@ package serve
 
 import (
 	"context"
-	"github.com/NYTimes/gziphandler"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/middleware"
 )
 
 type SkenarioServer struct {
-	srv *http.Server
-	mux *http.ServeMux
+	IndexRoot string
+	srv       *http.Server
+	mux       *http.ServeMux
 }
 
 func (ss *SkenarioServer) Serve() {
 	ss.mux = http.NewServeMux()
 
-	index := http.FileServer(http.Dir("pkg/serve"))
-	ss.mux.Handle("/", index)
+	indexHandler := http.FileServer(http.Dir(ss.IndexRoot))
+	indexHandler = middleware.NoCache(indexHandler)
+	indexHandler = middleware.DefaultCompress(indexHandler)
+	ss.mux.Handle("/", indexHandler)
 
 	runHandler := http.HandlerFunc(RunHandler)
-	gzipRunHandler := gziphandler.GzipHandler(runHandler)
+	gzipRunHandler := middleware.DefaultCompress(runHandler)
 	ss.mux.Handle("/run", gzipRunHandler)
 
 	ss.srv = &http.Server{
-		Addr:    ":3000",
+		Addr:    "0.0.0.0:3000",
 		Handler: ss.mux,
 	}
 

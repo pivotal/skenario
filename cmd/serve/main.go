@@ -28,7 +28,7 @@ func main() {
 	sighup := make(chan os.Signal, 1)
 	signal.Notify(sighup, os.Interrupt)
 
-	server := serve.SkenarioServer{}
+	server := serve.SkenarioServer{IndexRoot: "pkg/serve"}
 	server.Serve()
 
 	<-sighup
