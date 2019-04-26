@@ -22,54 +22,127 @@
     <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@3"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@4"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
 </head>
 <body>
 
-<h1>Skenario</h1>
+<div class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Skenario</h1>
+        </div>
+    </div>
+</div>
 
-<form>
-    <label for="runFor">Run For (seconds)</label>
-    <input type="number" id="runFor" value="180"/>
+<div class="columns">
+    <div class="column is-one-fifth">
+        <form>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="runFor">Run For (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="runFor" value="180"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="launchDelay">Replica Launch Delay (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="launchDelay" value="5"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="terminateDelay">Replica Terminate Delay (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="terminateDelay" value="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="tickInterval">Tick Interval (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="tickInterval" value="2"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="stableWindow">Stable Window (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="stableWindow" value="60"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="panicWindow">Panic Window (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="panicWindow" value="6"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="scaleToZeroGracePeriod">Scale to Zero Grace Period (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="scaleToZeroGracePeriod" value="30"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="targetConcurrencyDefault">Target Concurrency Default</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="targetConcurrencyDefault" value="1.0"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="targetConcurrencyPercentage">Target Concurrency Percentage</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="targetConcurrencyPercentage" value="0.5" step="0
+                    .01"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="maxScaleUpRate">Max Scale Up Rate</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="maxScaleUpRate" value="100.0"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="rampConfigDeltaV">Ramp Delta V</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="rampConfigDeltaV" value="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="rampConfigMaxRPS">Ramp Max RPS</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="rampConfigMaxRPS" value="50"/>
+                </div>
+            </div>
 
-    <label for="launchDelay">Replica Launch Delay (seconds)</label>
-    <input type="number" id="launchDelay" value="5"/>
-
-    <label for="terminateDelay">Replica Terminate Delay (seconds)</label>
-    <input type="number" id="terminateDelay" value="1"/>
-
-    <label for="tickInterval">Tick Interval (seconds)</label>
-    <input type="number" id="tickInterval" value="2"/>
-
-    <label for="stableWindow">Stable Window (seconds)</label>
-    <input type="number" id="stableWindow" value="60"/>
-
-    <label for="panicWindow">Panic Window (seconds)</label>
-    <input type="number" id="panicWindow" value="6"/>
-
-    <label for="scaleToZeroGracePeriod">Scale to Zero Grace Period (seconds)</label>
-    <input type="number" id="scaleToZeroGracePeriod" value="30"/>
-
-    <label for="targetConcurrencyDefault">Target Concurrency Default</label>
-    <input type="number" id="targetConcurrencyDefault" value="1.0"/>
-
-    <label for="targetConcurrencyPercentage">Target Concurrency Percentage</label>
-    <input type="number" id="targetConcurrencyPercentage" value="0.5" step="0.01"/>
-
-    <label for="maxScaleUpRate">Max Scale Up Rate</label>
-    <input type="number" id="maxScaleUpRate" value="100.0"/>
-
-    <label for="rampConfigDeltaV">Ramp Delta V</label>
-    <input type="number" id="rampConfigDeltaV" value="1"/>
-
-    <label for="rampConfigMaxRPS">Ramp Max RPS</label>
-    <input type="number" id="rampConfigMaxRPS" value="50"/>
-
-    <button type="button" onclick="doRun(event); return false">Execute simulation</button>
-</form>
-
-<div id="view">
-    <p id="loading"></p>
+            <button class="button is-primary is-fullwidth" type="button" onclick="doRun(event); return false">Execute
+                simulation
+            </button>
+        </form>
+    </div>
+    <div id="view" class="column" style="overflow: auto">
+        <p id="loading"></p>
+    </div>
 </div>
 
 <script>
