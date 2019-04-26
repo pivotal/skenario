@@ -27,15 +27,33 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 
 			page, err = driver.NewPage()
 			require.NoError(t, err)
+
+			err = page.Navigate("http://localhost:3000?inmemory=true")
+			assert.NoError(t, err)
 		})
 
 		it("is called Skenario", func() {
-			err = page.Navigate("http://localhost:3000?inmemory=true")
-			assert.NoError(t, err)
-
 			title, err := page.Title()
 			assert.NoError(t, err)
 			assert.Equal(t, "Skenario", title)
+		})
+
+		describe("executing simulations", func() {
+			it.Before(func() {
+				btn := page.FindByButton("Execute simulation")
+				require.NotNil(t, btn)
+
+				err = btn.Click()
+				require.NoError(t, err)
+			})
+
+			it("replaces the #loading <p> with a chart", func() {
+				loading := page.FindByID("loading")
+				assert.NotNil(t, loading)
+
+				vegaEmbed := page.FindByClass("vega-embed")
+				assert.NotNil(t, vegaEmbed)
+			})
 		})
 
 		it.After(func() {
@@ -43,5 +61,4 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 			assert.NoError(t, err)
 		})
 	})
-
 }

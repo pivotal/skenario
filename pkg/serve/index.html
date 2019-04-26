@@ -154,7 +154,7 @@
 
         let second = 1000000000;
         let skenarioRunRequest = {
-            run_for: 180 * second,
+            run_for: 10 * second,
             traffic_pattern: "ramp",
             launch_delay: 5 * second,
             terminate_delay: second,
@@ -167,7 +167,7 @@
             max_scale_up_rate: 100,
             ramp_config: {
                 delta_v: 1,
-                max_rps: 50,
+                max_rps: 5,
             }
         };
         let currentUrl = new URL(window.location.href);
