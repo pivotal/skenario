@@ -20,20 +20,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
-	"skenario/pkg/model"
-	"skenario/pkg/model/trafficpatterns"
 	"testing"
 	"time"
-)
 
-func TestRunHandler(t *testing.T) {
-	spec.Run(t, "RunHandler", testRunHandler, spec.Report(report.Terminal{}))
-}
+	"github.com/sclevine/spec"
+	"github.com/stretchr/testify/assert"
+
+	"skenario/pkg/model"
+	"skenario/pkg/model/trafficpatterns"
+)
 
 func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 	var req *http.Request
@@ -46,11 +43,11 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 		describe("common behaviour", func() {
 			it.Before(func() {
 				skenarioRunRequest = &SkenarioRunRequest{
+					InMemoryDatabase: true,
 					LaunchDelay:      time.Second,
 					TickInterval:     2 * time.Second,
 					RunFor:           20 * time.Second,
 					TrafficPattern:   "golang_rand_uniform",
-					InMemoryDatabase: true,
 					UniformConfig: trafficpatterns.UniformConfig{
 						NumberOfRequests: 10,
 						StartAt:          time.Unix(0, 0),
@@ -134,8 +131,9 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			srr = &SkenarioRunRequest{
-				LaunchDelay:    11 * time.Second,
-				TerminateDelay: 22 * time.Second,
+				InMemoryDatabase: true,
+				LaunchDelay:      11 * time.Second,
+				TerminateDelay:   22 * time.Second,
 				UniformConfig: trafficpatterns.UniformConfig{
 					NumberOfRequests: 33,
 				},
@@ -163,6 +161,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			srr = &SkenarioRunRequest{
+				InMemoryDatabase:            true,
 				LaunchDelay:                 time.Second,
 				TickInterval:                11 * time.Second,
 				StableWindow:                22 * time.Second,
@@ -211,9 +210,9 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 
 func trafficPatternBefore(t *testing.T, pattern string) *SkenarioRunResponse {
 	skenarioRunRequest := &SkenarioRunRequest{
+		InMemoryDatabase: true,
 		RunFor:           20 * time.Second,
 		TrafficPattern:   pattern,
-		InMemoryDatabase: true,
 		TickInterval:     2 * time.Second,
 		LaunchDelay:      2 * time.Second,
 	}
