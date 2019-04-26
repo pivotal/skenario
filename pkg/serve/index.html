@@ -29,6 +29,9 @@
 <h1>Skenario</h1>
 
 <form>
+    <input id="runFor" type="number" />
+    <label for="runFor">Run For (seconds)</label>
+
     <button type="button" onclick="doRun(event); return false">Execute simulation</button>
 </form>
 
@@ -152,9 +155,11 @@
 
         document.getElementById("loading").innerText = "Loading...";
 
+        let runFor = document.querySelector("input[id='runFor'").value;
+
         let second = 1000000000;
         let skenarioRunRequest = {
-            run_for: 10 * second,
+            run_for: runFor * second,
             traffic_pattern: "ramp",
             launch_delay: 5 * second,
             terminate_delay: second,

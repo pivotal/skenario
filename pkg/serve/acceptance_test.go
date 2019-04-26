@@ -40,6 +40,8 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("executing simulations", func() {
 			it.Before(func() {
+				setParams(t, page)
+
 				btn := page.FindByButton("Execute simulation")
 				require.NotNil(t, btn)
 
@@ -61,4 +63,14 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 			assert.NoError(t, err)
 		})
 	})
+}
+
+func setParams(t *testing.T, page *agouti.Page) {
+	var err error
+
+	runFor := page.FindByID("runFor")
+	require.NotNil(t, runFor)
+
+	err = runFor.Fill("10")
+	require.NoError(t, err)
 }
