@@ -29,8 +29,11 @@
 <h1>Skenario</h1>
 
 <form>
-    <input id="runFor" type="number" />
     <label for="runFor">Run For (seconds)</label>
+    <input type="number" id="runFor"/>
+
+    <label for="rampConfigMaxRPS">Ramp Max RPS</label>
+    <input type="number" id="rampConfigMaxRPS"/>
 
     <button type="button" onclick="doRun(event); return false">Execute simulation</button>
 </form>
@@ -155,7 +158,8 @@
 
         document.getElementById("loading").innerText = "Loading...";
 
-        let runFor = document.querySelector("input[id='runFor'").value;
+        let runFor = parseInt(document.querySelector("input[id='runFor'").value);
+        let rampConfigMaxRPS = parseInt(document.querySelector("input[id='rampConfigMaxRPS']").value);
 
         let second = 1000000000;
         let skenarioRunRequest = {
@@ -172,7 +176,7 @@
             max_scale_up_rate: 100,
             ramp_config: {
                 delta_v: 1,
-                max_rps: 5,
+                max_rps: rampConfigMaxRPS,
             }
         };
         let currentUrl = new URL(window.location.href);
