@@ -30,7 +30,7 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		it("is called Skenario", func() {
-			err = page.Navigate("http://localhost:3000")
+			err = page.Navigate("http://localhost:3000?inmemory=true")
 			assert.NoError(t, err)
 
 			title, err := page.Title()

@@ -153,28 +153,34 @@
         document.getElementById("loading").innerText = "Loading...";
 
         let second = 1000000000;
+        let skenarioRunRequest = {
+            run_for: 180 * second,
+            traffic_pattern: "ramp",
+            launch_delay: 5 * second,
+            terminate_delay: second,
+            tick_interval: 2 * second,
+            stable_window: 60 * second,
+            panic_window: 6 * second,
+            scale_to_zero_grace_period: 30 * second,
+            target_concurrency_default: 1,
+            target_concurrency_percentage: 0.5,
+            max_scale_up_rate: 100,
+            ramp_config: {
+                delta_v: 1,
+                max_rps: 50,
+            }
+        };
+        let currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.get("inmemory")) {
+            skenarioRunRequest.in_memory_database = true
+        }
+
         let fetchOpts = {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                run_for: 180 * second,
-                traffic_pattern: "ramp",
-                launch_delay: 5 * second,
-                terminate_delay: second,
-                tick_interval: 2 * second,
-                stable_window: 60 * second,
-                panic_window: 6 * second,
-                scale_to_zero_grace_period: 30 * second,
-                target_concurrency_default: 1,
-                target_concurrency_percentage: 0.5,
-                max_scale_up_rate: 100,
-                ramp_config: {
-                    delta_v: 1,
-                    max_rps: 50,
-                }
-            })
+            body: JSON.stringify(skenarioRunRequest)
         };
 
         fetch("http://localhost:3000/run", fetchOpts).then((response) => {
