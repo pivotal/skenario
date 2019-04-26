@@ -28,7 +28,14 @@
 
 <h1>Skenario</h1>
 
-<div id="view">Loading...</div>
+<form>
+    <button type="button" onclick="doRun(event); return false">Execute simulation</button>
+</form>
+
+<div id="view">
+    <p id="loading"></p>
+</div>
+
 <script>
     function chart(scaleDomain, datasets) {
         return {
@@ -140,49 +147,54 @@
         };
     }
 
-    let second = 1000000000;
-    let fetchOpts = {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            run_for: 180 * second,
-            traffic_pattern: "ramp",
-            launch_delay: 5 * second,
-            terminate_delay: second,
-            tick_interval: 2 * second,
-            stable_window: 60 * second,
-            panic_window: 6 * second,
-            scale_to_zero_grace_period: 30 * second,
-            target_concurrency_default: 1,
-            target_concurrency_percentage: 0.5,
-            max_scale_up_rate: 100,
-            ramp_config: {
-                delta_v: 1,
-                max_rps: 50,
-            }
-        })
-    };
+    function doRun(event) {
+        event.preventDefault();
 
-    fetch("http://localhost:3000/run", fetchOpts).then((response) => {
-        return response.json().then((responseJson) => {
-            let datasets = {
-                total_lines: responseJson["total_lines"],
-                response_times: responseJson["response_times"]
-            };
+        document.getElementById("loading").innerText = "Loading...";
 
-            let ranForSec = responseJson["ran_for"] / second;
-            let scaleDomain = [0, ranForSec];
+        let second = 1000000000;
+        let fetchOpts = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                run_for: 180 * second,
+                traffic_pattern: "ramp",
+                launch_delay: 5 * second,
+                terminate_delay: second,
+                tick_interval: 2 * second,
+                stable_window: 60 * second,
+                panic_window: 6 * second,
+                scale_to_zero_grace_period: 30 * second,
+                target_concurrency_default: 1,
+                target_concurrency_percentage: 0.5,
+                max_scale_up_rate: 100,
+                ramp_config: {
+                    delta_v: 1,
+                    max_rps: 50,
+                }
+            })
+        };
 
-            vegaEmbed(
-                '#view',
-                chart(scaleDomain, datasets),
-                {theme: 'fivethirtyeight'}
-            );
-        })
-    });
+        fetch("http://localhost:3000/run", fetchOpts).then((response) => {
+            return response.json().then((responseJson) => {
+                let datasets = {
+                    total_lines: responseJson["total_lines"],
+                    response_times: responseJson["response_times"]
+                };
 
+                let ranForSec = responseJson["ran_for"] / second;
+                let scaleDomain = [0, ranForSec];
+
+                vegaEmbed(
+                    '#view',
+                    chart(scaleDomain, datasets),
+                    {theme: 'fivethirtyeight'}
+                );
+            })
+        });
+    }
 </script>
 </body>
 </html>
