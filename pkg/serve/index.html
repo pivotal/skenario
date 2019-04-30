@@ -117,22 +117,91 @@
                     <input type="number" style="width: 5em" id="maxScaleUpRate" value="100.0" min="1" step="1"/>
                 </div>
             </div>
+
+            <hr>
+
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="rampConfigDeltaV">Ramp Delta V</label>
+                    <label for="select-traffic-pattern" class="label">Traffic Pattern</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="rampConfigDeltaV" value="1" min="1" step="1"/>
+                    <select name="select-traffic-pattern" id="select-traffic-pattern" class="select">
+                        <option value="">&mdash;</option>
+                        <option value="golang_rand_uniform">Uniform</option>
+                        <option value="step">Step</option>
+                        <option value="ramp">Ramp</option>
+                        <option value="sinusoidal">Sinusoidal</option>
+                    </select>
                 </div>
             </div>
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                    <label class="label" for="rampConfigMaxRPS">Ramp Max RPS</label>
+
+            <div id="traffic-settings">
+                <div id="settings-golang_rand_uniform" class="traffic-setting is-invisible">
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="uniformConfigNumberOfRequests">Number of Requests</label>
+                        </div>
+                        <div class="control">
+                            <input type="number" style="width: 5em" id="uniformConfigNumberOfRequests" value="100" min="1" step="1"/>
+                        </div>
+                    </div>
                 </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="rampConfigMaxRPS" value="50" min="1" step="1"/>
+                <div id="settings-step" class="traffic-setting is-invisible">
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="stepConfigStepAfter">Step After (seconds)</label>
+                        </div>
+                        <div class="control">
+                            <input type="number" style="width: 5em" id="stepConfigStepAfter" value="10" min="1" step="1"/>
+                        </div>
+                    </div>
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="stepConfigRPS">Step to RPS</label>
+                        </div>
+                        <div class="control">
+                            <input type="number" style="width: 5em" id="stepConfigRPS" value="10" min="1" step="1"/>
+                        </div>
+                    </div>
+                </div>
+                <div id="settings-ramp" class="traffic-setting is-invisible">
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="rampConfigDeltaV">Ramp Delta V</label>
+                        </div>
+                        <div class="control">
+                            <input type="number" style="width: 5em" id="rampConfigDeltaV" value="1" min="1" step="1"/>
+                        </div>
+                    </div>
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="rampConfigMaxRPS">Ramp Max RPS</label>
+                        </div>
+                        <div class="control">
+                            <input type="number" style="width: 5em" id="rampConfigMaxRPS" value="50" min="1" step="1"/>
+                        </div>
+                    </div>
+                </div>
+                <div id="settings-sinusoidal" class="traffic-setting is-invisible">
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="sinusoidalConfigAmplitude">Amplitude (RPS)</label>
+                        </div>
+                        <div class="control">
+                            <input type="number" style="width: 5em" id="sinusoidalConfigAmplitude" value="1" min="1" step="1"/>
+                        </div>
+                    </div>
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="sinusoidalConfigPeriod">Period (seconds)</label>
+                        </div>
+                        <div class="control">
+                            <input type="number" style="width: 5em" id="sinusoidalConfigPeriod" value="50" min="1" step="1"/>
+                        </div>
+                    </div>
                 </div>
             </div>
+
 
             <button class="button is-primary is-fullwidth" type="button" onclick="doRun(event); return false">Execute
                 simulation
@@ -145,6 +214,26 @@
 </div>
 
 <script>
+
+    const trafficSelector = document.getElementById("select-traffic-pattern");
+    trafficSelector.oninput = setTrafficPattern;
+
+    let trafficPattern = "";
+    function setTrafficPattern(inputEvt) {
+        let newPattern = inputEvt.target.value;
+
+        trafficPattern = newPattern;
+
+        let trafficSettings = Array.from(document.getElementsByClassName("traffic-setting"));
+        trafficSettings.forEach(function (ts) {
+            ts.hidden = true;
+        });
+
+        let settingsDiv = document.getElementById("settings-" + newPattern);
+        settingsDiv.hidden = false;
+        settingsDiv.className = "traffic-setting";
+    }
+
     function chart(scaleDomain, datasets) {
         return {
             $schema: "https://vega.github.io/schema/vega-lite/v3.json",
@@ -271,8 +360,6 @@
         let targetConcurrencyPercentage = parseFloat(document.querySelector("input[id='targetConcurrencyPercentage']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
 
-        let rampConfigMaxRPS = parseInt(document.querySelector("input[id='rampConfigMaxRPS']").value);
-        let rampConfigDeltaV = parseInt(document.querySelector("input[id='rampConfigDeltaV']").value);
 
         let second = 1000000000;
         let skenarioRunRequest = {
@@ -287,12 +374,50 @@
             target_concurrency_percentage: targetConcurrencyPercentage,
             max_scale_up_rate: maxScaleUpRate,
 
-            traffic_pattern: "ramp",
-            ramp_config: {
-                delta_v: rampConfigDeltaV,
-                max_rps: rampConfigMaxRPS,
-            }
+            traffic_pattern: trafficPattern,
         };
+
+        switch (trafficPattern) {
+            case "golang_rand_uniform":
+                let uniformConfigNumberOfRequests = parseInt(document.querySelector("input[id='uniformConfigNumberOfRequests']").value);
+
+                skenarioRunRequest["uniform_config"] = {
+                    number_of_requests: uniformConfigNumberOfRequests,
+                };
+
+                break;
+            case "step":
+                let stepConfigStepAfter = parseInt(document.querySelector("input[id='stepConfigStepAfter']").value);
+                let stepConfigRPS = parseInt(document.querySelector("input[id='stepConfigRPS']").value);
+
+                skenarioRunRequest["step_config"] = {
+                    step_after: stepConfigStepAfter,
+                    rps: stepConfigRPS,
+                };
+
+                break;
+            case "ramp":
+                let rampConfigMaxRPS = parseInt(document.querySelector("input[id='rampConfigMaxRPS']").value);
+                let rampConfigDeltaV = parseInt(document.querySelector("input[id='rampConfigDeltaV']").value);
+
+                skenarioRunRequest["ramp_config"] = {
+                    delta_v: rampConfigDeltaV,
+                    max_rps: rampConfigMaxRPS,
+                };
+
+                break;
+            case "sinusoidal":
+                let sinusoidalConfigAmplitude = parseInt(document.querySelector("input[id='sinusoidalConfigAmplitude']").value);
+                let sinusoidalConfigPeriod = parseInt(document.querySelector("input[id='sinusoidalConfigPeriod']").value);
+
+                skenarioRunRequest["sinusoidal_config"] = {
+                    amplitude: sinusoidalConfigAmplitude,
+                    period: sinusoidalConfigPeriod,
+                };
+
+                break;
+        }
+
         let currentUrl = new URL(window.location.href);
         if (currentUrl.searchParams.get("inmemory")) {
             skenarioRunRequest.in_memory_database = true
