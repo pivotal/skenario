@@ -391,7 +391,7 @@
                 let stepConfigRPS = parseInt(document.querySelector("input[id='stepConfigRPS']").value);
 
                 skenarioRunRequest["step_config"] = {
-                    step_after: stepConfigStepAfter,
+                    step_after: stepConfigStepAfter * second,
                     rps: stepConfigRPS,
                 };
 
@@ -412,7 +412,7 @@
 
                 skenarioRunRequest["sinusoidal_config"] = {
                     amplitude: sinusoidalConfigAmplitude,
-                    period: sinusoidalConfigPeriod,
+                    period: sinusoidalConfigPeriod * second,
                 };
 
                 break;
