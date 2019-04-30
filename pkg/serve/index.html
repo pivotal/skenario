@@ -42,7 +42,7 @@
                     <label class="label" for="runFor">Run For (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="runFor" value="180"/>
+                    <input type="number" style="width: 5em" id="runFor" value="180" min="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -50,7 +50,7 @@
                     <label class="label" for="launchDelay">Replica Launch Delay (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="launchDelay" value="5"/>
+                    <input type="number" style="width: 5em" id="launchDelay" value="5" min="0.01" step="0.1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -58,7 +58,7 @@
                     <label class="label" for="terminateDelay">Replica Terminate Delay (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="terminateDelay" value="1"/>
+                    <input type="number" style="width: 5em" id="terminateDelay" value="1" min="0.01" step="0.1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -66,7 +66,7 @@
                     <label class="label" for="tickInterval">Tick Interval (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="tickInterval" value="2"/>
+                    <input type="number" style="width: 5em" id="tickInterval" value="2" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -74,7 +74,7 @@
                     <label class="label" for="stableWindow">Stable Window (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="stableWindow" value="60"/>
+                    <input type="number" style="width: 5em" id="stableWindow" value="60" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -82,7 +82,7 @@
                     <label class="label" for="panicWindow">Panic Window (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="panicWindow" value="6"/>
+                    <input type="number" style="width: 5em" id="panicWindow" value="6" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -90,7 +90,7 @@
                     <label class="label" for="scaleToZeroGracePeriod">Scale to Zero Grace Period (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="scaleToZeroGracePeriod" value="30"/>
+                    <input type="number" style="width: 5em" id="scaleToZeroGracePeriod" value="30" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -98,7 +98,7 @@
                     <label class="label" for="targetConcurrencyDefault">Target Concurrency Default</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="targetConcurrencyDefault" value="1.0"/>
+                    <input type="number" style="width: 5em" id="targetConcurrencyDefault" value="1.0" min="0.1" step="0.1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -106,8 +106,7 @@
                     <label class="label" for="targetConcurrencyPercentage">Target Concurrency Percentage</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="targetConcurrencyPercentage" value="0.5" step="0
-                    .01"/>
+                    <input type="number" style="width: 5em" id="targetConcurrencyPercentage" value="0.5" min="0.01" max="0.99" step="0.01"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -115,7 +114,7 @@
                     <label class="label" for="maxScaleUpRate">Max Scale Up Rate</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="maxScaleUpRate" value="100.0"/>
+                    <input type="number" style="width: 5em" id="maxScaleUpRate" value="100.0" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -123,7 +122,7 @@
                     <label class="label" for="rampConfigDeltaV">Ramp Delta V</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="rampConfigDeltaV" value="1"/>
+                    <input type="number" style="width: 5em" id="rampConfigDeltaV" value="1" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -131,7 +130,7 @@
                     <label class="label" for="rampConfigMaxRPS">Ramp Max RPS</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="rampConfigMaxRPS" value="50"/>
+                    <input type="number" style="width: 5em" id="rampConfigMaxRPS" value="50" min="1" step="1"/>
                 </div>
             </div>
 
