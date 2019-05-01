@@ -117,7 +117,7 @@ func main() {
 
 		store := data.NewRunStore(conn)
 
-		scenarioRunId, err := store.Store(completed, ignored, r.ClusterConfig(), r.AutoscalerConfig(), "skenario_cli", traffic.Name())
+		scenarioRunId, err := store.Store(completed, ignored, r.ClusterConfig(), r.AutoscalerConfig(), "skenario_cli", traffic.Name(), *simDuration)
 		if err != nil {
 			fmt.Printf("there was an error saving data: %s", err.Error())
 		}

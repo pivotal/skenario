@@ -33,6 +33,7 @@ type RunStore interface {
 		kpaConf model.KnativeAutoscalerConfig,
 		origin string,
 		trafficPattern string,
+		ranFor time.Duration,
 	) (scenarioRunId int64, err error)
 }
 
@@ -44,15 +45,17 @@ type storer struct {
 	ignored        []simulator.IgnoredMovement
 	origin         string
 	trafficPattern string
+	ranFor         time.Duration
 }
 
-func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ) (scenarioRunId int64, err error) {
+func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ranFor time.Duration) (scenarioRunId int64, err error) {
 	s.completed = completed
 	s.ignored = ignored
 	s.clusterConf = clusterConf
 	s.kpaConf = kpaConf
 	s.origin = origin
 	s.trafficPattern = trafficPattern
+	s.ranFor = ranFor
 
 	scenarioRunId, err = s.scenarioRun()
 	if err != nil {
@@ -72,6 +75,7 @@ func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simula
 func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 	srStmt, err := s.conn.Prepare(`insert into scenario_runs(
 									   recorded
+									 , simulated_duration
 									 , origin
 									 , traffic_pattern
 									 , cluster_launch_delay
@@ -84,13 +88,14 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 									 , autoscaler_target_concurrency_default
 									 , autoscaler_target_concurrency_percentage
 									 , autoscaler_max_scale_up_rate)
-									values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
+									values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
 	if err != nil {
 		return -1, err
 	}
 
 	err = srStmt.Exec(
 		time.Now().Format(time.RFC3339),
+		s.ranFor.Nanoseconds(),
 		s.origin,
 		s.trafficPattern,
 		s.clusterConf.LaunchDelay.Nanoseconds(),

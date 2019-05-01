@@ -22,6 +22,8 @@ var Schema = `create table if not exists scenario_runs
 
     recorded                                 text        not null,
 
+    simulated_duration                             big integer not null,
+
     origin                                   text        not null,
 
     traffic_pattern                          text        not null,

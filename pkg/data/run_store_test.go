@@ -96,7 +96,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			completed, ignored, err = env.Run()
 			assert.NoError(t, err)
 
-			scenarioRunId, err = subject.Store(completed, ignored, clusterConf, kpaConf, "test_origin", "test_pattern")
+			scenarioRunId, err = subject.Store(completed, ignored, clusterConf, kpaConf, "test_origin", "test_pattern", 10*time.Minute)
 			assert.NoError(t, err)
 		})
 
@@ -107,9 +107,10 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 		describe("scenario run metadata", func() {
 			var recorded, origin, trafficPattern string
 			var count int
+			var ranFor int64
 
 			it.Before(func() {
-				singleQuery(t, conn, `select recorded, origin, traffic_pattern from scenario_runs`, &recorded, &origin, &trafficPattern)
+				singleQuery(t, conn, `select recorded, simulated_duration, origin, traffic_pattern from scenario_runs`, &recorded, &ranFor, &origin, &trafficPattern)
 				singleQuery(t, conn, `select count(1) from scenario_runs`, &count)
 			})
 
@@ -119,6 +120,10 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			it("records a timestamp", func() {
 				assert.Contains(t, recorded, time.Now().Format(time.RFC3339))
+			})
+
+			it("sets the simulated_duration as 10 minutes", func() {
+				assert.Equal(t, 10*time.Minute, time.Duration(ranFor))
 			})
 
 			it("sets the origin as 'test_origin'", func() {

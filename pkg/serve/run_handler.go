@@ -130,7 +130,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	store := data.NewRunStore(conn)
-	scenarioRunId, err := store.Store(completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name())
+	scenarioRunId, err := store.Store(completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name(), runReq.RunFor)
 	if err != nil {
 		fmt.Printf("there was an error saving data: %s", err.Error())
 	}
