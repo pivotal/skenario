@@ -28,15 +28,17 @@ func (*sinusoidal) Name() string {
 func (s *sinusoidal) Generate() {
 	var t time.Time
 	startAt := s.env.CurrentMovementTime()
-
+	twoPi := 2.0 * math.Pi
 	for t = startAt; t.Before(s.env.HaltTime()); t = t.Add(1 * time.Second) {
 		ampl := float64(s.amplitude)
 		perd := float64(s.period.Seconds())
-		tsec := float64(t.Second())
+		tsec := float64(t.Unix())
 
-		rps := ampl*math.Sin((2.0*math.Pi*tsec)/perd) + ampl
+		rps := ampl*math.Sin(twoPi*(tsec/perd)) + ampl
+		roundedRPS := int(math.Round(rps))
+
 		uniRand := NewUniformRandom(s.env, s.source, s.buffer, UniformConfig{
-			NumberOfRequests: int(math.Round(rps)),
+			NumberOfRequests: roundedRPS,
 			StartAt:          t,
 			RunFor:           time.Second,
 		})

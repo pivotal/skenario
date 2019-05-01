@@ -31,7 +31,8 @@ func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 		period = 20 * time.Second
 
 		envFake = new(fakes.FakeEnvironment)
-		envFake.TheHaltTime = envFake.TheTime.Add(60 * time.Second)
+		envFake.TheTime = time.Unix(0, 0)
+		envFake.TheHaltTime = envFake.TheTime.Add(30 * time.Second)
 
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
@@ -48,10 +49,31 @@ func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	// TODO: I am not entirely sure how to test this properly
-	describe.Pend("Generate()", func() {
+	describe("Generate()", func() {
+		var expectedRPS = []int{
+			20, 26, 32, 36, 39, 40, 39, 36, 32, 26, 20, 14, 8, 4, 1,
+			0, 1, 4, 8, 14, 20, 26, 32, 36, 39, 40, 39, 36, 32, 26,
+		}
+
 		it.Before(func() {
 			subject.Generate()
+		})
+
+		it("produces 726 requests in total", func() {
+			assert.Len(t, envFake.Movements, 726)
+		})
+
+		it("produces a sinusoidal pattern", func() {
+			mvmtIdx := 0
+			sec := time.Unix(1, 0)
+
+			for _, v := range expectedRPS {
+				for i := 0; i < v; i++ {
+					assert.WithinDuration(t, sec, envFake.Movements[mvmtIdx].OccursAt(), time.Second)
+					mvmtIdx++
+				}
+				sec = sec.Add(time.Second)
+			}
 		})
 	})
 }
