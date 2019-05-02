@@ -22,7 +22,7 @@ var Schema = `create table if not exists scenario_runs
 
     recorded                                 text        not null,
 
-    simulated_duration                             big integer not null,
+    simulated_duration                       big integer not null,
 
     origin                                   text        not null,
 
@@ -43,17 +43,17 @@ var Schema = `create table if not exists scenario_runs
 
 create table if not exists stocks
 (
-    id              integer primary key, -- aliases to rowid
-    name            text    not null,
-    kind_stocked    text    not null
+    id           integer primary key, -- aliases to rowid
+    name         text not null,
+    kind_stocked text not null
 );
 create unique index if not exists stocks_names_kind on stocks (name, kind_stocked);
 
 create table if not exists entities
 (
-    id              integer primary key, -- aliases to rowid
-    name            text    not null,
-    kind            text    not null
+    id   integer primary key, -- aliases to rowid
+    name text not null,
+    kind text not null
 );
 create unique index if not exists entities_names_kind on entities (name, kind);
 
@@ -83,4 +83,38 @@ create table if not exists ignored_movements
 
     scenario_run_id integer not null references scenario_runs (id)
 );
-create unique index if not exists ignore_once_per_run on ignored_movements (occurs_at, scenario_run_id);`
+create unique index if not exists ignore_once_per_run on ignored_movements (occurs_at, scenario_run_id);
+
+create view if not exists stock_aggregate as
+select id
+     , (case
+            when name like 'RequestsProcessing%' then 'RequestsProcessing'
+            else name
+    end) as name
+     , (case
+            when kind_stocked = 'Desired' then 'Replica'
+            else kind_stocked
+    end) as kind_stocked
+from stocks
+where kind_stocked in ('Request', 'Desired', 'Replica')
+  and name not in ('TrafficSource', 'ReplicaSource', 'DesiredSource', 'DesiredSink', 'ReplicasTerminated')
+  and name not like 'RequestsComplete%'
+;
+
+create view if not exists running_tallies as
+select scenario_run_id
+     , occurs_at
+     , sa.name            as stock_name
+     , sa.kind_stocked
+     , sum(case
+               when from_stock = to_stock then 0
+               when from_stock = sa.id then -1
+               when to_stock = sa.id then 1
+               end)
+           over summation as tally
+from completed_movements
+         join stock_aggregate sa on sa.id in (from_stock, to_stock)
+where kind not in ('start_to_running', 'autoscaler_tick', 'running_to_halted') window summation as (partition by sa.name order by occurs_at asc rows unbounded preceding)
+;
+
+`

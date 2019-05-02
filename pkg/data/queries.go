@@ -17,38 +17,25 @@
 package data
 
 // language=sql
-var RunningCountQuery = `
-select
-    occurs_at
-  , kind
-  , (select name from entities where id = moved) moved
-
-  , sum(case
-      when exists(select id from stocks where name = 'RequestsBuffered' and id = from_stock and id = to_stock) then 0
-      when exists(select id from stocks where name = 'RequestsBuffered' and id = from_stock) then -1
-      when exists(select id from stocks where name = 'RequestsBuffered' and id = to_stock) then 1
-      else 0 end)
-    over summation as requests_buffered
-  , sum(case
-      when exists(select id from stocks where name like 'RequestsProcessing%' and id = from_stock) then -1
-      when exists(select id from stocks where name like 'RequestsProcessing%' and id = to_stock) then 1
-      else 0 end)
-    over summation as requests_processing
-  , sum(case
-      when exists(select id from stocks where name like 'RequestsComplete%' and id = from_stock) then -1
-      when exists(select id from stocks where name like 'RequestsComplete%' and id = to_stock) then 1
-      else 0 end)
-    over summation as requests_completed
-  , sum(case (select id from stocks where name    = 'ReplicasDesired'   ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_desired
-  , sum(case (select id from stocks where name    = 'ReplicasLaunching'   ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_launching
-  , sum(case (select id from stocks where name    = 'ReplicasActive'      ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_active
-  , sum(case (select id from stocks where name    = 'ReplicasTerminated'  ) when from_stock then -1   when to_stock then 1  else 0 end) over summation as replicas_terminated
-
-from completed_movements
+var RunningTallyQuery = `select occurs_at
+     , stock_name
+     , kind_stocked
+     , tally
+from running_tallies
 where scenario_run_id = ?
-and kind not in ('start_to_running', 'autoscaler_tick', 'running_to_halted')
-window summation as (order by occurs_at asc rows unbounded preceding)
-order by occurs_at
+union
+select -- fake up final values so that plot of replicas doesn't clip
+    simulated_duration as occurs_at
+     , stock_name
+     , kind_stocked
+     , tally
+from running_tallies
+         join scenario_runs on running_tallies.scenario_run_id = scenario_runs.id
+where scenario_run_id = ?
+  and kind_stocked = 'Replica'
+group by stock_name
+having max(occurs_at)
+order by occurs_at asc, stock_name asc
 ;
 `
 
