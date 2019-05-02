@@ -237,6 +237,15 @@
     function chart(scaleDomain, datasets) {
         const NO_TITLE = null;
         const chartWidth = 1600;
+        const legend = {
+            title: "Legend",
+            titleOrient: "left",
+            titleFontSize: 18,
+            labelFontSize: 13,
+            orient: "bottom-left",
+            columns: 2,
+            columnPadding: 50,
+        };
         const rpsPlot = {
             data: {name: "requests_per_second"},
             mark: {
@@ -256,8 +265,8 @@
                 y: {
                     field: "requests",
                     type: "quantitative",
-                    title: NO_TITLE
-                }
+                    title: "Requests Per Second"
+                },
             }
         };
 
@@ -282,7 +291,8 @@
                             encoding: {
                                 color: {
                                     field: "stock_name",
-                                    type: "nominal"
+                                    type: "nominal",
+                                    legend: legend
                                 },
                                 x: {
                                     field: "occurs_at_sec",
@@ -323,7 +333,8 @@
                             encoding: {
                                 color: {
                                     field: "stock_name",
-                                    type: "nominal"
+                                    type: "nominal",
+                                    legend: legend
                                 },
                                 x: {
                                     field: "occurs_at_sec",
@@ -360,7 +371,8 @@
                         x: {
                             field: "completed_at_sec",
                             type: "quantitative",
-                            scale: {domain: scaleDomain}
+                            scale: {domain: scaleDomain},
+                            title: NO_TITLE
                         },
                         y: {
                             field: "response_time_ms",
@@ -369,7 +381,7 @@
                         }
                     }
                 }
-            ],
+            ]
         };
     }
 
