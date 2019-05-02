@@ -65,3 +65,15 @@ group by moved
 order by arrived_at
 ;
 `
+
+// language=sql
+var RequestsPerSecondQuery = `
+select
+    occurs_at / 1000000000        as occurs_at_second
+  , count(occurs_at / 1000000000) as arrivals
+from completed_movements
+where kind = 'arrive_at_buffer'
+and scenario_run_id = ?
+group by occurs_at_second
+;
+`

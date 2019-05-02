@@ -51,11 +51,17 @@ type ResponseTime struct {
 	ResponseTime int64 `json:"response_time"`
 }
 
+type RPS struct {
+	Second   int64 `json:"second"`
+	Requests int64 `json:"requests"`
+}
+
 type SkenarioRunResponse struct {
-	RanFor         time.Duration  `json:"ran_for"`
-	TrafficPattern string         `json:"traffic_pattern"`
-	TotalLines     []TotalLine    `json:"total_lines"`
-	ResponseTimes  []ResponseTime `json:"response_times"`
+	RanFor            time.Duration  `json:"ran_for"`
+	TrafficPattern    string         `json:"traffic_pattern"`
+	TotalLines        []TotalLine    `json:"total_lines"`
+	ResponseTimes     []ResponseTime `json:"response_times"`
+	RequestsPerSecond []RPS          `json:"requests_per_second"`
 }
 
 type SkenarioRunRequest struct {
@@ -147,14 +153,21 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	requestsPerSecondStmt, err := conn.Prepare(data.RequestsPerSecondQuery, scenarioRunId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	var occursAt, requestsBuffered, requestsProcessing, requestsCompleted, replicasDesired, replicasLaunching, replicasActive, replicasTerminated int
-	var arrivedAt, completedAt, rTime int64
+	var arrivedAt, completedAt, rTime, second, requests int64
 	var kind, moved string
 	var vds = SkenarioRunResponse{
-		RanFor:         env.HaltTime().Sub(startAt),
-		TrafficPattern: traffic.Name(),
-		TotalLines:     make([]TotalLine, 0),
-		ResponseTimes:  make([]ResponseTime, 0),
+		RanFor:            env.HaltTime().Sub(startAt),
+		TrafficPattern:    traffic.Name(),
+		TotalLines:        make([]TotalLine, 0),
+		ResponseTimes:     make([]ResponseTime, 0),
+		RequestsPerSecond: make([]RPS, 0),
 	}
 
 	for {
@@ -212,6 +225,30 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			ResponseTime: rTime,
 		}
 		vds.ResponseTimes = append(vds.ResponseTimes, rt)
+	}
+
+	for {
+		hasRow, err := requestsPerSecondStmt.Step()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if !hasRow {
+			break
+		}
+
+		err = requestsPerSecondStmt.Scan(&second, &requests)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		var rps = RPS{
+			Second:   second,
+			Requests: requests,
+		}
+		vds.RequestsPerSecond = append(vds.RequestsPerSecond, rps)
 	}
 
 	err = json.NewEncoder(w).Encode(vds)

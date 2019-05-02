@@ -103,6 +103,10 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 				it("contains response_time entries", func() {
 					assert.NotEmpty(t, skenarioResponse.ResponseTimes)
 				})
+
+				it("contains requests_per_second entries", func() {
+					assert.NotEmpty(t, skenarioResponse.RequestsPerSecond)
+				})
 			})
 		})
 

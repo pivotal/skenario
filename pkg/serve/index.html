@@ -214,6 +214,7 @@
 </div>
 
 <script>
+    const NO_TITLE = null;
 
     const trafficSelector = document.getElementById("select-traffic-pattern");
     trafficSelector.oninput = setTrafficPattern;
@@ -265,7 +266,7 @@
                                 x: {
                                     field: "occurs_at_sec",
                                     type: "quantitative",
-                                    title: "Occurs At (s)",
+                                    title: "Seconds",
                                     scale: {domain: scaleDomain}
                                 },
                                 y: {
@@ -304,7 +305,7 @@
                                 x: {
                                     field: "occurs_at_sec",
                                     type: "quantitative",
-                                    title: "Occurs At (s)",
+                                    title: NO_TITLE,
                                     scale: {domain: scaleDomain}
                                 },
                                 y: {
@@ -314,8 +315,35 @@
                                 }
                             }
                         },
+                        {
+                            data: {name: "requests_per_second"},
+                            mark: {
+                                type: "line",
+                                opacity: 0.8,
+                                strokeDash: [4,4],
+                                color: "#6f3cb2"
+                            },
+                            encoding: {
+                                x: {
+                                    field: "second",
+                                    type: "quantitative",
+                                    title: NO_TITLE,
+                                    scale: {domain: scaleDomain}
+                                },
+                                y: {
+                                    field: "requests",
+                                    type: "quantitative",
+                                    title: NO_TITLE,
+                                }
+                            }
+                        }
                     ],
-                    resolve: {scale: {y: "independent"}}
+                    resolve: {
+                        scale: {
+                            x: "shared",
+                            y: "independent"
+                        }
+                    }
                 },
                 {
                     height: 200,
@@ -435,7 +463,8 @@
             return response.json().then((responseJson) => {
                 let datasets = {
                     total_lines: responseJson["total_lines"],
-                    response_times: responseJson["response_times"]
+                    response_times: responseJson["response_times"],
+                    requests_per_second: responseJson["requests_per_second"]
                 };
 
                 let ranForSec = responseJson["ran_for"] / second;
