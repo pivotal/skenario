@@ -32,17 +32,11 @@ import (
 
 var startAt = time.Unix(0, 0)
 
-type TotalLine struct {
-	OccursAt            int    `json:"occurs_at"`
-	MovementKind        string `json:"movement_kind"`
-	MovedEntity         string `json:"moved_entity"`
-	RequestsBuffered    int    `json:"requests_buffered"`
-	RequestsProcessing  int    `json:"requests_processing"`
-	RequestsCompleted   int    `json:"requests_completed"`
-	ReplicasDesired     int    `json:"replicas_desired"`
-	ReplicasLaunching   int    `json:"replicas_launching"`
-	ReplicasActive      int    `json:"replicas_active"`
-	ReplicasTerminating int    `json:"replicas_terminated"`
+type TallyLine struct {
+	OccursAt    int64  `json:"occurs_at"`
+	StockName   string `json:"stock_name"`
+	KindStocked string `json:"kind_stocked"`
+	Tally       int64  `json:"tally"`
 }
 
 type ResponseTime struct {
@@ -51,11 +45,17 @@ type ResponseTime struct {
 	ResponseTime int64 `json:"response_time"`
 }
 
+type RPS struct {
+	Second   int64 `json:"second"`
+	Requests int64 `json:"requests"`
+}
+
 type SkenarioRunResponse struct {
-	RanFor         time.Duration  `json:"ran_for"`
-	TrafficPattern string         `json:"traffic_pattern"`
-	TotalLines     []TotalLine    `json:"total_lines"`
-	ResponseTimes  []ResponseTime `json:"response_times"`
+	RanFor            time.Duration  `json:"ran_for"`
+	TrafficPattern    string         `json:"traffic_pattern"`
+	TallyLines        []TallyLine    `json:"tally_lines"`
+	ResponseTimes     []ResponseTime `json:"response_times"`
+	RequestsPerSecond []RPS          `json:"requests_per_second"`
 }
 
 type SkenarioRunRequest struct {
@@ -135,7 +135,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("there was an error saving data: %s", err.Error())
 	}
 
-	totalStmt, err := conn.Prepare(data.RunningCountQuery, scenarioRunId)
+	totalStmt, err := conn.Prepare(data.RunningTallyQuery, scenarioRunId, scenarioRunId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -147,14 +147,20 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var occursAt, requestsBuffered, requestsProcessing, requestsCompleted, replicasDesired, replicasLaunching, replicasActive, replicasTerminated int
-	var arrivedAt, completedAt, rTime int64
-	var kind, moved string
+	requestsPerSecondStmt, err := conn.Prepare(data.RequestsPerSecondQuery, scenarioRunId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var occursAt, tally, arrivedAt, completedAt, rTime, second, requests int64
+	var stockName, kindStocked string
 	var vds = SkenarioRunResponse{
-		RanFor:         env.HaltTime().Sub(startAt),
-		TrafficPattern: traffic.Name(),
-		TotalLines:     make([]TotalLine, 0),
-		ResponseTimes:  make([]ResponseTime, 0),
+		RanFor:            env.HaltTime().Sub(startAt),
+		TrafficPattern:    traffic.Name(),
+		TallyLines:        make([]TallyLine, 0),
+		ResponseTimes:     make([]ResponseTime, 0),
+		RequestsPerSecond: make([]RPS, 0),
 	}
 
 	for {
@@ -168,25 +174,19 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		err = totalStmt.Scan(&occursAt, &kind, &moved, &requestsBuffered, &requestsProcessing, &requestsCompleted, &replicasDesired, &replicasLaunching, &replicasActive, &replicasTerminated)
+		err = totalStmt.Scan(&occursAt, &stockName, &kindStocked, &tally)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		line := TotalLine{
-			OccursAt:            occursAt,
-			MovementKind:        kind,
-			MovedEntity:         moved,
-			RequestsBuffered:    requestsBuffered,
-			RequestsProcessing:  requestsProcessing,
-			RequestsCompleted:   requestsCompleted,
-			ReplicasDesired:     replicasDesired,
-			ReplicasLaunching:   replicasLaunching,
-			ReplicasActive:      replicasActive,
-			ReplicasTerminating: replicasTerminated,
+		line := TallyLine{
+			OccursAt:    occursAt,
+			StockName:   stockName,
+			KindStocked: kindStocked,
+			Tally:       tally,
 		}
-		vds.TotalLines = append(vds.TotalLines, line)
+		vds.TallyLines = append(vds.TallyLines, line)
 	}
 
 	for {
@@ -212,6 +212,30 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			ResponseTime: rTime,
 		}
 		vds.ResponseTimes = append(vds.ResponseTimes, rt)
+	}
+
+	for {
+		hasRow, err := requestsPerSecondStmt.Step()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if !hasRow {
+			break
+		}
+
+		err = requestsPerSecondStmt.Scan(&second, &requests)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		var rps = RPS{
+			Second:   second,
+			Requests: requests,
+		}
+		vds.RequestsPerSecond = append(vds.RequestsPerSecond, rps)
 	}
 
 	err = json.NewEncoder(w).Encode(vds)

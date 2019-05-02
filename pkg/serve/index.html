@@ -214,112 +214,153 @@
 </div>
 
 <script>
-
     const trafficSelector = document.getElementById("select-traffic-pattern");
-    trafficSelector.oninput = setTrafficPattern;
 
+    trafficSelector.oninput = setTrafficPattern;
     let trafficPattern = "";
+
     function setTrafficPattern(inputEvt) {
         let newPattern = inputEvt.target.value;
-
         trafficPattern = newPattern;
 
         let trafficSettings = Array.from(document.getElementsByClassName("traffic-setting"));
+
         trafficSettings.forEach(function (ts) {
             ts.hidden = true;
         });
-
         let settingsDiv = document.getElementById("settings-" + newPattern);
+
         settingsDiv.hidden = false;
         settingsDiv.className = "traffic-setting";
     }
 
     function chart(scaleDomain, datasets) {
+        const NO_TITLE = null;
+        const chartWidth = 1600;
+        const legend = {
+            title: "Legend",
+            titleOrient: "left",
+            titleFontSize: 18,
+            labelFontSize: 13,
+            orient: "bottom-left",
+            columns: 2,
+            columnPadding: 50,
+        };
+        const rpsPlot = {
+            data: {name: "requests_per_second"},
+            mark: {
+                type: "line",
+                opacity: 0.6,
+                strokeDash: [2, 2],
+                color: "#a13200",
+                interpolate: "linear"
+            },
+            encoding: {
+                x: {
+                    field: "second",
+                    type: "quantitative",
+                    title: NO_TITLE,
+                    scale: {domain: scaleDomain}
+                },
+                y: {
+                    field: "requests",
+                    type: "quantitative",
+                    title: "Requests Per Second"
+                },
+            }
+        };
+
         return {
             $schema: "https://vega.github.io/schema/vega-lite/v3.json",
             datasets: datasets,
             vconcat: [
                 {
-                    height: 800,
-                    width: 1600,
+                    height: 500,
+                    width: chartWidth,
                     layer: [
                         {
-                            data: {name: "total_lines"},
+                            data: {name: "tally_lines"},
                             transform: [
-                                {
-                                    fold: [
-                                        "requests_buffered",
-                                        "requests_processing"
-                                    ]
-                                },
-                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
+                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"},
+                                {filter: {field: "kind_stocked", equal: "Replica"}}
                             ],
                             mark: {
-                                type: "line"
+                                type: "line",
+                                interpolate: "step"
                             },
                             encoding: {
                                 color: {
-                                    field: "key",
-                                    type: "nominal"
+                                    field: "stock_name",
+                                    type: "nominal",
+                                    legend: legend
                                 },
                                 x: {
                                     field: "occurs_at_sec",
                                     type: "quantitative",
-                                    title: "Occurs At (s)",
                                     scale: {domain: scaleDomain}
                                 },
                                 y: {
-                                    field: "value",
-                                    title: "Requests",
+                                    field: "tally",
                                     type: "quantitative",
-                                },
-                                tooltip: [
-                                    {field: "requests_buffered", type: "quantitative"},
-                                    {field: "requests_processing", type: "quantitative"},
-                                    {field: "replicas_launching", type: "quantitative"},
-                                    {field: "replicas_active", type: "quantitative"}
-                                ]
-                            }
-                        },
-                        {
-                            data: {name: "total_lines"},
-                            transform: [
-                                {
-                                    fold: [
-                                        "replicas_desired",
-                                        "replicas_launching",
-                                        "replicas_active"
-                                    ]
-                                },
-                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"}
-                            ],
-                            mark: {
-                                type: "line"
-                            },
-                            encoding: {
-                                color: {
-                                    field: "key",
-                                    type: "nominal"
-                                },
-                                x: {
-                                    field: "occurs_at_sec",
-                                    type: "quantitative",
-                                    title: "Occurs At (s)",
-                                    scale: {domain: scaleDomain}
-                                },
-                                y: {
-                                    field: "value",
-                                    title: "Replicas",
-                                    type: "quantitative"
+                                    title: "Replicas"
                                 }
                             }
                         },
+                        rpsPlot
                     ],
-                    resolve: {scale: {y: "independent"}}
+                    resolve: {
+                        scale: {
+                            color: "shared",
+                            y: "independent"
+                        }
+                    }
                 },
+
                 {
-                    height: 200,
-                    width: 1600,
+                    height: 500,
+                    width: chartWidth,
+                    layer: [
+                        {
+                            data: {name: "tally_lines"},
+                            transform: [
+                                {calculate: "datum.occurs_at / 1000000000", as: "occurs_at_sec"},
+                                {filter: {field: "kind_stocked", equal: "Request"}}
+                            ],
+                            mark: {
+                                type: "line",
+                                interpolate: "linear"
+                            },
+                            encoding: {
+                                color: {
+                                    field: "stock_name",
+                                    type: "nominal",
+                                    legend: legend
+                                },
+                                x: {
+                                    field: "occurs_at_sec",
+                                    type: "quantitative",
+                                    scale: {domain: scaleDomain}
+                                },
+                                y: {
+                                    field: "tally",
+                                    type: "quantitative",
+                                    title: "Requests"
+                                }
+                            }
+                        },
+                        rpsPlot
+                    ],
+                    resolve: {
+                        scale: {
+                            color: "shared",
+                            y: "independent"
+                        }
+                    }
+                },
+
+                {
+                    height: 100,
+                    width: chartWidth,
                     data: {name: "response_times"},
                     transform: [
                         {calculate: "datum.completed_at / 1000000000", as: "completed_at_sec"},
@@ -330,8 +371,8 @@
                         x: {
                             field: "completed_at_sec",
                             type: "quantitative",
-                            title: "Completed At (s)",
-                            scale: {domain: scaleDomain}
+                            scale: {domain: scaleDomain},
+                            title: NO_TITLE
                         },
                         y: {
                             field: "response_time_ms",
@@ -340,7 +381,7 @@
                         }
                     }
                 }
-            ],
+            ]
         };
     }
 
@@ -434,8 +475,9 @@
         fetch("http://localhost:3000/run", fetchOpts).then((response) => {
             return response.json().then((responseJson) => {
                 let datasets = {
-                    total_lines: responseJson["total_lines"],
-                    response_times: responseJson["response_times"]
+                    tally_lines: responseJson["tally_lines"],
+                    response_times: responseJson["response_times"],
+                    requests_per_second: responseJson["requests_per_second"]
                 };
 
                 let ranForSec = responseJson["ran_for"] / second;

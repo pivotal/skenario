@@ -92,16 +92,20 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("only runs for the expected amount of time", func() {
-					maxTime := skenarioResponse.TotalLines[len(skenarioResponse.TotalLines)-1].OccursAt
+					maxTime := skenarioResponse.TallyLines[len(skenarioResponse.TallyLines)-1].OccursAt
 					assert.InDelta(t, int64(20*time.Second), maxTime, float64(time.Second))
 				})
 
 				it("contains total_line entries", func() {
-					assert.NotEmpty(t, skenarioResponse.TotalLines)
+					assert.NotEmpty(t, skenarioResponse.TallyLines)
 				})
 
 				it("contains response_time entries", func() {
 					assert.NotEmpty(t, skenarioResponse.ResponseTimes)
+				})
+
+				it("contains requests_per_second entries", func() {
+					assert.NotEmpty(t, skenarioResponse.RequestsPerSecond)
 				})
 			})
 		})
