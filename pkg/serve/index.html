@@ -358,7 +358,7 @@
                         {calculate: "datum.completed_at / 1000000000", as: "completed_at_sec"},
                         {calculate: "datum.response_time / 1000000", as: "response_time_ms"}
                     ],
-                    mark: {type: "line"},
+                    mark: {type: "point"},
                     encoding: {
                         x: {
                             field: "completed_at_sec",

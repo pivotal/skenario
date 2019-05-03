@@ -17,6 +17,8 @@ package model
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -59,9 +61,11 @@ func (rps *requestsProcessingStock) Remove() simulator.Entity {
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	rps.numRequestsSinceLast++
 
+	totalTime := calculateTime(rps.delegate.Count(), 100, time.Second)
+
 	rps.env.AddToSchedule(simulator.NewMovement(
 		"complete_request",
-		rps.env.CurrentMovementTime().Add(time.Second),
+		rps.env.CurrentMovementTime().Add(totalTime),
 		rps,
 		rps.requestsComplete,
 	))
@@ -81,4 +85,34 @@ func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, re
 		replicaNumber:    replicaNumber,
 		requestsComplete: requestSink,
 	}
+}
+
+func saturateClamp(fractionUtilised float64) float64 {
+	if fractionUtilised > 0.96 {
+		return 0.96
+	} else if fractionUtilised > 0.0 {
+		return fractionUtilised
+	}
+
+	return 0.01
+}
+
+// returns Sakasegawa's approximation for expected queueing time for an M/M/m queue
+func sakasegawaApproximation(fractionUtilised, maxRPS float64, baseServiceTime time.Duration) time.Duration {
+	powerTerm := math.Sqrt(2*(maxRPS+1)) - 1
+	utilizationTerm := math.Pow(fractionUtilised, powerTerm) / (maxRPS * (1 - fractionUtilised))
+
+	expected := time.Duration(utilizationTerm * float64(baseServiceTime))
+
+	return expected
+}
+
+func calculateTime(currentRequests uint64, maxRPS int64, baseServiceTime time.Duration) time.Duration {
+	fractionUtilised := saturateClamp(float64(currentRequests) / float64(maxRPS))
+	delayTime := 1 + sakasegawaApproximation(fractionUtilised, float64(maxRPS), baseServiceTime)
+
+	delayRand := rand.Int63n(int64(delayTime))
+	totalTime := baseServiceTime + time.Duration(delayRand)
+
+	return totalTime
 }

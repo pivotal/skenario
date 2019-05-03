@@ -102,4 +102,55 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, int32(0), subject.RequestCount())
 		})
 	})
+
+	describe("helper functions", func() {
+		describe("saturateClamp()", func() {
+			describe("when fractionUtilised is greater than 0.96", func() {
+				it("returns 0.96", func() {
+					assert.Equal(t, saturateClamp(0.97), 0.96)
+					assert.Equal(t, saturateClamp(1.01), 0.96)
+					assert.Equal(t, saturateClamp(99.0), 0.96)
+				})
+			})
+
+			describe("when fractionUtilised is between 0.0 and 0.96", func() {
+				it("returns fractionUtilised", func() {
+					assert.Equal(t, saturateClamp(0.01), 0.01)
+					assert.Equal(t, saturateClamp(0.5), 0.5)
+					assert.Equal(t, saturateClamp(0.95), 0.95)
+				})
+			})
+
+			describe("when fractionUtilised is 0", func() {
+				it("returns 0.01", func() {
+					assert.Equal(t, saturateClamp(0.0), 0.01)
+				})
+			})
+
+			describe("when fractionUtilised is a negative number", func() {
+				it("returns 0.01", func() {
+					assert.Equal(t, saturateClamp(-1.0), 0.01)
+					assert.Equal(t, saturateClamp(-99.0), 0.01)
+				})
+			})
+		})
+
+		describe("sakasegawaApproximation()", func() {
+			it("reduces to the M/M/1 approximation when m = 1", func() {
+				assert.Equal(t, 18999999999*time.Nanosecond, sakasegawaApproximation(0.95, 1, time.Second))
+			})
+
+			it("approximates 7.3 second slowdown when given 3 replicas and 0.958 utilization", func() {
+				assert.Equal(t, 7337661046*time.Nanosecond, sakasegawaApproximation(0.958, 3, time.Second))
+			})
+		})
+
+		describe("calculateTime()", func() {
+			describe("when currentRequests = 9, maxRPS = 10, baseServiceTime = 1 second", func() {
+				it("returns base time + random value uniformly selected in range of sakasegawa approximation", func() {
+					assert.Equal(t, time.Duration(1542089454), calculateTime(9, 10, time.Second))
+				})
+			})
+		})
+	})
 }
