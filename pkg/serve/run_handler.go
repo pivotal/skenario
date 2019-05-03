@@ -63,15 +63,14 @@ type SkenarioRunRequest struct {
 	TrafficPattern   string        `json:"traffic_pattern"`
 	InMemoryDatabase bool          `json:"in_memory_database,omitempty"`
 
-	LaunchDelay                 time.Duration `json:"launch_delay"`
-	TerminateDelay              time.Duration `json:"terminate_delay"`
-	TickInterval                time.Duration `json:"tick_interval"`
-	StableWindow                time.Duration `json:"stable_window"`
-	PanicWindow                 time.Duration `json:"panic_window"`
-	ScaleToZeroGracePeriod      time.Duration `json:"scale_to_zero_grace_period"`
-	TargetConcurrencyDefault    float64       `json:"target_concurrency_default"`
-	TargetConcurrencyPercentage float64       `json:"target_concurrency_percentage"`
-	MaxScaleUpRate              float64       `json:"max_scale_up_rate"`
+	LaunchDelay              time.Duration `json:"launch_delay"`
+	TerminateDelay           time.Duration `json:"terminate_delay"`
+	TickInterval             time.Duration `json:"tick_interval"`
+	StableWindow             time.Duration `json:"stable_window"`
+	PanicWindow              time.Duration `json:"panic_window"`
+	ScaleToZeroGracePeriod   time.Duration `json:"scale_to_zero_grace_period"`
+	TargetConcurrencyDefault float64       `json:"target_concurrency_default"`
+	MaxScaleUpRate           float64       `json:"max_scale_up_rate"`
 
 	UniformConfig    trafficpatterns.UniformConfig    `json:"uniform_config,omitempty"`
 	RampConfig       trafficpatterns.RampConfig       `json:"ramp_config,omitempty"`
@@ -255,12 +254,11 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 
 func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
 	return model.KnativeAutoscalerConfig{
-		TickInterval:                srr.TickInterval,
-		StableWindow:                srr.StableWindow,
-		PanicWindow:                 srr.PanicWindow,
-		ScaleToZeroGracePeriod:      srr.ScaleToZeroGracePeriod,
-		TargetConcurrencyDefault:    srr.TargetConcurrencyDefault,
-		TargetConcurrencyPercentage: srr.TargetConcurrencyPercentage,
-		MaxScaleUpRate:              srr.MaxScaleUpRate,
+		TickInterval:             srr.TickInterval,
+		StableWindow:             srr.StableWindow,
+		PanicWindow:              srr.PanicWindow,
+		ScaleToZeroGracePeriod:   srr.ScaleToZeroGracePeriod,
+		TargetConcurrencyDefault: srr.TargetConcurrencyDefault,
+		MaxScaleUpRate:           srr.MaxScaleUpRate,
 	}
 }

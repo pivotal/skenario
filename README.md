@@ -84,9 +84,6 @@ $ go run cmd/skenario/main.go -h
   -targetConcurrencyDefault float
         Default target concurrency of Replicas (default 1)
 
-  -targetConcurrencyPercentage float
-        Percentage adjustment of target concurrency of Replicas (default 0.5)
-
   -tickInterval duration
         Tick interval duration of the Autoscaler (default 2s)
 

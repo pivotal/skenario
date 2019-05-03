@@ -86,9 +86,8 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 									 , autoscaler_panic_window
 									 , autoscaler_scale_to_zero_grace_period
 									 , autoscaler_target_concurrency_default
-									 , autoscaler_target_concurrency_percentage
 									 , autoscaler_max_scale_up_rate)
-									values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
+									values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
 	if err != nil {
 		return -1, err
 	}
@@ -106,7 +105,6 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 		s.kpaConf.PanicWindow.Nanoseconds(),
 		s.kpaConf.ScaleToZeroGracePeriod.Nanoseconds(),
 		s.kpaConf.TargetConcurrencyDefault,
-		s.kpaConf.TargetConcurrencyPercentage,
 		s.kpaConf.MaxScaleUpRate,
 	)
 	if err != nil {

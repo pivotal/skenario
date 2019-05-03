@@ -37,7 +37,6 @@ var Schema = `create table if not exists scenario_runs
     autoscaler_panic_window                  big integer not null,
     autoscaler_scale_to_zero_grace_period    big integer not null,
     autoscaler_target_concurrency_default    real        not null,
-    autoscaler_target_concurrency_percentage real        not null,
     autoscaler_max_scale_up_rate             real        not null
 );
 

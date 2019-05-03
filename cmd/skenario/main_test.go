@@ -98,9 +98,6 @@ func testMain(t *testing.T, describe spec.G, it spec.S) {
 			it("sets a TargetConcurrencyDefault value", func() {
 				assert.Equal(t, 1.0, subject.AutoscalerConfig().TargetConcurrencyDefault)
 			})
-			it("sets a TargetConcurrencyPercentage value", func() {
-				assert.Equal(t, 0.5, subject.AutoscalerConfig().TargetConcurrencyPercentage)
-			})
 			it("sets a MaxScaleUpRate value", func() {
 				assert.Equal(t, 10.0, subject.AutoscalerConfig().MaxScaleUpRate)
 			})

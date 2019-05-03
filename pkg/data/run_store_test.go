@@ -55,13 +55,12 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			NumberOfRequests: 33,
 		}
 		kpaConf = model.KnativeAutoscalerConfig{
-			TickInterval:                11 * time.Second,
-			StableWindow:                22 * time.Second,
-			PanicWindow:                 33 * time.Second,
-			ScaleToZeroGracePeriod:      44 * time.Second,
-			TargetConcurrencyDefault:    5.5,
-			TargetConcurrencyPercentage: 6.6,
-			MaxScaleUpRate:              77,
+			TickInterval:             11 * time.Second,
+			StableWindow:             22 * time.Second,
+			PanicWindow:              33 * time.Second,
+			ScaleToZeroGracePeriod:   44 * time.Second,
+			TargetConcurrencyDefault: 5.5,
+			MaxScaleUpRate:           77,
 		}
 	})
 
@@ -138,7 +137,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 		describe("scenario parameters", func() {
 			var launchDelay, termDelay, numRequests int
 			var tickInterval, stableWindow, panicWindow, scaleToZeroGrace int
-			var concurrencyDefault, concurrencyPercent, maxScaleUp float64
+			var concurrencyDefault, maxScaleUp float64
 
 			it.Before(func() {
 				singleQuery(t, conn, `
@@ -150,11 +149,10 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 						 , autoscaler_panic_window
 						 , autoscaler_scale_to_zero_grace_period
 						 , autoscaler_target_concurrency_default
-						 , autoscaler_target_concurrency_percentage
 						 , autoscaler_max_scale_up_rate
 					from scenario_runs `,
 					&launchDelay, &termDelay, &numRequests, &tickInterval, &stableWindow, &panicWindow, &scaleToZeroGrace,
-					&concurrencyDefault, &concurrencyPercent, &maxScaleUp,
+					&concurrencyDefault, &maxScaleUp,
 				)
 			})
 
@@ -170,7 +168,6 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, 33000000000, panicWindow)
 				assert.Equal(t, 44000000000, scaleToZeroGrace)
 				assert.Equal(t, 5.5, concurrencyDefault)
-				assert.Equal(t, 6.6, concurrencyPercent)
 				assert.Equal(t, 77.0, maxScaleUp)
 			})
 		})

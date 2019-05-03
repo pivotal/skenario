@@ -103,14 +103,6 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="targetConcurrencyPercentage">Target Concurrency Percentage</label>
-                </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="targetConcurrencyPercentage" value="0.5" min="0.01" max="0.99" step="0.01"/>
-                </div>
-            </div>
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
                     <label class="label" for="maxScaleUpRate">Max Scale Up Rate</label>
                 </div>
                 <div class="control">
@@ -398,7 +390,6 @@
         let panicWindow = parseInt(document.querySelector("input[id='panicWindow']").value);
         let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
         let targetConcurrencyDefault = parseFloat(document.querySelector("input[id='targetConcurrencyDefault']").value);
-        let targetConcurrencyPercentage = parseFloat(document.querySelector("input[id='targetConcurrencyPercentage']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
 
 
@@ -412,7 +403,6 @@
             panic_window: panicWindow * second,
             scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
             target_concurrency_default: targetConcurrencyDefault,
-            target_concurrency_percentage: targetConcurrencyPercentage,
             max_scale_up_rate: maxScaleUpRate,
 
             traffic_pattern: trafficPattern,

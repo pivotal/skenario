@@ -51,7 +51,6 @@ var (
 	panicWindow                 = flag.Duration("panicWindow", 6*time.Second, "Duration of panic window of the Autoscaler")
 	scaleToZeroGrace            = flag.Duration("scaleToZeroGrace", 30*time.Second, "Duration of the scale-to-zero grace period of the Autoscaler")
 	targetConcurrencyDefault    = flag.Float64("targetConcurrencyDefault", 1.0, "Default target concurrency of Replicas")
-	targetConcurrencyPercentage = flag.Float64("targetConcurrencyPercentage", 0.5, "Percentage adjustment of target concurrency of Replicas")
 	maxScaleUpRate              = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
 	launchDelay                 = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
 	terminateDelay              = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
@@ -227,7 +226,6 @@ func (r *runner) AutoscalerConfig() model.KnativeAutoscalerConfig {
 		PanicWindow:                 *panicWindow,
 		ScaleToZeroGracePeriod:      *scaleToZeroGrace,
 		TargetConcurrencyDefault:    *targetConcurrencyDefault,
-		TargetConcurrencyPercentage: *targetConcurrencyPercentage,
 		MaxScaleUpRate:              *maxScaleUpRate,
 	}
 }
