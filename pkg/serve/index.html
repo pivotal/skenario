@@ -95,10 +95,10 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="targetConcurrencyDefault">Target Concurrency Default</label>
+                    <label class="label" for="targetConcurrency">Target Concurrency</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="targetConcurrencyDefault" value="1.0" min="0.1" step="0.1"/>
+                    <input type="number" style="width: 5em" id="targetConcurrency" value="1.0" min="0.1" step="0.1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -389,7 +389,7 @@
         let stableWindow = parseInt(document.querySelector("input[id='stableWindow']").value);
         let panicWindow = parseInt(document.querySelector("input[id='panicWindow']").value);
         let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
-        let targetConcurrencyDefault = parseFloat(document.querySelector("input[id='targetConcurrencyDefault']").value);
+        let targetConcurrency = parseFloat(document.querySelector("input[id='targetConcurrency']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
 
 
@@ -402,7 +402,7 @@
             stable_window: stableWindow * second,
             panic_window: panicWindow * second,
             scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
-            target_concurrency_default: targetConcurrencyDefault,
+            target_concurrency: targetConcurrency,
             max_scale_up_rate: maxScaleUpRate,
 
             traffic_pattern: trafficPattern,

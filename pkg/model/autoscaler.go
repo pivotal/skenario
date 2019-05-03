@@ -32,12 +32,12 @@ const (
 )
 
 type KnativeAutoscalerConfig struct {
-	TickInterval             time.Duration
-	StableWindow             time.Duration
-	PanicWindow              time.Duration
-	ScaleToZeroGracePeriod   time.Duration
-	TargetConcurrencyDefault float64
-	MaxScaleUpRate           float64
+	TickInterval           time.Duration
+	StableWindow           time.Duration
+	PanicWindow            time.Duration
+	ScaleToZeroGracePeriod time.Duration
+	TargetConcurrency      float64
+	MaxScaleUpRate         float64
 }
 
 type KnativeAutoscalerModel interface {
@@ -85,7 +85,7 @@ func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerS
 		StableWindow:                      kconfig.StableWindow,
 		PanicWindow:                       kconfig.PanicWindow,
 		ScaleToZeroGracePeriod:            kconfig.ScaleToZeroGracePeriod,
-		ContainerConcurrencyTargetDefault: kconfig.TargetConcurrencyDefault,
+		ContainerConcurrencyTargetDefault: kconfig.TargetConcurrency,
 	}
 
 	dynConfig := autoscaler.NewDynamicConfig(config, logger)
@@ -100,7 +100,7 @@ func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerS
 		testNamespace,
 		testName,
 		endpointsInformerSource.EPInformer(),
-		kconfig.TargetConcurrencyDefault,
+		kconfig.TargetConcurrency,
 		statsReporter,
 	)
 	if err != nil {

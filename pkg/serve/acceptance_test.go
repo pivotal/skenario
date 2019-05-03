@@ -69,15 +69,15 @@ func setParams(t *testing.T, page *agouti.Page) {
 	var err error
 
 	var settings = map[string]string{
-		"runFor":                   "10",
-		"launchDelay":              "5",
-		"terminateDelay":           "1",
-		"tickInterval":             "2",
-		"stableWindow":             "60",
-		"panicWindow":              "6",
-		"scaleToZeroGracePeriod":   "30",
-		"targetConcurrencyDefault": "1",
-		"maxScaleUpRate":           "100",
+		"runFor":                 "10",
+		"launchDelay":            "5",
+		"terminateDelay":         "1",
+		"tickInterval":           "2",
+		"stableWindow":           "60",
+		"panicWindow":            "6",
+		"scaleToZeroGracePeriod": "30",
+		"targetConcurrency":      "1",
+		"maxScaleUpRate":         "100",
 
 		"rampConfigMaxRPS": "10",
 		"rampConfigDeltaV": "1",

@@ -165,14 +165,14 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			srr = &SkenarioRunRequest{
-				InMemoryDatabase:         true,
-				LaunchDelay:              time.Second,
-				TickInterval:             11 * time.Second,
-				StableWindow:             22 * time.Second,
-				PanicWindow:              33 * time.Second,
-				ScaleToZeroGracePeriod:   44 * time.Second,
-				TargetConcurrencyDefault: 55,
-				MaxScaleUpRate:           77,
+				InMemoryDatabase:       true,
+				LaunchDelay:            time.Second,
+				TickInterval:           11 * time.Second,
+				StableWindow:           22 * time.Second,
+				PanicWindow:            33 * time.Second,
+				ScaleToZeroGracePeriod: 44 * time.Second,
+				TargetConcurrency:      55,
+				MaxScaleUpRate:         77,
 				UniformConfig: trafficpatterns.UniformConfig{
 					NumberOfRequests: 88,
 				},
@@ -197,8 +197,8 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, 44*time.Second, subject.ScaleToZeroGracePeriod)
 		})
 
-		it("sets a target concurrency default", func() {
-			assert.Equal(t, 55.0, subject.TargetConcurrencyDefault)
+		it("sets a target concurrency", func() {
+			assert.Equal(t, 55.0, subject.TargetConcurrency)
 		})
 
 		it("sets a max scale up rate", func() {

@@ -42,28 +42,28 @@ import (
 )
 
 var (
-	startAt                     = time.Unix(0, 0)
-	startRunning                = time.Now()
-	au                          = aurora.NewAurora(true)
-	simDuration                 = flag.Duration("duration", 10*time.Minute, "Duration of time to simulate.")
-	tickInterval                = flag.Duration("tickInterval", 2*time.Second, "Tick interval duration of the Autoscaler")
-	stableWindow                = flag.Duration("stableWindow", 60*time.Second, "Duration of stable window of the Autoscaler")
-	panicWindow                 = flag.Duration("panicWindow", 6*time.Second, "Duration of panic window of the Autoscaler")
-	scaleToZeroGrace            = flag.Duration("scaleToZeroGrace", 30*time.Second, "Duration of the scale-to-zero grace period of the Autoscaler")
-	targetConcurrencyDefault    = flag.Float64("targetConcurrencyDefault", 1.0, "Default target concurrency of Replicas")
-	maxScaleUpRate              = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
-	launchDelay                 = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
-	terminateDelay              = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
-	numberOfRequests            = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate. Ignored by the ramp pattern")
-	showTrace                   = flag.Bool("showTrace", true, "Show simulation trace")
-	storeRun                    = flag.Bool("storeRun", true, "Store simulation run results in skenario.db")
-	trafficPattern              = flag.String("trafficPattern", "uniform", "Options are 'uniform', 'ramp', 'step' and 'sinusoidal'")
-	rampDelta                   = flag.Int("rampDelta", 1, "RPS acceleration/deceleration rate")
-	rampMaxRPS                  = flag.Int("rampMaxRPS", 50, "Max RPS of the ramp traffic pattern. Ignored by uniform pattern")
-	stepRPS                     = flag.Int("stepRPS", 50, "RPS of the step traffic pattern")
-	stepAfter                   = flag.Duration("stepAfter", 10*time.Second, "When using the step traffic pattern, wait this long until the step occurs")
-	sineAmplitude               = flag.Int("sineAmplitude", 50, "Maximum RPS of the sinusoidal traffic pattern")
-	sinePeriod                  = flag.Duration("sinePeriod", 60*time.Second, "Time between sinusoidal RPS peaks")
+	startAt           = time.Unix(0, 0)
+	startRunning      = time.Now()
+	au                = aurora.NewAurora(true)
+	simDuration       = flag.Duration("duration", 10*time.Minute, "Duration of time to simulate.")
+	tickInterval      = flag.Duration("tickInterval", 2*time.Second, "Tick interval duration of the Autoscaler")
+	stableWindow      = flag.Duration("stableWindow", 60*time.Second, "Duration of stable window of the Autoscaler")
+	panicWindow       = flag.Duration("panicWindow", 6*time.Second, "Duration of panic window of the Autoscaler")
+	scaleToZeroGrace  = flag.Duration("scaleToZeroGrace", 30*time.Second, "Duration of the scale-to-zero grace period of the Autoscaler")
+	targetConcurrency = flag.Float64("targetConcurrency", 1.0, "Target concurrency of Replicas")
+	maxScaleUpRate    = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
+	launchDelay       = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
+	terminateDelay    = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
+	numberOfRequests  = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate. Ignored by the ramp pattern")
+	showTrace         = flag.Bool("showTrace", true, "Show simulation trace")
+	storeRun          = flag.Bool("storeRun", true, "Store simulation run results in skenario.db")
+	trafficPattern    = flag.String("trafficPattern", "uniform", "Options are 'uniform', 'ramp', 'step' and 'sinusoidal'")
+	rampDelta         = flag.Int("rampDelta", 1, "RPS acceleration/deceleration rate")
+	rampMaxRPS        = flag.Int("rampMaxRPS", 50, "Max RPS of the ramp traffic pattern. Ignored by uniform pattern")
+	stepRPS           = flag.Int("stepRPS", 50, "RPS of the step traffic pattern")
+	stepAfter         = flag.Duration("stepAfter", 10*time.Second, "When using the step traffic pattern, wait this long until the step occurs")
+	sineAmplitude     = flag.Int("sineAmplitude", 50, "Maximum RPS of the sinusoidal traffic pattern")
+	sinePeriod        = flag.Duration("sinePeriod", 60*time.Second, "Time between sinusoidal RPS peaks")
 )
 
 func main() {
@@ -221,12 +221,12 @@ func (r *runner) Env() simulator.Environment {
 
 func (r *runner) AutoscalerConfig() model.KnativeAutoscalerConfig {
 	return model.KnativeAutoscalerConfig{
-		TickInterval:                *tickInterval,
-		StableWindow:                *stableWindow,
-		PanicWindow:                 *panicWindow,
-		ScaleToZeroGracePeriod:      *scaleToZeroGrace,
-		TargetConcurrencyDefault:    *targetConcurrencyDefault,
-		MaxScaleUpRate:              *maxScaleUpRate,
+		TickInterval:           *tickInterval,
+		StableWindow:           *stableWindow,
+		PanicWindow:            *panicWindow,
+		ScaleToZeroGracePeriod: *scaleToZeroGrace,
+		TargetConcurrency:      *targetConcurrency,
+		MaxScaleUpRate:         *maxScaleUpRate,
 	}
 }
 

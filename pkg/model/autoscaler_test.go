@@ -144,12 +144,12 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 				lg, err := zap.NewDevelopment()
 				assert.NoError(t, err)
 				as = newKpa(lg.Sugar(), epiFake, KnativeAutoscalerConfig{
-					TickInterval:             11 * time.Second,
-					StableWindow:             22 * time.Second,
-					PanicWindow:              33 * time.Second,
-					ScaleToZeroGracePeriod:   44 * time.Second,
-					TargetConcurrencyDefault: 55.0,
-					MaxScaleUpRate:           77.0,
+					TickInterval:           11 * time.Second,
+					StableWindow:           22 * time.Second,
+					PanicWindow:            33 * time.Second,
+					ScaleToZeroGracePeriod: 44 * time.Second,
+					TargetConcurrency:      55.0,
+					MaxScaleUpRate:         77.0,
 				})
 				assert.NotNil(t, as)
 
