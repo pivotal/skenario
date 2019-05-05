@@ -135,13 +135,12 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var vds = SkenarioRunResponse{
-		RanFor:         env.HaltTime().Sub(startAt),
-		TrafficPattern: traffic.Name(),
+		RanFor:            env.HaltTime().Sub(startAt),
+		TrafficPattern:    traffic.Name(),
+		TallyLines:        tallyLines(dbFileName, scenarioRunId),
+		ResponseTimes:     responseTimes(dbFileName, scenarioRunId),
+		RequestsPerSecond: requestsPerSecond(dbFileName, scenarioRunId),
 	}
-
-	vds.TallyLines = tallyLines(dbFileName, scenarioRunId)
-	vds.ResponseTimes = responseTimes(dbFileName, scenarioRunId)
-	vds.RequestsPerSecond = requestsPerSecond(dbFileName, scenarioRunId)
 
 	err = json.NewEncoder(w).Encode(vds)
 	if err != nil {
