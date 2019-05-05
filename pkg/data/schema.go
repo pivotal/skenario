@@ -62,9 +62,9 @@ create table if not exists completed_movements
     occurs_at       unsigned big integer, -- unsigned int to avoid being an alias to rowid
     kind            text    not null,
 
-    moved           text    not null references entities (id),
-    from_stock      text    not null references stocks (id),
-    to_stock        text    not null references stocks (id),
+    moved           integer    not null references entities (id),
+    from_stock      integer    not null references stocks (id),
+    to_stock        integer    not null references stocks (id),
 
     scenario_run_id integer not null references scenario_runs (id)
 );
@@ -76,9 +76,9 @@ create table if not exists ignored_movements
     occurs_at       unsigned big integer, -- unsigned int to avoid being an alias to rowid
     kind            text    not null,
 
-    from_stock      text    not null references stocks (id),
-    to_stock        text    not null references stocks (id),
-    reason          text    not null,
+    from_stock      integer    not null references stocks (id),
+    to_stock        integer    not null references stocks (id),
+    reason          text       not null,
 
     scenario_run_id integer not null references scenario_runs (id)
 );
