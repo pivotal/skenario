@@ -117,7 +117,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 	var dbFileName string
 	if runReq.InMemoryDatabase {
-		dbFileName = ":memory:"
+		dbFileName = "file::memory:?cache=shared"
 	} else {
 		dbFileName = "skenario.db"
 	}
@@ -134,39 +134,41 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("there was an error saving data: %s", err.Error())
 	}
 
-	totalStmt, err := conn.Prepare(data.RunningTallyQuery, scenarioRunId, scenarioRunId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	responseStmt, err := conn.Prepare(data.ResponseTimesQuery, scenarioRunId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	requestsPerSecondStmt, err := conn.Prepare(data.RequestsPerSecondQuery, scenarioRunId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	var occursAt, tally, arrivedAt, completedAt, rTime, second, requests int64
-	var stockName, kindStocked string
 	var vds = SkenarioRunResponse{
-		RanFor:            env.HaltTime().Sub(startAt),
-		TrafficPattern:    traffic.Name(),
-		TallyLines:        make([]TallyLine, 0),
-		ResponseTimes:     make([]ResponseTime, 0),
-		RequestsPerSecond: make([]RPS, 0),
+		RanFor:         env.HaltTime().Sub(startAt),
+		TrafficPattern: traffic.Name(),
 	}
 
+	vds.TallyLines = tallyLines(dbFileName, scenarioRunId)
+	vds.ResponseTimes = responseTimes(dbFileName, scenarioRunId)
+	vds.RequestsPerSecond = requestsPerSecond(dbFileName, scenarioRunId)
+
+	err = json.NewEncoder(w).Encode(vds)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func tallyLines(dbFileName string, scenarioRunId int64) []TallyLine {
+	totalConn, err := sqlite3.Open(dbFileName, sqlite3.OPEN_READONLY)
+	if err != nil {
+		panic(fmt.Errorf("could not open database file '%s': %s", dbFileName, err.Error()))
+	}
+	defer totalConn.Close()
+
+	totalStmt, err := totalConn.Prepare(data.RunningTallyQuery, scenarioRunId, scenarioRunId)
+	if err != nil {
+		panic(fmt.Errorf("could not prepare query: %s", err.Error()))
+	}
+
+	var occursAt, tally int64
+	var stockName, kindStocked string
+	tallyLines := make([]TallyLine, 0)
 	for {
 		hasRow, err := totalStmt.Step()
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(fmt.Errorf("could not step: %s", err.Error()))
 		}
 
 		if !hasRow {
@@ -175,8 +177,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = totalStmt.Scan(&occursAt, &stockName, &kindStocked, &tally)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(fmt.Errorf("could not scan: %s", err.Error()))
 		}
 
 		line := TallyLine{
@@ -185,14 +186,30 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			KindStocked: kindStocked,
 			Tally:       tally,
 		}
-		vds.TallyLines = append(vds.TallyLines, line)
+		tallyLines = append(tallyLines, line)
 	}
 
+	return tallyLines
+}
+
+func responseTimes(dbFileName string, scenarioRunId int64) []ResponseTime {
+	responseConn, err := sqlite3.Open(dbFileName, sqlite3.OPEN_READONLY)
+	if err != nil {
+		panic(fmt.Errorf("could not open database file '%s': %s", dbFileName, err.Error()))
+	}
+	defer responseConn.Close()
+
+	responseStmt, err := responseConn.Prepare(data.ResponseTimesQuery, scenarioRunId)
+	if err != nil {
+		panic(fmt.Errorf("could not prepare query: %s", err.Error()))
+	}
+
+	var arrivedAt, completedAt, rTime int64
+	responseTimes := make([]ResponseTime, 0)
 	for {
 		hasRow, err := responseStmt.Step()
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(fmt.Errorf("could not step: %s", err.Error()))
 		}
 
 		if !hasRow {
@@ -201,8 +218,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = responseStmt.Scan(&arrivedAt, &completedAt, &rTime)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(fmt.Errorf("could not scan: %s", err.Error()))
 		}
 
 		var rt = ResponseTime{
@@ -210,14 +226,30 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 			CompletedAt:  completedAt,
 			ResponseTime: rTime,
 		}
-		vds.ResponseTimes = append(vds.ResponseTimes, rt)
+		responseTimes = append(responseTimes, rt)
 	}
 
+	return responseTimes
+}
+
+func requestsPerSecond(dbFileName string, scenarioRunId int64) []RPS {
+	rpsConn, err := sqlite3.Open(dbFileName, sqlite3.OPEN_READONLY)
+	if err != nil {
+		panic(fmt.Errorf("could not open database file '%s': %s", dbFileName, err.Error()))
+	}
+	defer rpsConn.Close()
+
+	requestsPerSecondStmt, err := rpsConn.Prepare(data.RequestsPerSecondQuery, scenarioRunId)
+	if err != nil {
+		panic(fmt.Errorf("could not prepare query: %s", err.Error()))
+	}
+
+	var second, requests int64
+	requestsPerSecond := make([]RPS, 0)
 	for {
 		hasRow, err := requestsPerSecondStmt.Step()
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(fmt.Errorf("could not step: %s", err.Error()))
 		}
 
 		if !hasRow {
@@ -226,22 +258,17 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = requestsPerSecondStmt.Scan(&second, &requests)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(fmt.Errorf("could not scan: %s", err.Error()))
 		}
 
 		var rps = RPS{
 			Second:   second,
 			Requests: requests,
 		}
-		vds.RequestsPerSecond = append(vds.RequestsPerSecond, rps)
+		requestsPerSecond = append(requestsPerSecond, rps)
 	}
 
-	err = json.NewEncoder(w).Encode(vds)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	return requestsPerSecond
 }
 
 func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
