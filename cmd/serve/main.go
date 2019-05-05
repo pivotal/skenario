@@ -17,7 +17,6 @@
 package main
 
 import (
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
 

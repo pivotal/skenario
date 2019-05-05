@@ -6,30 +6,28 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
 
 type SkenarioServer struct {
 	IndexRoot string
 	srv       *http.Server
-	mux       *http.ServeMux
 }
 
 func (ss *SkenarioServer) Serve() {
-	ss.mux = http.NewServeMux()
 
-	indexHandler := http.FileServer(http.Dir(ss.IndexRoot))
-	indexHandler = middleware.NoCache(indexHandler)
-	indexHandler = middleware.DefaultCompress(indexHandler)
-	ss.mux.Handle("/", indexHandler)
+	router := chi.NewRouter()
+	router.Use(middleware.NoCache)
+	router.Use(middleware.DefaultCompress)
 
-	runHandler := http.HandlerFunc(RunHandler)
-	gzipRunHandler := middleware.DefaultCompress(runHandler)
-	ss.mux.Handle("/run", gzipRunHandler)
+	router.Mount("/debug", middleware.Profiler())
+	router.Mount("/", http.FileServer(http.Dir(ss.IndexRoot)))
+	router.HandleFunc("/run", RunHandler)
 
 	ss.srv = &http.Server{
 		Addr:    "0.0.0.0:3000",
-		Handler: ss.mux,
+		Handler: router,
 	}
 
 	go func() {
