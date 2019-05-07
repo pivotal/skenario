@@ -18,7 +18,6 @@ package model
 import (
 	"testing"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -28,40 +27,6 @@ import (
 
 func TestReplicasActive(t *testing.T) {
 	spec.Run(t, "Replicas Active spec", testReplicasActive, spec.Report(report.Terminal{}))
-}
-
-type fakeReplica struct {
-	activateCalled           bool
-	deactivateCalled         bool
-	requestsProcessingCalled bool
-	statCalled               bool
-	fakeReplicaNum           int
-}
-
-func (fr *fakeReplica) Name() simulator.EntityName {
-	return "Replica"
-}
-
-func (fr *fakeReplica) Kind() simulator.EntityKind {
-	return "Replica"
-}
-
-func (fr *fakeReplica) Activate() {
-	fr.activateCalled = true
-}
-
-func (fr *fakeReplica) Deactivate() {
-	fr.deactivateCalled = true
-}
-
-func (fr *fakeReplica) RequestsProcessing() RequestsProcessingStock {
-	fr.requestsProcessingCalled = true
-	return NewRequestsProcessingStock(new(FakeEnvironment), fr.fakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"))
-}
-
-func (fr *fakeReplica) Stat() autoscaler.Stat {
-	fr.statCalled = true
-	return autoscaler.Stat{}
 }
 
 func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
@@ -84,29 +49,29 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Add()", func() {
-		var replicaFake *fakeReplica
+		var replicaFake *FakeReplica
 
 		it.Before(func() {
-			replicaFake = new(fakeReplica)
+			replicaFake = new(FakeReplica)
 			subject.Add(replicaFake)
 		})
 
 		it("tells the Replica entity that it is active", func() {
-			assert.True(t, replicaFake.activateCalled)
+			assert.True(t, replicaFake.ActivateCalled)
 		})
 	})
 
 	describe("Remove()", func() {
-		var replicaFake *fakeReplica
+		var replicaFake *FakeReplica
 
 		it.Before(func() {
-			replicaFake = new(fakeReplica)
+			replicaFake = new(FakeReplica)
 			subject.Add(replicaFake)
 			subject.Remove()
 		})
 
 		it("tells the Replica entity that it is terminating", func() {
-			assert.True(t, replicaFake.deactivateCalled)
+			assert.True(t, replicaFake.DeactivateCalled)
 		})
 
 		it("returns nil if it is empty", func() {

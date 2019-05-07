@@ -36,7 +36,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 	var replicaStock ReplicasActiveStock
 	var requestsFailedStock simulator.SinkStock
-	var replicaFake *fakeReplica
+	var replicaFake *FakeReplica
 
 	it.Before(func() {
 		requestsFailedStock = simulator.NewSinkStock("RequestsFailed", "Request")
@@ -66,16 +66,16 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 				replicaStock = NewReplicasActiveStock()
 
-				replicaFake = new(fakeReplica)
-				replicaFake.fakeReplicaNum = 11
+				replicaFake = new(FakeReplica)
+				replicaFake.FakeReplicaNum = 11
 				replicaStock.Add(replicaFake)
 
-				replicaFake = new(fakeReplica)
-				replicaFake.fakeReplicaNum = 22
+				replicaFake = new(FakeReplica)
+				replicaFake.FakeReplicaNum = 22
 				replicaStock.Add(replicaFake)
 
-				replicaFake = new(fakeReplica)
-				replicaFake.fakeReplicaNum = 33
+				replicaFake = new(FakeReplica)
+				replicaFake.FakeReplicaNum = 33
 				replicaStock.Add(replicaFake)
 
 				subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
@@ -102,7 +102,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					request = NewRequestEntity(envFake, subject)
 
 					replicaStock = NewReplicasActiveStock()
-					replicaFake = new(fakeReplica)
+					replicaFake = new(FakeReplica)
 					replicaStock.Add(replicaFake)
 
 					subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)

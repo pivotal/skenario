@@ -17,6 +17,7 @@ package model
 
 import (
 	"context"
+	"github.com/knative/serving/pkg/autoscaler"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -48,3 +49,38 @@ func (fe *FakeEnvironment) HaltTime() time.Time {
 func (fe *FakeEnvironment) Context() context.Context {
 	return context.Background()
 }
+
+type FakeReplica struct {
+	ActivateCalled           bool
+	DeactivateCalled         bool
+	RequestsProcessingCalled bool
+	StatCalled               bool
+	FakeReplicaNum           int
+}
+
+func (*FakeReplica) Name() simulator.EntityName {
+	return "Replica"
+}
+
+func (*FakeReplica) Kind() simulator.EntityKind {
+	return "Replica"
+}
+
+func (fr *FakeReplica) Activate() {
+	fr.ActivateCalled = true
+}
+
+func (fr *FakeReplica) Deactivate() {
+	fr.DeactivateCalled = true
+}
+
+func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
+	fr.RequestsProcessingCalled = true
+	return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"))
+}
+
+func (fr *FakeReplica) Stat() autoscaler.Stat {
+	fr.StatCalled = true
+	return autoscaler.Stat{}
+}
+

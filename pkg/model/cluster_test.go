@@ -109,7 +109,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		var rawSubject *clusterModel
 		var bufferRecorded autoscaler.Stat
 		var theTime = time.Now()
-		var replicaFake *fakeReplica
+		var replicaFake *FakeReplica
 		envFake = new(FakeEnvironment)
 		recordOnce := 1
 		recordThrice := 3
@@ -117,7 +117,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
 
-			replicaFake = new(fakeReplica)
+			replicaFake = new(FakeReplica)
 
 			autoscalerFake = &fakeAutoscaler{
 				recorded:   make([]autoscaler.Stat, 0),
@@ -165,7 +165,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("records for replicas", func() {
 			it("delegates Stat creation to the Replica", func() {
-				assert.True(t, replicaFake.statCalled)
+				assert.True(t, replicaFake.StatCalled)
 			})
 		})
 	})
