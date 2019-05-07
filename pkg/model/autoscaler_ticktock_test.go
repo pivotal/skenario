@@ -24,7 +24,6 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -35,12 +34,12 @@ func TestAutoscalerTicktock(t *testing.T) {
 func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 	var subject AutoscalerTicktockStock
 	var rawSubject *autoscalerTicktockStock
-	var envFake *fakes.FakeEnvironment
+	var envFake *FakeEnvironment
 	var autoscalerFake *fakeAutoscaler
 	var cluster ClusterModel
 
 	it.Before(func() {
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 		envFake.TheTime = time.Unix(0, 0)
 		autoscalerFake = &fakeAutoscaler{
 			recorded:   make([]autoscaler.Stat, 0),

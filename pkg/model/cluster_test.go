@@ -26,8 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers/core/v1"
-
-	"skenario/pkg/model/fakes"
 )
 
 func TestCluster(t *testing.T) {
@@ -39,7 +37,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var config ClusterConfig
 	var subject ClusterModel
 	var rawSubject *clusterModel
-	var envFake *fakes.FakeEnvironment
+	var envFake *FakeEnvironment
 	var endpoints *corev1.Endpoints
 	var err error
 
@@ -55,7 +53,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("NewCluster()", func() {
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, subject.Env())
@@ -75,7 +73,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("CurrentLaunching()", func() {
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -91,7 +89,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("CurrentActive()", func() {
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -112,7 +110,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		var bufferRecorded autoscaler.Stat
 		var theTime = time.Now()
 		var replicaFake *fakeReplica
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 		recordOnce := 1
 		recordThrice := 3
 
@@ -183,7 +181,7 @@ func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
 	var config ClusterConfig
 	var subject EndpointInformerSource
 	var cluster ClusterModel
-	var envFake = new(fakes.FakeEnvironment)
+	var envFake = new(FakeEnvironment)
 
 	it.Before(func() {
 		config = ClusterConfig{}

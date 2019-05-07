@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"skenario/pkg/model"
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -35,12 +34,12 @@ func TestStep(t *testing.T) {
 func testStep(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
 	var config StepConfig
-	var envFake *fakes.FakeEnvironment
+	var envFake *model.FakeEnvironment
 	var trafficSource model.TrafficSource
 	var bufferStock model.RequestsBufferedStock
 
 	it.Before(func() {
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(20 * time.Second)
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)

@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"skenario/pkg/model"
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -35,7 +34,7 @@ func TestSinusoidal(t *testing.T) {
 func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
 	var config SinusoidalConfig
-	var envFake *fakes.FakeEnvironment
+	var envFake *model.FakeEnvironment
 	var amplitude int
 	var period time.Duration
 	var trafficSource model.TrafficSource
@@ -45,7 +44,7 @@ func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 		amplitude = 20
 		period = 20 * time.Second
 
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(model.FakeEnvironment)
 		envFake.TheTime = time.Unix(0, 0)
 		envFake.TheHaltTime = envFake.TheTime.Add(30 * time.Second)
 

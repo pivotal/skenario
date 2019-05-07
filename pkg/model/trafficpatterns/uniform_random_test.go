@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"skenario/pkg/model"
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -35,14 +34,14 @@ func TestUniformRandom(t *testing.T) {
 func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
 	var config UniformConfig
-	var envFake *fakes.FakeEnvironment
+	var envFake *model.FakeEnvironment
 	var trafficSource model.TrafficSource
 	var bufferStock model.RequestsBufferedStock
 	var startAt time.Time
 	var runFor time.Duration
 
 	it.Before(func() {
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(10 * time.Second)
 		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)

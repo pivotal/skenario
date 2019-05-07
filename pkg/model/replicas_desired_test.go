@@ -23,7 +23,6 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -38,7 +37,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 	var replicaSource ReplicaSource
 	var replicasLaunching, replicasActive simulator.ThroughStock
 	var replicasTerminated simulator.SinkStock
-	var envFake *fakes.FakeEnvironment
+	var envFake *FakeEnvironment
 
 	it.Before(func() {
 		replicasLaunching = simulator.NewThroughStock("ReplicasLaunching", "Replica")
@@ -46,7 +45,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		replicasTerminated = simulator.NewThroughStock("ReplicasTerminated", "Replica")
 		replicaSource = NewReplicaSource(envFake, nil, nil)
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 		envFake.Movements = make([]simulator.Movement, 0)
 
 		subject = NewReplicasDesiredStock(envFake, config, replicaSource, replicasLaunching, replicasActive, replicasTerminated)

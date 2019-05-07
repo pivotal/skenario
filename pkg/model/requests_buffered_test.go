@@ -23,7 +23,6 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -34,7 +33,7 @@ func TestRequestsBuffered(t *testing.T) {
 func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 	var subject RequestsBufferedStock
 	var rawSubject *requestsBufferedStock
-	var envFake *fakes.FakeEnvironment
+	var envFake *FakeEnvironment
 	var replicaStock ReplicasActiveStock
 	var requestsFailedStock simulator.SinkStock
 	var replicaFake *fakeReplica
@@ -45,7 +44,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewRequestsBufferedStock()", func() {
 		it.Before(func() {
-			envFake = new(fakes.FakeEnvironment)
+			envFake = new(FakeEnvironment)
 			replicaStock = NewReplicasActiveStock()
 			subject = NewRequestsBufferedStock(envFake, replicaStock, nil)
 			rawSubject = subject.(*requestsBufferedStock)
@@ -63,7 +62,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("there are multiple replicas available to serve multiple requests", func() {
 			it.Before(func() {
-				envFake = new(fakes.FakeEnvironment)
+				envFake = new(FakeEnvironment)
 
 				replicaStock = NewReplicasActiveStock()
 
@@ -99,7 +98,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 		describe("there are no other requests yet", func() {
 			describe("there is at least one Replica available to process the request", func() {
 				it.Before(func() {
-					envFake = new(fakes.FakeEnvironment)
+					envFake = new(FakeEnvironment)
 					request = NewRequestEntity(envFake, subject)
 
 					replicaStock = NewReplicasActiveStock()
@@ -120,7 +119,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 			describe("there are no Replicas active", func() {
 				describe("scheduling the first retry", func() {
 					it.Before(func() {
-						envFake = new(fakes.FakeEnvironment)
+						envFake = new(FakeEnvironment)
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
@@ -141,7 +140,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 				describe("scheduling subsequent retries", func() {
 					it.Before(func() {
-						envFake = new(fakes.FakeEnvironment)
+						envFake = new(FakeEnvironment)
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
@@ -160,7 +159,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 				describe("running out of retries", func() {
 					it.Before(func() {
-						envFake = new(fakes.FakeEnvironment)
+						envFake = new(FakeEnvironment)
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()

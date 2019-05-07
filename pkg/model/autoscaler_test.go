@@ -29,7 +29,6 @@ import (
 	"k8s.io/client-go/informers/core/v1"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -76,14 +75,14 @@ func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	var subject KnativeAutoscalerModel
 	var rawSubject *knativeAutoscaler
-	var envFake *fakes.FakeEnvironment
+	var envFake *FakeEnvironment
 	var cluster ClusterModel
 	var config ClusterConfig
 	startAt := time.Unix(0, 0)
 
 	it.Before(func() {
 		config = ClusterConfig{}
-		envFake = &fakes.FakeEnvironment{
+		envFake = &FakeEnvironment{
 			Movements:   make([]simulator.Movement, 0),
 			TheTime:     startAt,
 			TheHaltTime: startAt.Add(1 * time.Hour),

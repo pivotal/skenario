@@ -23,7 +23,6 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -34,10 +33,10 @@ func TestRequestsProcessing(t *testing.T) {
 func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 	var subject RequestsProcessingStock
 	var rawSubject *requestsProcessingStock
-	var envFake *fakes.FakeEnvironment
+	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 		subject = NewRequestsProcessingStock(envFake, 99, simulator.NewSinkStock("RequestsComplete", "Request"))
 		rawSubject = subject.(*requestsProcessingStock)
 	})

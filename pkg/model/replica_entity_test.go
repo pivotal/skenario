@@ -31,7 +31,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"skenario/pkg/model/fakes"
 	"skenario/pkg/simulator"
 )
 
@@ -44,7 +43,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 	var rawSubject *replicaEntity
 	var fakeClient kubernetes.Interface
 	var endpointsInformer v1.EndpointsInformer
-	var envFake *fakes.FakeEnvironment
+	var envFake *FakeEnvironment
 
 	it.Before(func() {
 		fakeClient = k8sfakes.NewSimpleClientset()
@@ -63,7 +62,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
 		endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
-		envFake = new(fakes.FakeEnvironment)
+		envFake = new(FakeEnvironment)
 
 		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4")
 		assert.NotNil(t, subject)
