@@ -56,6 +56,7 @@ type FakeReplica struct {
 	RequestsProcessingCalled bool
 	StatCalled               bool
 	FakeReplicaNum           int
+	ProcessingStock          RequestsProcessingStock
 }
 
 func (*FakeReplica) Name() simulator.EntityName {
@@ -76,11 +77,14 @@ func (fr *FakeReplica) Deactivate() {
 
 func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.RequestsProcessingCalled = true
-	return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"))
+	if fr.ProcessingStock == nil {
+		return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"))
+	} else {
+		return fr.ProcessingStock
+	}
 }
 
 func (fr *FakeReplica) Stat() autoscaler.Stat {
 	fr.StatCalled = true
 	return autoscaler.Stat{}
 }
-
