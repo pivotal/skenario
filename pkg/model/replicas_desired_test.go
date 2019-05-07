@@ -37,6 +37,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 	var replicaSource ReplicaSource
 	var replicasLaunching, replicasActive simulator.ThroughStock
 	var replicasTerminated simulator.SinkStock
+	var replicasTerminating ReplicasTerminatingStock
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
@@ -47,8 +48,9 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
 		envFake = new(FakeEnvironment)
 		envFake.Movements = make([]simulator.Movement, 0)
+		replicasTerminating = NewReplicasTerminatingStock(envFake, config, replicasTerminated)
 
-		subject = NewReplicasDesiredStock(envFake, config, replicaSource, replicasLaunching, replicasActive, replicasTerminated)
+		subject = NewReplicasDesiredStock(envFake, config, replicaSource, replicasLaunching, replicasActive, replicasTerminating)
 		rawSubject = subject.(*replicasDesiredStock)
 	})
 

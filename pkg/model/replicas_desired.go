@@ -31,14 +31,14 @@ type ReplicasDesiredStock interface {
 }
 
 type replicasDesiredStock struct {
-	env                simulator.Environment
-	config             ReplicasConfig
-	delegate           simulator.ThroughStock
-	replicaSource      ReplicaSource
-	replicasLaunching  simulator.ThroughStock
-	replicasActive     simulator.ThroughStock
-	replicasTerminated simulator.SinkStock
-	launchingCount     uint64
+	env                 simulator.Environment
+	config              ReplicasConfig
+	delegate            simulator.ThroughStock
+	replicaSource       ReplicaSource
+	replicasLaunching   simulator.ThroughStock
+	replicasActive      simulator.ThroughStock
+	replicasTerminating ReplicasTerminatingStock
+	launchingCount      uint64
 }
 
 func (rds *replicasDesiredStock) Name() simulator.StockName {
@@ -69,14 +69,14 @@ func (rds *replicasDesiredStock) Remove() simulator.Entity {
 			"terminate_launch",
 			nextTerminate,
 			rds.replicasLaunching,
-			rds.replicasTerminated,
+			rds.replicasTerminating,
 		))
 	} else {
 		rds.env.AddToSchedule(simulator.NewMovement(
 			"terminate_active",
 			nextTerminate,
 			rds.replicasActive,
-			rds.replicasTerminated,
+			rds.replicasTerminating,
 		))
 	}
 
@@ -106,14 +106,14 @@ func (rds *replicasDesiredStock) Add(entity simulator.Entity) error {
 	return nil
 }
 
-func NewReplicasDesiredStock(env simulator.Environment, config ReplicasConfig, replicaSource ReplicaSource, replicasLaunching, replicasActive simulator.ThroughStock, replicasTerminated simulator.SinkStock) ReplicasDesiredStock {
+func NewReplicasDesiredStock(env simulator.Environment, config ReplicasConfig, replicaSource ReplicaSource, replicasLaunching, replicasActive simulator.ThroughStock, replicasTerminating ReplicasTerminatingStock) ReplicasDesiredStock {
 	return &replicasDesiredStock{
-		env:                env,
-		config:             config,
-		delegate:           simulator.NewThroughStock("ReplicasDesired", "Desired"),
-		replicaSource:      replicaSource,
-		replicasLaunching:  replicasLaunching,
-		replicasActive:     replicasActive,
-		replicasTerminated: replicasTerminated,
+		env:                 env,
+		config:              config,
+		delegate:            simulator.NewThroughStock("ReplicasDesired", "Desired"),
+		replicaSource:       replicaSource,
+		replicasLaunching:   replicasLaunching,
+		replicasActive:      replicasActive,
+		replicasTerminating: replicasTerminating,
 	}
 }
