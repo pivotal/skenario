@@ -16,21 +16,36 @@
 package data
 
 // language=sql
-var RunningTallyQuery = `select occurs_at
+var RunningTallyQuery = `
+with running_tally as (
+select
+	  occurs_at
+	, sa.name            as stock_name
+	, sa.kind_stocked
+	, sum(case
+		   when from_stock = to_stock then 0
+		   when from_stock = sa.id then -1
+		   when to_stock = sa.id then 1
+		 end)
+	  over summation as tally
+	from completed_movements join stock_aggregate sa on sa.id in (from_stock, to_stock)
+	where kind not in ('start_to_running', 'autoscaler_tick', 'running_to_halted')
+	and scenario_run_id = ?
+    window summation as (partition by sa.name order by occurs_at asc rows unbounded preceding)
+)
+select occurs_at
      , stock_name
      , kind_stocked
      , tally
-from running_tallies
-where scenario_run_id = ?
+from running_tally
 union
 select -- fake up final values so that plot of replicas doesn't clip
     simulated_duration as occurs_at
      , stock_name
      , kind_stocked
      , tally
-from running_tallies
-         join scenario_runs on running_tallies.scenario_run_id = scenario_runs.id
-where scenario_run_id = ?
+from running_tally, scenario_runs
+where scenario_runs.id = ?
   and kind_stocked = 'Replica'
 group by stock_name
 having max(occurs_at)

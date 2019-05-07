@@ -99,21 +99,4 @@ where kind_stocked in ('Request', 'Desired', 'Replica')
   and name not in ('TrafficSource', 'ReplicaSource', 'DesiredSource', 'DesiredSink', 'ReplicasTerminated')
   and name not like 'RequestsComplete%'
 ;
-
-create view if not exists running_tallies as
-select scenario_run_id
-     , occurs_at
-     , sa.name            as stock_name
-     , sa.kind_stocked
-     , sum(case
-               when from_stock = to_stock then 0
-               when from_stock = sa.id then -1
-               when to_stock = sa.id then 1
-               end)
-           over summation as tally
-from completed_movements
-         join stock_aggregate sa on sa.id in (from_stock, to_stock)
-where kind not in ('start_to_running', 'autoscaler_tick', 'running_to_halted') window summation as (partition by sa.name order by occurs_at asc rows unbounded preceding)
-;
-
 `
