@@ -96,7 +96,7 @@ select id
     end) as kind_stocked
 from stocks
 where kind_stocked in ('Request', 'Desired', 'Replica')
-  and name not in ('TrafficSource', 'ReplicaSource', 'DesiredSource', 'DesiredSink', 'ReplicasTerminated')
+  and name not in ('TrafficSource', 'ReplicaSource', 'DesiredSource', 'DesiredSink', 'ReplicasLaunching', 'ReplicasTerminating', 'ReplicasTerminated')
   and name not like 'RequestsComplete%'
 ;
 `
