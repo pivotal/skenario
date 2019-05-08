@@ -121,10 +121,6 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				assert.Len(t, envFake.Movements, 1)
 				assert.Equal(t, simulator.MovementKind("terminate_launch"), envFake.Movements[0].Kind())
 			})
-
-			it("adds the TerminateDelay to the termination time", func() {
-				assert.Equal(t, envFake.TheTime.Add(222*time.Nanosecond), envFake.Movements[0].OccursAt())
-			})
 		})
 
 		describe("there are active replicas but no launching replicas", func() {
@@ -139,10 +135,6 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 			it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
 				assert.Len(t, envFake.Movements, 1)
 				assert.Equal(t, simulator.MovementKind("terminate_active"), envFake.Movements[0].Kind())
-			})
-
-			it("adds the TerminateDelay to the termination time", func() {
-				assert.Equal(t, envFake.TheTime.Add(222*time.Nanosecond), envFake.Movements[0].OccursAt())
 			})
 		})
 

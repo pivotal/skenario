@@ -63,7 +63,7 @@ func (rds *replicasDesiredStock) Remove() simulator.Entity {
 		return nil
 	}
 
-	nextTerminate := rds.env.CurrentMovementTime().Add(rds.config.TerminateDelay)
+	nextTerminate := rds.env.CurrentMovementTime().Add(1*time.Nanosecond)
 	if rds.replicasLaunching.Count() > 0 {
 		rds.env.AddToSchedule(simulator.NewMovement(
 			"terminate_launch",
