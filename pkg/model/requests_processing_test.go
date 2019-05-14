@@ -16,6 +16,7 @@
 package model
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 
@@ -146,9 +147,14 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		describe("calculateTime()", func() {
+			var rng *rand.Rand
+			it.Before(func() {
+				rng = rand.New(rand.NewSource(1))
+			})
+
 			describe("when currentRequests = 9, maxRPS = 10, baseServiceTime = 1 second", func() {
 				it("returns base time + random value uniformly selected in range of sakasegawa approximation", func() {
-					assert.Equal(t, time.Duration(1542089454), calculateTime(9, 10, time.Second))
+					assert.Equal(t, time.Duration(1329249318), calculateTime(9, 10, time.Second, rng))
 				})
 			})
 		})

@@ -61,7 +61,8 @@ func (rps *requestsProcessingStock) Remove() simulator.Entity {
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	rps.numRequestsSinceLast++
 
-	totalTime := calculateTime(rps.delegate.Count(), 100, time.Second)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	totalTime := calculateTime(rps.delegate.Count(), 100, time.Second, rng)
 
 	rps.env.AddToSchedule(simulator.NewMovement(
 		"complete_request",
@@ -107,11 +108,11 @@ func sakasegawaApproximation(fractionUtilised, maxRPS float64, baseServiceTime t
 	return expected
 }
 
-func calculateTime(currentRequests uint64, maxRPS int64, baseServiceTime time.Duration) time.Duration {
+func calculateTime(currentRequests uint64, maxRPS int64, baseServiceTime time.Duration, rng *rand.Rand) time.Duration {
 	fractionUtilised := saturateClamp(float64(currentRequests) / float64(maxRPS))
 	delayTime := 1 + sakasegawaApproximation(fractionUtilised, float64(maxRPS), baseServiceTime)
 
-	delayRand := rand.Int63n(int64(delayTime))
+	delayRand := rng.Int63n(int64(delayTime))
 	totalTime := baseServiceTime + time.Duration(delayRand)
 
 	return totalTime
