@@ -103,6 +103,15 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
+                    <label class="label" for="replicaMaxRPS">Replica Max RPS Capacity</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="replicaMaxRPS" value="1" min="1" step="1"/>
+                </div>
+            </div>
+
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
                     <label class="label" for="maxScaleUpRate">Max Scale Up Rate</label>
                 </div>
                 <div class="control">
@@ -390,6 +399,7 @@
         let panicWindow = parseInt(document.querySelector("input[id='panicWindow']").value);
         let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
         let targetConcurrency = parseFloat(document.querySelector("input[id='targetConcurrency']").value);
+        let replicaMaxRPS = parseInt(document.querySelector("input[id='replicaMaxRPS']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
 
 
@@ -403,6 +413,7 @@
             panic_window: panicWindow * second,
             scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
             target_concurrency: targetConcurrency,
+            replica_max_rps: replicaMaxRPS,
             max_scale_up_rate: maxScaleUpRate,
 
             traffic_pattern: trafficPattern,

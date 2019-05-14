@@ -36,6 +36,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 	var rawSubject *autoscalerTicktockStock
 	var envFake *FakeEnvironment
 	var autoscalerFake *fakeAutoscaler
+	var replicasConfig ReplicasConfig
 	var cluster ClusterModel
 
 	it.Before(func() {
@@ -46,7 +47,8 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			scaleTimes: make([]time.Time, 0),
 		}
 
-		cluster = NewCluster(envFake, ClusterConfig{})
+		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
+		cluster = NewCluster(envFake, ClusterConfig{}, replicasConfig)
 		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "KnativeAutoscaler"), autoscalerFake, cluster)
 		rawSubject = subject.(*autoscalerTicktockStock)
 	})
@@ -130,7 +132,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
-					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22")
+					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", 100)
 					err := rawCluster.replicasActive.Add(newReplica)
 					assert.NoError(t, err)
 

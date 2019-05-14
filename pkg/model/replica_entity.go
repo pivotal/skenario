@@ -126,7 +126,7 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 	return "Replica"
 }
 
-func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string) ReplicaEntity {
+func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string, replicaMaxRPSCapacity int64) ReplicaEntity {
 	replicaNum++
 
 	re := &replicaEntity{
@@ -137,7 +137,7 @@ func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, en
 	}
 
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
-	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete)
+	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, replicaMaxRPSCapacity)
 
 
 	re.endpointAddress = corev1.EndpointAddress{

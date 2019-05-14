@@ -40,11 +40,13 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 	var endpoints *corev1.Endpoints
 	var err error
+	var replicasConfig ReplicasConfig
 
 	it.Before(func() {
 		config = ClusterConfig{}
 		config.NumberOfRequests = 10
-		subject = NewCluster(envFake, config)
+		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
+		subject = NewCluster(envFake, config, replicasConfig)
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*clusterModel)
@@ -77,8 +79,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
 			rawSubject.replicasLaunching.Add(firstReplica)
 			rawSubject.replicasLaunching.Add(secondReplica)
 		})
@@ -93,8 +95,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 		})
@@ -127,8 +129,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			request := NewRequestEntity(envFake, rawSubject.requestsInBuffer)
 			rawSubject.requestsInBuffer.Add(request)
 
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
 
 			rawSubject.replicasActive.Add(replicaFake)
 
@@ -182,10 +184,12 @@ func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
 	var subject EndpointInformerSource
 	var cluster ClusterModel
 	var envFake = new(FakeEnvironment)
+	var replicasConfig ReplicasConfig
 
 	it.Before(func() {
 		config = ClusterConfig{}
-		cluster = NewCluster(envFake, config)
+		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
+		cluster = NewCluster(envFake, config, replicasConfig)
 		assert.NotNil(t, cluster)
 		subject = cluster.(EndpointInformerSource)
 		assert.NotNil(t, subject)

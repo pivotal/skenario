@@ -70,7 +70,7 @@ func main() {
 	flag.Parse()
 	r := NewRunner()
 
-	cluster := model.NewCluster(r.Env(), r.ClusterConfig())
+	cluster := model.NewCluster(r.Env(), r.ClusterConfig(), r.ReplicasConfig())
 	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 	trafficSource := model.NewTrafficSource(r.Env(), cluster.BufferStock())
 
@@ -136,6 +136,7 @@ type Runner interface {
 	Env() simulator.Environment
 	AutoscalerConfig() model.KnativeAutoscalerConfig
 	ClusterConfig() model.ClusterConfig
+	ReplicasConfig() model.ReplicasConfig
 	Report(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, writer io.Writer) error
 }
 
@@ -235,6 +236,14 @@ func (r *runner) ClusterConfig() model.ClusterConfig {
 		LaunchDelay:      *launchDelay,
 		TerminateDelay:   *terminateDelay,
 		NumberOfRequests: *numberOfRequests,
+	}
+}
+
+func (r *runner) ReplicasConfig() model.ReplicasConfig {
+	return model.ReplicasConfig{
+		LaunchDelay:    *launchDelay,
+		TerminateDelay: *terminateDelay,
+		MaxRPS:         100,
 	}
 }
 

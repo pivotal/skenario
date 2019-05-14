@@ -51,6 +51,7 @@ type EndpointInformerSource interface {
 type clusterModel struct {
 	env                 simulator.Environment
 	config              ClusterConfig
+	replicasConfig      ReplicasConfig
 	replicasDesired     ReplicasDesiredStock
 	replicaSource       ReplicaSource
 	replicasLaunching   simulator.ThroughStock
@@ -104,7 +105,7 @@ func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 	return cm.requestsInBuffer
 }
 
-func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
+func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 	endpointsInformer := informerFactory.Core().V1().Endpoints()
@@ -125,15 +126,12 @@ func NewCluster(env simulator.Environment, config ClusterConfig) ClusterModel {
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed)
 	replicasTerminated := simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica"))
-	replicasConfig := ReplicasConfig{
-		LaunchDelay:    config.LaunchDelay,
-		TerminateDelay: config.TerminateDelay,
-	}
 
 	cm := &clusterModel{
 		env:                 env,
 		config:              config,
-		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer),
+		replicasConfig:		 replicasConfig,
+		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
 		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
 		replicasTerminating: NewReplicasTerminatingStock(env, replicasConfig, replicasTerminated),

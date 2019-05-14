@@ -69,6 +69,7 @@ type SkenarioRunRequest struct {
 	PanicWindow            time.Duration `json:"panic_window"`
 	ScaleToZeroGracePeriod time.Duration `json:"scale_to_zero_grace_period"`
 	TargetConcurrency      float64       `json:"target_concurrency"`
+	ReplicaMaxRPS          int64         `json:"replica_max_rps"`
 	MaxScaleUpRate         float64       `json:"max_scale_up_rate"`
 
 	UniformConfig    trafficpatterns.UniformConfig    `json:"uniform_config,omitempty"`
@@ -90,8 +91,13 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 	clusterConf := buildClusterConfig(runReq)
 	kpaConf := buildKpaConfig(runReq)
+	replicasConfig := model.ReplicasConfig{
+		LaunchDelay:    runReq.LaunchDelay,
+		TerminateDelay: runReq.TerminateDelay,
+		MaxRPS:         runReq.ReplicaMaxRPS,
+	}
 
-	cluster := model.NewCluster(env, clusterConf)
+	cluster := model.NewCluster(env, clusterConf, replicasConfig)
 	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
 	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
 

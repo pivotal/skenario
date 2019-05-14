@@ -38,7 +38,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = new(FakeEnvironment)
-		subject = NewRequestsProcessingStock(envFake, 99, simulator.NewSinkStock("RequestsComplete", "Request"))
+		subject = NewRequestsProcessingStock(envFake, 99, simulator.NewSinkStock("RequestsComplete", "Request"), 100)
 		rawSubject = subject.(*requestsProcessingStock)
 	})
 

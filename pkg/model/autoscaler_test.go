@@ -78,16 +78,18 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 	var cluster ClusterModel
 	var config ClusterConfig
+	var replicasConfig ReplicasConfig
 	startAt := time.Unix(0, 0)
 
 	it.Before(func() {
 		config = ClusterConfig{}
+		replicasConfig = ReplicasConfig{time.Second,time.Second, 100}
 		envFake = &FakeEnvironment{
 			Movements:   make([]simulator.Movement, 0),
 			TheTime:     startAt,
 			TheHaltTime: startAt.Add(1 * time.Hour),
 		}
-		cluster = NewCluster(envFake, config)
+		cluster = NewCluster(envFake, config, replicasConfig)
 	})
 
 	describe("NewKnativeAutoscaler()", func() {

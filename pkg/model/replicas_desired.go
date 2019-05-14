@@ -24,6 +24,7 @@ import (
 type ReplicasConfig struct {
 	LaunchDelay    time.Duration
 	TerminateDelay time.Duration
+	MaxRPS         int64
 }
 
 type ReplicasDesiredStock interface {
@@ -63,7 +64,7 @@ func (rds *replicasDesiredStock) Remove() simulator.Entity {
 		return nil
 	}
 
-	nextTerminate := rds.env.CurrentMovementTime().Add(1*time.Nanosecond)
+	nextTerminate := rds.env.CurrentMovementTime().Add(1 * time.Nanosecond)
 	if rds.replicasLaunching.Count() > 0 {
 		rds.env.AddToSchedule(simulator.NewMovement(
 			"terminate_launch",

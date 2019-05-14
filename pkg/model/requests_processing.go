@@ -30,11 +30,12 @@ type RequestsProcessingStock interface {
 }
 
 type requestsProcessingStock struct {
-	env                  simulator.Environment
-	delegate             simulator.ThroughStock
-	replicaNumber        int
-	requestsComplete     simulator.SinkStock
-	numRequestsSinceLast int32
+	env                   simulator.Environment
+	delegate              simulator.ThroughStock
+	replicaNumber         int
+	requestsComplete      simulator.SinkStock
+	numRequestsSinceLast  int32
+	replicaMaxRPSCapacity int64
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -62,7 +63,7 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	rps.numRequestsSinceLast++
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	totalTime := calculateTime(rps.delegate.Count(), 100, time.Second, rng)
+	totalTime := calculateTime(rps.delegate.Count(), rps.replicaMaxRPSCapacity, time.Second, rng)
 
 	rps.env.AddToSchedule(simulator.NewMovement(
 		"complete_request",
@@ -79,12 +80,13 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 	return rc
 }
 
-func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestSink simulator.SinkStock) RequestsProcessingStock {
+func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestSink simulator.SinkStock, replicaMaxRPSCapacity int64) RequestsProcessingStock {
 	return &requestsProcessingStock{
-		env:              env,
-		delegate:         simulator.NewThroughStock("RequestsProcessing", "Request"),
-		replicaNumber:    replicaNumber,
-		requestsComplete: requestSink,
+		env:                   env,
+		delegate:              simulator.NewThroughStock("RequestsProcessing", "Request"),
+		replicaNumber:         replicaNumber,
+		requestsComplete:      requestSink,
+		replicaMaxRPSCapacity: replicaMaxRPSCapacity,
 	}
 }
 

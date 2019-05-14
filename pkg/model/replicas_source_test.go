@@ -47,7 +47,7 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 		endpointsInformer = informerFactory.Core().V1().Endpoints()
 
-		subject = NewReplicaSource(envFake, fakeClient, endpointsInformer)
+		subject = NewReplicaSource(envFake, fakeClient, endpointsInformer, 100)
 		rawSubject = subject.(*replicaSource)
 	})
 
@@ -119,7 +119,7 @@ func testIPV4Sequence(t *testing.T, describe spec.G, it spec.S) {
 		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 		endpointsInformer = informerFactory.Core().V1().Endpoints()
 
-		rs = NewReplicaSource(envFake, fakeClient, endpointsInformer)
+		rs = NewReplicaSource(envFake, fakeClient, endpointsInformer, 100)
 		subject = rs.(IPV4Sequence)
 		rawSubject = rs.(*replicaSource)
 	})

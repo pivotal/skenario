@@ -38,6 +38,7 @@ type replicaSource struct {
 	kubernetesClient  kubernetes.Interface
 	endpointsInformer corev1informers.EndpointsInformer
 	nextIPValue       uint32
+	maxReplicaRPS     int64
 }
 
 func (rs *replicaSource) Name() simulator.StockName {
@@ -57,7 +58,7 @@ func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rs *replicaSource) Remove() simulator.Entity {
-	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next())
+	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), rs.maxReplicaRPS)
 }
 
 func (rs *replicaSource) Next() string {
@@ -69,11 +70,12 @@ func (rs *replicaSource) Next() string {
 	return ip.String()
 }
 
-func NewReplicaSource(env simulator.Environment, client kubernetes.Interface, informer corev1informers.EndpointsInformer) ReplicaSource {
+func NewReplicaSource(env simulator.Environment, client kubernetes.Interface, informer corev1informers.EndpointsInformer, maxReplicaRPS int64) ReplicaSource {
 	return &replicaSource{
 		env:               env,
 		kubernetesClient:  client,
 		endpointsInformer: informer,
 		nextIPValue:       1,
+		maxReplicaRPS: maxReplicaRPS,
 	}
 }
