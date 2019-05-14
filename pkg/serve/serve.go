@@ -35,6 +35,7 @@ func (ss *SkenarioServer) Serve() {
 	router := chi.NewRouter()
 	router.Use(middleware.NoCache)
 	router.Use(middleware.DefaultCompress)
+	router.Use(middleware.Logger)
 
 	router.Mount("/debug", middleware.Profiler())
 	router.Mount("/", http.FileServer(http.Dir(ss.IndexRoot)))
