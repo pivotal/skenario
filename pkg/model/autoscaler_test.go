@@ -136,7 +136,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("newKpa() helper", func() {
 			var as *autoscaler.Autoscaler
-			var conf *autoscaler.Config
 			var epiFake *fakeEndpointsInformerSource
 
 			it.Before(func() {
@@ -144,42 +143,8 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 				lg, err := zap.NewDevelopment()
 				assert.NoError(t, err)
-				as = newKpa(lg.Sugar(), epiFake, KnativeAutoscalerConfig{
-					TickInterval:           11 * time.Second,
-					StableWindow:           22 * time.Second,
-					PanicWindow:            33 * time.Second,
-					ScaleToZeroGracePeriod: 44 * time.Second,
-					TargetConcurrency:      55.0,
-					MaxScaleUpRate:         77.0,
-				})
+				as = newKpa(lg.Sugar(), epiFake, KnativeAutoscalerConfig{})
 				assert.NotNil(t, as)
-
-				conf = as.Current()
-				assert.NotNil(t, conf)
-			})
-
-			it("sets TickInterval", func() {
-				assert.Equal(t, 11*time.Second, conf.TickInterval)
-			})
-
-			it("sets StableWindow", func() {
-				assert.Equal(t, 22*time.Second, conf.StableWindow)
-			})
-
-			it("sets PanicWindow", func() {
-				assert.Equal(t, 33*time.Second, conf.PanicWindow)
-			})
-
-			it("sets ScaleToZeroGracePeriod", func() {
-				assert.Equal(t, 44*time.Second, conf.ScaleToZeroGracePeriod)
-			})
-
-			it("sets ContainerCurrencyTargetDefault", func() {
-				assert.Equal(t, 55.0, conf.ContainerConcurrencyTargetDefault)
-			})
-
-			it("sets MaxScaleUpRate", func() {
-				assert.Equal(t, 77.0, conf.MaxScaleUpRate)
 			})
 
 			it("gets the endpoints informer from EndpointsInformerSource", func() {

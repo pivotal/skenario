@@ -20,7 +20,6 @@ import (
 
 	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
-
 	"skenario/pkg/simulator"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -35,6 +34,7 @@ type KnativeAutoscalerConfig struct {
 	TickInterval           time.Duration
 	StableWindow           time.Duration
 	PanicWindow            time.Duration
+	PanicThreshold         float64
 	ScaleToZeroGracePeriod time.Duration
 	TargetConcurrency      float64
 	MaxScaleUpRate         float64
@@ -79,28 +79,31 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 }
 
 func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig KnativeAutoscalerConfig) *autoscaler.Autoscaler {
-	config := &autoscaler.Config{
-		TickInterval:                      kconfig.TickInterval,
-		MaxScaleUpRate:                    kconfig.MaxScaleUpRate,
-		StableWindow:                      kconfig.StableWindow,
-		PanicWindow:                       kconfig.PanicWindow,
-		ScaleToZeroGracePeriod:            kconfig.ScaleToZeroGracePeriod,
-		ContainerConcurrencyTargetDefault: kconfig.TargetConcurrency,
+	deciderSpec := autoscaler.DeciderSpec{
+		ServiceName:       testName,
+		TickInterval:      kconfig.TickInterval,
+		MaxScaleUpRate:    kconfig.MaxScaleUpRate,
+		TargetConcurrency: kconfig.TargetConcurrency,
+		PanicThreshold:    kconfig.PanicThreshold,
+		MetricSpec: autoscaler.MetricSpec{
+			StableWindow: kconfig.StableWindow,
+			PanicWindow:  kconfig.PanicWindow,
+		},
 	}
-
-	dynConfig := autoscaler.NewDynamicConfig(config, logger)
 
 	statsReporter, err := autoscaler.NewStatsReporter(testNamespace, testName, "config-1", "revision-1")
 	if err != nil {
 		logger.Fatalf("could not create stats reporter: %s", err.Error())
 	}
 
+	//collector := autoscaler.NewMetricCollector(statsScraperFactoryFunc(endpointsInformerSource.EPInformer().Lister()), logger)
+
 	as, err := autoscaler.New(
-		dynConfig,
 		testNamespace,
 		testName,
+		&phonyMetricsClient{},
 		endpointsInformerSource.EPInformer(),
-		kconfig.TargetConcurrency,
+		deciderSpec,
 		statsReporter,
 	)
 	if err != nil {
@@ -108,4 +111,10 @@ func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerS
 	}
 
 	return as
+}
+
+type phonyMetricsClient struct{}
+
+func (pmc *phonyMetricsClient) StableAndPanicConcurrency(key string) (float64, float64, error) {
+	return 1.0, 2.0, nil
 }

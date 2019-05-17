@@ -13,10 +13,11 @@ require (
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
-	github.com/knative/build v0.3.1-0.20190321182147-dd3ceb332392 // indirect
-	github.com/knative/caching v0.0.0-20190329233554-babf400eeec0 // indirect
-	github.com/knative/pkg v0.0.0-20190330034653-916205998db9
-	github.com/knative/serving v0.5.1
+	github.com/knative/build v0.6.0 // indirect
+	github.com/knative/caching v0.0.0-20190405141957-afa9ee174c6f // indirect
+	github.com/knative/pkg v0.0.0-20190510233738-9e0db8f0a7f4
+	github.com/knative/serving v0.6.0
+	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
