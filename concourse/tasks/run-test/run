@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+pushd skenario-repo
+    echo Installing modules
+
+    go mod tidy
+
+    echo Running tests
+
+    # ignoring pkg/serve until I have a chromedriver+golang image
+    go test ./cmd/...
+    go test ./pkg/data/...
+    go test ./pkg/model/...
+    go test ./pkg/simulator/...
+popd
+
+echo Done.

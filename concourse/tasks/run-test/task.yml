@@ -1,0 +1,15 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+    tag: '1.12'
+
+inputs:
+- name: skenario-repo
+
+
+run:
+  path: skenario-repo/concourse/tasks/run-test/run
