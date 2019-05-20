@@ -12,5 +12,7 @@ jobs: ##########################################################################
 - name: test-9999
   plan:
   - get: skenario-repo
+    trigger: true
+    version: every
   - task: run-test
     file: skenario-repo/concourse/tasks/run-test/task.yml
