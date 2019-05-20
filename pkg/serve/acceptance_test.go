@@ -16,12 +16,11 @@
 package serve
 
 import (
-	"testing"
-
 	"github.com/sclevine/agouti"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
@@ -43,6 +42,12 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 			page, err = driver.NewPage()
 			require.NoError(t, err)
 
+			err = page.Size(1200, 1200)
+			require.NoError(t, err)
+
+			err = page.SetImplicitWait(250)
+			require.NoError(t, err)
+
 			err = page.Navigate("http://localhost:3000?inmemory=true")
 			assert.NoError(t, err)
 		})
@@ -55,12 +60,18 @@ func testAcceptance(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("executing simulations", func() {
 			it.Before(func() {
+				selectBtn := page.FindByID("select-traffic-pattern")
+				require.NotNil(t, selectBtn)
+
+				err := selectBtn.Select("Ramp")
+				require.NoError(t, err)
+
 				setParams(t, page)
 
-				btn := page.FindByButton("Execute simulation")
-				require.NotNil(t, btn)
+				execBtn := page.FindByButton("Execute simulation")
+				require.NotNil(t, execBtn)
 
-				err = btn.Click()
+				err = execBtn.Click()
 				require.NoError(t, err)
 			})
 

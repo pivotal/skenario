@@ -217,7 +217,7 @@
 <script>
     const trafficSelector = document.getElementById("select-traffic-pattern");
 
-    trafficSelector.oninput = setTrafficPattern;
+    trafficSelector.onchange = setTrafficPattern;
     let trafficPattern = "";
 
     function setTrafficPattern(inputEvt) {
