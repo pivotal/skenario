@@ -4,6 +4,11 @@ resource_types: ################################################################
   source:
     repository: teliaoss/github-pr-resource
 
+- name: github-status
+  type: registry-image
+  source:
+    repository: resource/github-status
+
 resources: ############################################################################################################
 
 - name: skenario-repo
@@ -11,6 +16,12 @@ resources: #####################################################################
   source:
     uri: https://github.com/pivotal/skenario.git
     branch: master
+
+- name: skenario-repo-status
+  type: github-status
+  source:
+    repo: pivotal/skenario
+    access_token: ((github-access-token))
 
 - name: skenario-prs
   type: pull-request
@@ -28,8 +39,37 @@ jobs: ##########################################################################
   - get: skenario-repo
     trigger: true
     version: every
+  - put: skenario-repo-status
+    params:
+      path: skenario-repo
+      context: concourse-ci/test
+      state: pending
   - task: run-test
     file: skenario-repo/concourse/tasks/run-test/task.yml
+    on_failure:
+      put: skenario-repo-status
+      params:
+        path: skenario-repo
+        context: concourse-ci/test
+        state: failure
+    on_error:
+      put: skenario-repo-status
+      params:
+        path: skenario-repo
+        context: concourse-ci/test
+        state: error
+    on_abort:
+      put: skenario-repo-status
+      params:
+        path: skenario-repo
+        context: concourse-ci/test
+        state: error
+    on_success:
+      put: skenario-repo-status
+      params:
+        path: skenario-repo
+        context: concourse-ci/test
+        state: success
 
 - name: test-pr
   plan:
@@ -40,6 +80,7 @@ jobs: ##########################################################################
   - put: skenario-prs
     params:
       path: skenario-repo
+      context: test-pr
       status: pending
   - task: run-test
     file: skenario-repo/concourse/tasks/run-test/task.yml
@@ -47,19 +88,23 @@ jobs: ##########################################################################
       put: skenario-prs
       params:
         path: skenario-repo
+        context: test-pr
         status: failure
     on_error:
       put: skenario-prs
       params:
         path: skenario-repo
+        context: test-pr
         status: error
     on_abort:
       put: skenario-prs
       params:
         path: skenario-repo
+        context: test-pr
         status: error
     on_success:
       put: skenario-prs
       params:
         path: skenario-repo
+        context: test-pr
         status: success
