@@ -10,8 +10,8 @@ for background and notes.
 
 | Job | Status |
 | ---: | --- |
-| Main Tests | ![Tests](http://wings.pivotal.io/api/v1/teams/jchester-knative/pipelines/skenario/jobs/test/badge) |
-| PR Tests | ![PRs](http://wings.pivotal.io/api/v1/teams/jchester-knative/pipelines/skenario/jobs/test-pr/badge) |
+| Main Tests | [![Tests](http://wings.pivotal.io/api/v1/teams/jchester-knative/pipelines/skenario/jobs/test/badge)](https://wings.pivotal.io/teams/jchester-knative/pipelines/skenario/jobs/test/) |
+| PR Tests | [![PRs](http://wings.pivotal.io/api/v1/teams/jchester-knative/pipelines/skenario/jobs/test-pr/badge)](https://wings.pivotal.io/teams/jchester-knative/pipelines/skenario/jobs/test-pr/) |
 
 
 ## Web GUI Usage
