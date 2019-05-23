@@ -35,6 +35,7 @@ resources: #####################################################################
 jobs: #################################################################################################################
 
 - name: test
+  public: true
   plan:
   - get: skenario-repo
     trigger: true
@@ -72,6 +73,7 @@ jobs: ##########################################################################
         state: success
 
 - name: test-pr
+  public: true
   plan:
   - get: skenario-repo
     resource: skenario-prs
