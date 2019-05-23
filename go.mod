@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.10.2 // indirect
-	github.com/bvinc/go-sqlite-lite v0.5.0
+	github.com/bvinc/go-sqlite-lite v0.6.1
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
