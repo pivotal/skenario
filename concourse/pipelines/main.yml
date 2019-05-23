@@ -1,6 +1,6 @@
 resource_types: #######################################################################################################
 - name: pull-request
-  type: docker-image
+  type: registry-image
   source:
     repository: teliaoss/github-pr-resource
 
