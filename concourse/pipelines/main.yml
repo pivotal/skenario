@@ -1,3 +1,8 @@
+resource_types: #######################################################################################################
+- name: pull-request
+  type: docker-image
+  source:
+    repository: teliaoss/github-pr-resource
 
 resources: ############################################################################################################
 
@@ -6,6 +11,15 @@ resources: #####################################################################
   source:
     uri: https://github.com/pivotal/skenario.git
     branch: master
+
+- name: skenario-prs
+  type: pull-request
+  check_every: 10m
+  webhook_token: ((webhook-token))
+  source:
+    repository: pivotal/skenario
+    access_token: ((github-access-token))
+    disable_ci_skip: true
 
 jobs: #################################################################################################################
 
@@ -16,3 +30,36 @@ jobs: ##########################################################################
     version: every
   - task: run-test
     file: skenario-repo/concourse/tasks/run-test/task.yml
+
+- name: test-pr
+  plan:
+  - get: skenario-repo
+    resource: skenario-prs
+    trigger: true
+    version: every
+  - put: skenario-prs
+    params:
+      path: skenario-repo
+      status: pending
+  - task: run-test
+    file: skenario-repo/concourse/tasks/run-test/task.yml
+    on_failure:
+      put: skenario-prs
+      params:
+        path: skenario-repo
+        status: failure
+    on_error:
+      put: skenario-prs
+      params:
+        path: skenario-repo
+        status: error
+    on_abort:
+      put: skenario-prs
+      params:
+        path: skenario-repo
+        status: error
+    on_success:
+      put: skenario-prs
+      params:
+        path: skenario-repo
+        status: success
