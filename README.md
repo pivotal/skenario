@@ -8,6 +8,12 @@ See [the Concepts document](docs/concepts.md) for a discussion of how Skenario i
 See "[Implement workload simulator for autoscaler development](https://github.com/knative/serving/issues/1686)"
 for background and notes. 
 
+| | |
+| ---: | --- |
+| Main Tests | ![Tests](http://wings.pivotal.io/api/v1/teams/jchester-knative/pipelines/skenario/jobs/test/badge) |
+| PR Tests | ![PRs](http://wings.pivotal.io/api/v1/teams/jchester-knative/pipelines/skenario/jobs/test-pr/badge) |
+ | | |
+
 ## Web GUI Usage
 
 First, launch the server:
