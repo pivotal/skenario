@@ -16,6 +16,7 @@
 package model
 
 import (
+	"github.com/knative/serving/pkg/resources"
 	"time"
 
 	"github.com/knative/pkg/logging"
@@ -96,13 +97,13 @@ func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerS
 		logger.Fatalf("could not create stats reporter: %s", err.Error())
 	}
 
-	//collector := autoscaler.NewMetricCollector(statsScraperFactoryFunc(endpointsInformerSource.EPInformer().Lister()), logger)
+	counter := resources.NewScopedEndpointsCounter(endpointsInformerSource.EPInformer().Lister(), testNamespace, testName)
 
 	as, err := autoscaler.New(
 		testNamespace,
 		testName,
 		&phonyMetricsClient{},
-		endpointsInformerSource.EPInformer(),
+		counter,
 		deciderSpec,
 		statsReporter,
 	)
