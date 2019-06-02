@@ -24,7 +24,6 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/informers/core/v1"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
@@ -132,24 +131,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		it("sets a ticktock stock", func() {
 			assert.NotNil(t, rawSubject.tickTock)
 			assert.Equal(t, simulator.StockName("Autoscaler Ticktock"), rawSubject.tickTock.Name())
-		})
-
-		describe("newKpa() helper", func() {
-			var as *autoscaler.Autoscaler
-			var epiFake *fakeEndpointsInformerSource
-
-			it.Before(func() {
-				epiFake = new(fakeEndpointsInformerSource)
-
-				lg, err := zap.NewDevelopment()
-				assert.NoError(t, err)
-				as = newKpa(lg.Sugar(), epiFake, KnativeAutoscalerConfig{})
-				assert.NotNil(t, as)
-			})
-
-			it("gets the endpoints informer from EndpointsInformerSource", func() {
-				assert.True(t, epiFake.epInformerCalled)
-			})
 		})
 	})
 }

@@ -19,18 +19,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers/core/v1"
 )
 
 func TestCluster(t *testing.T) {
 	spec.Run(t, "Cluster model", testCluster, spec.Report(report.Terminal{}))
-	spec.Run(t, "EPInformer interface", testEPInformer, spec.Report(report.Terminal{}))
 }
 
 func testCluster(t *testing.T, describe spec.G, it spec.S) {
@@ -38,8 +33,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var subject ClusterModel
 	var rawSubject *clusterModel
 	var envFake *FakeEnvironment
-	var endpoints *corev1.Endpoints
-	var err error
 	var replicasConfig ReplicasConfig
 
 	it.Before(func() {
@@ -50,8 +43,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*clusterModel)
-		endpoints, err = rawSubject.kubernetesClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
-		assert.NoError(t, err)
 	})
 
 	describe("NewCluster()", func() {
@@ -59,12 +50,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, subject.Env())
-		})
-
-		it("creates an 'empty' Endpoints entry for 'Skenario Revision'", func() {
-			assert.Equal(t, "Skenario Revision", endpoints.Name)
-			assert.Len(t, endpoints.Subsets, 1)
-			assert.Len(t, endpoints.Subsets[0].Addresses, 0)
 		})
 	})
 
@@ -106,99 +91,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("RecordToAutoscaler()", func() {
-		var autoscalerFake *fakeAutoscaler
-		var rawSubject *clusterModel
-		var bufferRecorded autoscaler.Stat
-		var theTime = time.Now()
-		var replicaFake *FakeReplica
-		envFake = new(FakeEnvironment)
-		recordOnce := 1
-		recordThrice := 3
-
-		it.Before(func() {
-			rawSubject = subject.(*clusterModel)
-
-			replicaFake = new(FakeReplica)
-
-			autoscalerFake = &fakeAutoscaler{
-				recorded:   make([]autoscaler.Stat, 0),
-				scaleTimes: make([]time.Time, 0),
-			}
-
-			request := NewRequestEntity(envFake, rawSubject.requestsInBuffer)
-			rawSubject.requestsInBuffer.Add(request)
-
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
-
-			rawSubject.replicasActive.Add(replicaFake)
-
-			rawSubject.replicasActive.Add(firstReplica)
-			rawSubject.replicasActive.Add(secondReplica)
-
-			subject.RecordToAutoscaler(autoscalerFake, &theTime)
-			bufferRecorded = autoscalerFake.recorded[0]
-		})
-
-		// TODO immediately record arrivals at buffer
-
-		it("records once for the buffer and once each replica in ReplicasActive", func() {
-			assert.Len(t, autoscalerFake.recorded, recordOnce+recordThrice)
-		})
-
-		describe("the record for the Buffer", func() {
-			it("sets time to the movement OccursAt", func() {
-				assert.Equal(t, &theTime, bufferRecorded.Time)
-			})
-
-			it("sets the PodName to 'Buffer'", func() {
-				assert.Equal(t, "Buffer", bufferRecorded.PodName)
-			})
-
-			it("sets AverageConcurrentRequests to the number of Requests in the Buffer", func() {
-				assert.Equal(t, 1.0, bufferRecorded.AverageConcurrentRequests)
-			})
-
-			it("sets RequestCount to the net change in the number of Requests since last invocation", func() {
-				assert.Equal(t, int32(1), bufferRecorded.RequestCount)
-			})
-		})
-
-		describe("records for replicas", func() {
-			it("delegates Stat creation to the Replica", func() {
-				assert.True(t, replicaFake.StatCalled)
-			})
-		})
-	})
-
 	describe("BufferStock()", func() {
 		it("returns the configured buffer stock", func() {
 			assert.Equal(t, rawSubject.requestsInBuffer, subject.BufferStock())
-		})
-	})
-}
-
-func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
-	var config ClusterConfig
-	var subject EndpointInformerSource
-	var cluster ClusterModel
-	var envFake = new(FakeEnvironment)
-	var replicasConfig ReplicasConfig
-
-	it.Before(func() {
-		config = ClusterConfig{}
-		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
-		cluster = NewCluster(envFake, config, replicasConfig)
-		assert.NotNil(t, cluster)
-		subject = cluster.(EndpointInformerSource)
-		assert.NotNil(t, subject)
-	})
-
-	describe("EPInformer()", func() {
-		// TODO: this test just feels like it's testing the compiler
-		it("returns an EndpointsInformer", func() {
-			assert.Implements(t, (*v1.EndpointsInformer)(nil), subject.EPInformer())
 		})
 	})
 }

@@ -114,56 +114,6 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("Activate()", func() {
-		var endpoints *corev1.Endpoints
-		var epSubsets []corev1.EndpointSubset
-		var epAddresses []corev1.EndpointAddress
-		var err error
-
-		it.Before(func() {
-			subject.Activate()
-			endpoints, err = fakeClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
-			assert.NoError(t, err)
-			assert.NotNil(t, endpoints)
-
-			epSubsets = endpoints.Subsets
-			assert.NotNil(t, epSubsets)
-
-			epAddresses = epSubsets[0].Addresses
-			assert.NotNil(t, epAddresses)
-		})
-
-		it("Adds its EndpointAddress to the Endpoints", func() {
-			assert.Contains(t, epAddresses, rawSubject.endpointAddress)
-		})
-	})
-
-	describe("Deactivate()", func() {
-		var endpoints *corev1.Endpoints
-		var epSubsets []corev1.EndpointSubset
-		var epAddresses []corev1.EndpointAddress
-		var err error
-
-		it.Before(func() {
-			subject.Activate()
-			subject.Deactivate()
-
-			endpoints, err = fakeClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
-			assert.NoError(t, err)
-			assert.NotNil(t, endpoints)
-
-			epSubsets = endpoints.Subsets
-			assert.NotNil(t, epSubsets)
-
-			epAddresses = epSubsets[0].Addresses
-			assert.NotNil(t, epAddresses)
-		})
-
-		it("Removes its EndpointAddress from the Endpoints", func() {
-			assert.NotContains(t, epAddresses, rawSubject.endpointAddress)
-		})
-	})
-
 	describe("RequestsProcessing()", func() {
 		it("returns the Requests Processing stock", func() {
 			assert.Contains(t, subject.RequestsProcessing().Name(), "RequestsProcessing [")

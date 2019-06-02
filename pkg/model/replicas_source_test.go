@@ -21,10 +21,6 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/informers"
-	corev1informers "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
 
 	"skenario/pkg/simulator"
 )
@@ -38,30 +34,17 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 	var subject ReplicaSource
 	var rawSubject *replicaSource
 	var envFake *FakeEnvironment
-	var fakeClient kubernetes.Interface
-	var endpointsInformer corev1informers.EndpointsInformer
 
 	it.Before(func() {
 		envFake = new(FakeEnvironment)
-		fakeClient = fake.NewSimpleClientset()
-		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-		endpointsInformer = informerFactory.Core().V1().Endpoints()
 
-		subject = NewReplicaSource(envFake, fakeClient, endpointsInformer, 100)
+		subject = NewReplicaSource(envFake, 100)
 		rawSubject = subject.(*replicaSource)
 	})
 
 	describe("NewReplicaSource", func() {
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, rawSubject.env)
-		})
-
-		it("sets a kubernetes client", func() {
-			assert.Equal(t, fakeClient, rawSubject.kubernetesClient)
-		})
-
-		it("sets an endpoints informer", func() {
-			assert.Equal(t, endpointsInformer, rawSubject.endpointsInformer)
 		})
 	})
 
@@ -111,15 +94,9 @@ func testIPV4Sequence(t *testing.T, describe spec.G, it spec.S) {
 	var subject IPV4Sequence
 	var rawSubject *replicaSource
 	var envFake *FakeEnvironment
-	var fakeClient kubernetes.Interface
-	var endpointsInformer corev1informers.EndpointsInformer
 
 	it.Before(func() {
-		fakeClient = fake.NewSimpleClientset()
-		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-		endpointsInformer = informerFactory.Core().V1().Endpoints()
-
-		rs = NewReplicaSource(envFake, fakeClient, endpointsInformer, 100)
+		rs = NewReplicaSource(envFake, 100)
 		subject = rs.(IPV4Sequence)
 		rawSubject = rs.(*replicaSource)
 	})

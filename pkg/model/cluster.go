@@ -18,13 +18,8 @@ package model
 import (
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers"
 	corev1informers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
 	"skenario/pkg/simulator"
 )
@@ -40,12 +35,7 @@ type ClusterModel interface {
 	Desired() ReplicasDesiredStock
 	CurrentLaunching() uint64
 	CurrentActive() uint64
-	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
 	BufferStock() RequestsBufferedStock
-}
-
-type EndpointInformerSource interface {
-	EPInformer() corev1informers.EndpointsInformer
 }
 
 type clusterModel struct {
@@ -79,49 +69,29 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
-	// first report for the buffer
-	scaler.Record(cm.env.Context(), autoscaler.Stat{
-		Time:                      atTime,
-		PodName:                   "Buffer",
-		AverageConcurrentRequests: float64(cm.requestsInBuffer.Count()),
-		RequestCount:              int32(cm.requestsInBuffer.Count()),
-	})
-
-	// and then report for the replicas
-	for _, e := range cm.replicasActive.EntitiesInStock() {
-		r := (*e).(ReplicaEntity)
-		stat := r.Stat()
-
-		scaler.Record(cm.env.Context(), stat)
-	}
-}
-
-func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
-	return cm.endpointsInformer
-}
+//func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
+//	// first report for the buffer
+//	scaler.Record(cm.env.Context(), autoscaler.Stat{
+//		Time:                      atTime,
+//		PodName:                   "Buffer",
+//		AverageConcurrentRequests: float64(cm.requestsInBuffer.Count()),
+//		RequestCount:              int32(cm.requestsInBuffer.Count()),
+//	})
+//
+//	// and then report for the replicas
+//	for _, e := range cm.replicasActive.EntitiesInStock() {
+//		r := (*e).(ReplicaEntity)
+//		stat := r.Stat()
+//
+//		scaler.Record(cm.env.Context(), stat)
+//	}
+//}
 
 func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 	return cm.requestsInBuffer
 }
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
-	fakeClient := k8sfakes.NewSimpleClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-	endpointsInformer := informerFactory.Core().V1().Endpoints()
-
-	newEndpoints := &corev1.Endpoints{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "Skenario Revision",
-		},
-		Subsets: []corev1.EndpointSubset{{
-			Addresses: []corev1.EndpointAddress{},
-		}},
-	}
-
-	fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
-	endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
-
 	replicasActive := NewReplicasActiveStock()
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed)
@@ -131,15 +101,13 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 		env:                 env,
 		config:              config,
 		replicasConfig:		 replicasConfig,
-		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
+		replicaSource:       NewReplicaSource(env, replicasConfig.MaxRPS),
 		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
 		replicasTerminating: NewReplicasTerminatingStock(env, replicasConfig, replicasTerminated),
 		replicasTerminated:  replicasTerminated,
 		requestsInBuffer:    bufferStock,
 		requestsFailed:      requestsFailed,
-		kubernetesClient:    fakeClient,
-		endpointsInformer:   endpointsInformer,
 	}
 
 	desiredConf := ReplicasConfig{

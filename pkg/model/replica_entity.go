@@ -20,7 +20,6 @@ import (
 
 	"github.com/knative/serving/pkg/autoscaler"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	informers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -28,8 +27,6 @@ import (
 )
 
 type Replica interface {
-	Activate()
-	Deactivate()
 	RequestsProcessing() RequestsProcessingStock
 	Stat() autoscaler.Stat
 }
@@ -51,54 +48,6 @@ type replicaEntity struct {
 }
 
 var replicaNum int
-
-func (re *replicaEntity) Activate() {
-	endpoints, err := re.kubernetesClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
-	if err != nil {
-		panic(err.Error())
-	}
-
-	endpoints.Subsets[0].Addresses = append(endpoints.Subsets[0].Addresses, re.endpointAddress)
-
-	updatedEndpoints, err := re.kubernetesClient.CoreV1().Endpoints("skenario").Update(endpoints)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = re.endpointsInformer.Informer().GetIndexer().Update(updatedEndpoints)
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
-func (re *replicaEntity) Deactivate() {
-	endpoints, err := re.kubernetesClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
-	if err != nil {
-		panic(err.Error())
-	}
-
-	addresses := endpoints.Subsets[0].Addresses
-
-	for i, addr := range addresses {
-		if addr == re.endpointAddress {
-			// remove by swapping with last entry and then truncating
-			addresses[i] = addresses[len(addresses)-1]
-			addresses = addresses[:len(addresses)-1]
-
-			break
-		}
-	}
-
-	endpoints.Subsets[0].Addresses = addresses
-
-	updatedEndpoints, err := re.kubernetesClient.CoreV1().Endpoints("skenario").Update(endpoints)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = re.endpointsInformer.Informer().GetIndexer().Update(updatedEndpoints)
-	if err != nil {
-		panic(err.Error())
-	}
-}
 
 func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 	return re.requestsProcessing

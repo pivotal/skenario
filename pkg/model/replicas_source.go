@@ -70,11 +70,9 @@ func (rs *replicaSource) Next() string {
 	return ip.String()
 }
 
-func NewReplicaSource(env simulator.Environment, client kubernetes.Interface, informer corev1informers.EndpointsInformer, maxReplicaRPS int64) ReplicaSource {
+func NewReplicaSource(env simulator.Environment, maxReplicaRPS int64) ReplicaSource {
 	return &replicaSource{
 		env:               env,
-		kubernetesClient:  client,
-		endpointsInformer: informer,
 		nextIPValue:       1,
 		maxReplicaRPS: maxReplicaRPS,
 	}
