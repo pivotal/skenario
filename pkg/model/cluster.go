@@ -69,27 +69,31 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-//func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
-//	// first report for the buffer
-//	scaler.Record(cm.env.Context(), autoscaler.Stat{
-//		Time:                      atTime,
-//		PodName:                   "Buffer",
-//		AverageConcurrentRequests: float64(cm.requestsInBuffer.Count()),
-//		RequestCount:              int32(cm.requestsInBuffer.Count()),
-//	})
-//
-//	// and then report for the replicas
-//	for _, e := range cm.replicasActive.EntitiesInStock() {
-//		r := (*e).(ReplicaEntity)
-//		stat := r.Stat()
-//
-//		scaler.Record(cm.env.Context(), stat)
-//	}
-//}
-
 func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 	return cm.requestsInBuffer
 }
+
+func (cm *clusterModel) StableAndPanicConcurrency(key string) (float64, float64, error) {
+	const scrapeSeconds = 3.0
+
+	var processingCount int32
+	for _, entity := range cm.replicasActive.EntitiesInStock() {
+		replica := (*entity).(ReplicaEntity)
+		processingCount += replica.RequestsProcessing().RequestCount()
+	}
+
+	bufferedCount := int32(cm.requestsInBuffer.Count())
+
+	totalCount := processingCount + bufferedCount
+	avgCount := float64(totalCount) / scrapeSeconds
+
+	return avgCount+1, avgCount, nil
+}
+
+func (cm *clusterModel) ReadyCount() (int, error) {
+	return int(cm.replicasActive.Count()), nil
+}
+
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
 	replicasActive := NewReplicasActiveStock()
@@ -100,7 +104,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	cm := &clusterModel{
 		env:                 env,
 		config:              config,
-		replicasConfig:		 replicasConfig,
+		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, replicasConfig.MaxRPS),
 		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,

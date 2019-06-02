@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/knative/pkg/logging"
+	"github.com/knative/serving/pkg/resources"
 	"go.uber.org/zap"
 
 	"skenario/pkg/simulator"
@@ -57,7 +58,7 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
 	logger := logging.FromContext(env.Context())
 
-	kpa := newKpa(logger, config)
+	kpa := newKpa(logger, config, cluster)
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
@@ -78,7 +79,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 	return kas
 }
 
-func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig) *autoscaler.Autoscaler {
+func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) *autoscaler.Autoscaler {
 	deciderSpec := autoscaler.DeciderSpec{
 		ServiceName:       testName,
 		TickInterval:      kconfig.TickInterval,
@@ -96,11 +97,14 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig) *autosca
 		logger.Fatalf("could not create stats reporter: %s", err.Error())
 	}
 
+	clusterAsMetrics := cluster.(autoscaler.MetricClient)
+	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
+
 	as, err := autoscaler.New(
 		testNamespace,
 		testName,
-		&phonyMetricsClient{},
-		&phonyCounter{},
+		clusterAsMetrics,
+		clusterAsReadyPods,
 		deciderSpec,
 		statsReporter,
 	)
@@ -110,17 +114,4 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig) *autosca
 
 	return as
 }
-
-type phonyMetricsClient struct{}
-
-func (pmc *phonyMetricsClient) StableAndPanicConcurrency(key string) (float64, float64, error) {
-	return 1.0, 2.0, nil
-}
-
-type phonyCounter struct {}
-
-func (*phonyCounter) ReadyCount() (int, error) {
-	return 10, nil
-}
-
 

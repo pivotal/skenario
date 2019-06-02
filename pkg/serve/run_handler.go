@@ -18,10 +18,15 @@ package serve
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
+	"github.com/knative/pkg/logging"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"skenario/pkg/data"
 	"skenario/pkg/model"
@@ -87,7 +92,9 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
-	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
+	logger := newLogger(os.Stdout)
+	ctx := logging.WithLogger(r.Context(), logger)
+	env := simulator.NewEnvironment(ctx, startAt, runReq.RunFor)
 
 	clusterConf := buildClusterConfig(runReq)
 	kpaConf := buildKpaConfig(runReq)
@@ -292,4 +299,18 @@ func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
 		TargetConcurrency:      srr.TargetConcurrency,
 		MaxScaleUpRate:         srr.MaxScaleUpRate,
 	}
+}
+
+func newLogger(buf io.Writer) *zap.SugaredLogger {
+	sink := zapcore.AddSync(buf)
+
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
+		sink,
+		zap.DebugLevel,
+	)
+
+	unsugaredLogger := zap.New(core)
+
+	return unsugaredLogger.Named("skenario").Sugar()
 }
