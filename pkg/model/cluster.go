@@ -16,6 +16,9 @@
 package model
 
 import (
+	"math"
+	"math/rand"
+	"skenario/pkg/simulator"
 	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
@@ -25,9 +28,9 @@ import (
 	corev1informers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
-
-	"skenario/pkg/simulator"
 )
+
+var metricSampleRand = rand.New(rand.NewSource(0))
 
 type ClusterConfig struct {
 	LaunchDelay      time.Duration
@@ -88,8 +91,11 @@ func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *
 		RequestCount:              int32(cm.requestsInBuffer.Count()),
 	})
 
-	// and then report for the replicas
-	for _, e := range cm.replicasActive.EntitiesInStock() {
+	// and then report replica samples
+	entitiesInStock := cm.replicasActive.EntitiesInStock()
+	sampleSize := int(math.Min(3.0, float64(len(entitiesInStock))))
+	for i := range metricSampleRand.Perm(len(entitiesInStock))[:sampleSize] {
+		e := entitiesInStock[i]
 		r := (*e).(ReplicaEntity)
 		stat := r.Stat()
 
@@ -130,7 +136,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	cm := &clusterModel{
 		env:                 env,
 		config:              config,
-		replicasConfig:		 replicasConfig,
+		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
 		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
