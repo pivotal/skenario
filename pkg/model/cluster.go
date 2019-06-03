@@ -73,27 +73,9 @@ func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 	return cm.requestsInBuffer
 }
 
-func (cm *clusterModel) StableAndPanicConcurrency(key string) (float64, float64, error) {
-	const scrapeSeconds = 3.0
-
-	var processingCount int32
-	for _, entity := range cm.replicasActive.EntitiesInStock() {
-		replica := (*entity).(ReplicaEntity)
-		processingCount += replica.RequestsProcessing().RequestCount()
-	}
-
-	bufferedCount := int32(cm.requestsInBuffer.Count())
-
-	totalCount := processingCount + bufferedCount
-	avgCount := float64(totalCount) / scrapeSeconds
-
-	return avgCount+1, avgCount, nil
-}
-
 func (cm *clusterModel) ReadyCount() (int, error) {
 	return int(cm.replicasActive.Count()), nil
 }
-
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
 	replicasActive := NewReplicasActiveStock()

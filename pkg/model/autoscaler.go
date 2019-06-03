@@ -97,13 +97,17 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 		logger.Fatalf("could not create stats reporter: %s", err.Error())
 	}
 
-	clusterAsMetrics := cluster.(autoscaler.MetricClient)
 	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
+	clusterStatScraper := func (metric *autoscaler.Metric) (autoscaler.StatsScraper, error) {
+		return autoscaler.NewServiceScraper(metric, clusterAsReadyPods)
+	}
+
+	collector := autoscaler.NewMetricCollector(clusterStatScraper, logger)
 
 	as, err := autoscaler.New(
 		testNamespace,
 		testName,
-		clusterAsMetrics,
+		collector,
 		clusterAsReadyPods,
 		deciderSpec,
 		statsReporter,

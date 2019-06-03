@@ -17,7 +17,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/knative/pkg v0.0.0-20190529001130-15b1aa79be0b
-	github.com/knative/serving v0.6.1-0.20190531190232-c6ad8b442b92
+	github.com/knative/serving v0.6.1-0.20190603203933-06d0d7a57673
 	github.com/kubernetes-incubator/custom-metrics-apiserver v0.0.0-20190116221620-b7016fc85e1c // indirect
 	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
