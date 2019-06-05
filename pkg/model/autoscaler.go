@@ -16,6 +16,9 @@
 package model
 
 import (
+	"context"
+	"github.com/knative/serving/pkg/apis/serving"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	"github.com/knative/pkg/logging"
@@ -98,11 +101,26 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 	}
 
 	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
+	clusterAsScrapeClient := cluster.(autoscaler.ScrapeClient)
 	clusterStatScraper := func (metric *autoscaler.Metric) (autoscaler.StatsScraper, error) {
-		return autoscaler.NewServiceScraper(metric, clusterAsReadyPods)
+		return autoscaler.NewServiceScraper(metric, clusterAsReadyPods, clusterAsScrapeClient)
 	}
 
 	collector := autoscaler.NewMetricCollector(clusterStatScraper, logger)
+	_, err = collector.Create(context.Background(), &autoscaler.Metric{
+		ObjectMeta: v1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+			Labels:    map[string]string{serving.RevisionLabelKey: testName},
+		},
+		Spec: autoscaler.MetricSpec{
+			StableWindow: kconfig.StableWindow,
+			PanicWindow:  kconfig.PanicWindow,
+		},
+	})
+	if err != nil {
+		panic(err.Error())
+	}
 
 	as, err := autoscaler.New(
 		testNamespace,
@@ -119,3 +137,16 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 	return as
 }
 
+type foo struct {}
+
+func (*foo) Scrape(url string) (*autoscaler.Stat, error) {
+	naow := time.Now()
+	return &autoscaler.Stat{
+		Time:                             &naow,
+		PodName:                          "foo-123",
+		AverageConcurrentRequests:        10,
+		AverageProxiedConcurrentRequests: 20,
+		RequestCount:                     30,
+		ProxiedRequestCount:              10,
+	}, nil
+}

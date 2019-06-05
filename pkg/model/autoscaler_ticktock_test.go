@@ -28,7 +28,7 @@ import (
 )
 
 func TestAutoscalerTicktock(t *testing.T) {
-	spec.Run(t, "Ticktock stock", testAutoscalerTicktock, spec.Report(report.Terminal{}))
+	spec.Run(t, "Autoscaler Ticktock stock", testAutoscalerTicktock, spec.Report(report.Terminal{}))
 }
 
 func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {

@@ -16,6 +16,8 @@
 package model
 
 import (
+	"github.com/knative/serving/pkg/autoscaler"
+	"math/rand"
 	"time"
 
 	corev1informers "k8s.io/client-go/informers/core/v1"
@@ -75,6 +77,14 @@ func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 
 func (cm *clusterModel) ReadyCount() (int, error) {
 	return int(cm.replicasActive.Count()), nil
+}
+
+func (cm *clusterModel) Scrape(url string) (*autoscaler.Stat, error) {
+	replicas := cm.replicasActive.EntitiesInStock()
+	rep := (*replicas[rand.Intn(len(replicas))]).(ReplicaEntity)
+	stat := rep.Stat()
+
+	return &stat, nil
 }
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
