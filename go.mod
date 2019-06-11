@@ -10,8 +10,9 @@ require (
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
-	github.com/knative/pkg v0.0.0-20190529001130-15b1aa79be0b
-	github.com/knative/serving v0.6.1-0.20190603203933-06d0d7a57673
+	github.com/knative/caching v0.0.0-20190605182338-b6c8f4851e3f // indirect
+	github.com/knative/pkg v0.0.0-20190607163941-463df98531b3
+	github.com/knative/serving v0.6.1-0.20190610151142-6e56283484a4
 	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect

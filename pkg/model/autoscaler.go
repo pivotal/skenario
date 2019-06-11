@@ -17,6 +17,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"github.com/knative/serving/pkg/apis/serving"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
@@ -61,7 +62,8 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
 	logger := logging.FromContext(env.Context())
 
-	kpa := newKpa(logger, config, cluster)
+	collector, scraper := newMetricsComponents(logger, config, cluster)
+	kpa := newKpa(logger, config, cluster, collector)
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
@@ -79,20 +81,27 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 		))
 	}
 
+	scraperTickTock := NewScraperTicktockStock(collector, scraper)
+	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
+		kas.env.AddToSchedule(simulator.NewMovement(
+			"scraper_tick",
+			theTime,
+			scraperTickTock,
+			scraperTickTock,
+		))
+	}
+
 	return kas
 }
 
-func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) *autoscaler.Autoscaler {
+func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel, collector *autoscaler.MetricCollector) *autoscaler.Autoscaler {
 	deciderSpec := autoscaler.DeciderSpec{
 		ServiceName:       testName,
 		TickInterval:      kconfig.TickInterval,
 		MaxScaleUpRate:    kconfig.MaxScaleUpRate,
 		TargetConcurrency: kconfig.TargetConcurrency,
 		PanicThreshold:    kconfig.PanicThreshold,
-		MetricSpec: autoscaler.MetricSpec{
-			StableWindow: kconfig.StableWindow,
-			PanicWindow:  kconfig.PanicWindow,
-		},
+		StableWindow:      kconfig.StableWindow,
 	}
 
 	statsReporter, err := autoscaler.NewStatsReporter(testNamespace, testName, "config-1", "revision-1")
@@ -101,26 +110,6 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 	}
 
 	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
-	clusterAsScrapeClient := cluster.(autoscaler.ScrapeClient)
-	clusterStatScraper := func (metric *autoscaler.Metric) (autoscaler.StatsScraper, error) {
-		return autoscaler.NewServiceScraper(metric, clusterAsReadyPods, clusterAsScrapeClient)
-	}
-
-	collector := autoscaler.NewMetricCollector(clusterStatScraper, logger)
-	_, err = collector.Create(context.Background(), &autoscaler.Metric{
-		ObjectMeta: v1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-			Labels:    map[string]string{serving.RevisionLabelKey: testName},
-		},
-		Spec: autoscaler.MetricSpec{
-			StableWindow: kconfig.StableWindow,
-			PanicWindow:  kconfig.PanicWindow,
-		},
-	})
-	if err != nil {
-		panic(err.Error())
-	}
 
 	as, err := autoscaler.New(
 		testNamespace,
@@ -137,7 +126,40 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 	return as
 }
 
-type foo struct {}
+func newMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) (*autoscaler.MetricCollector, *autoscaler.ServiceScraper) {
+	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
+	clusterAsScrapeClient := cluster.(autoscaler.ScrapeClient)
+
+	metric := &autoscaler.Metric{
+		ObjectMeta: v1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+			Labels:    map[string]string{serving.RevisionLabelKey: testName},
+		},
+		Spec: autoscaler.MetricSpec{
+			StableWindow: kconfig.StableWindow,
+			PanicWindow:  kconfig.PanicWindow,
+		},
+	}
+	scraper, err := autoscaler.NewServiceScraper(metric, clusterAsReadyPods, clusterAsScrapeClient)
+	if err != nil {
+		panic(fmt.Errorf("could not create service scraper: %s", err.Error()))
+	}
+
+	clusterStatScraper := func(metric *autoscaler.Metric) (autoscaler.StatsScraper, error) {
+		return scraper, nil
+	}
+
+	collector := autoscaler.NewMetricCollector(clusterStatScraper, logger)
+	_, err = collector.Create(context.Background(), metric)
+	if err != nil {
+		panic(fmt.Errorf("could not create metric collector: %s", err.Error()))
+	}
+
+	return collector, scraper
+}
+
+type foo struct{}
 
 func (*foo) Scrape(url string) (*autoscaler.Stat, error) {
 	naow := time.Now()

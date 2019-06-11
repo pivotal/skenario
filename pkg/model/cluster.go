@@ -76,7 +76,7 @@ func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 }
 
 func (cm *clusterModel) ReadyCount() (int, error) {
-	return int(cm.replicasActive.Count()), nil
+	return int(cm.replicasActive.Count()) + 1, nil
 }
 
 func (cm *clusterModel) Scrape(url string) (*autoscaler.Stat, error) {

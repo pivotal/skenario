@@ -156,8 +156,13 @@ github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/knative/caching v0.0.0-20190405141957-afa9ee174c6f/go.mod h1:D6ynAUa79yFRVWCEogSqhRRNi2SooyDBf1ucp02CFKg=
+github.com/knative/caching v0.0.0-20190605182338-b6c8f4851e3f h1:3lF4RXQBfSLasDsHGK5+NcrngAHgNlqtFhO0J92uEVI=
+github.com/knative/caching v0.0.0-20190605182338-b6c8f4851e3f/go.mod h1:D6ynAUa79yFRVWCEogSqhRRNi2SooyDBf1ucp02CFKg=
 github.com/knative/pkg v0.0.0-20190529001130-15b1aa79be0b h1:QNzr2E8qnP2DbmAHDOma7GFsXUUtr7nHV1qPK1XT9y0=
 github.com/knative/pkg v0.0.0-20190529001130-15b1aa79be0b/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
+github.com/knative/pkg v0.0.0-20190607163941-463df98531b3 h1:qTI62id2BSgLBwNFi8uIe0VyJb7S1orauoDQxr6svmI=
+github.com/knative/pkg v0.0.0-20190607163941-463df98531b3/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
+github.com/knative/pkg v0.0.0-20190610153941-28f181241cdb h1:X/FTe0HyoDh1Vn285dR2s5WpQ309RA6Rxe/YluyDN2s=
 github.com/knative/serving v0.6.0 h1:2SOr1jAvrUPO1y0mJvpiTe3bJTSMd2tKXflmHCM0MAA=
 github.com/knative/serving v0.6.1-0.20190531190232-c6ad8b442b92 h1:OZqRHfDrdv+sPI0WrZ5sgdKjBttwTH88KZsMzMJnnzg=
 github.com/knative/serving v0.6.1-0.20190531190232-c6ad8b442b92/go.mod h1:ljvMfwQy2qanaM/8xnBSK4Mz3Vv2NawC2fo5kFRJS1A=
