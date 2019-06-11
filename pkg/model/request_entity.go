@@ -17,9 +17,8 @@ package model
 
 import (
 	"fmt"
-	"time"
-
 	"skenario/pkg/simulator"
+	"time"
 )
 
 const backoffMultiplier float64 = 1.3
@@ -39,6 +38,10 @@ type requestEntity struct {
 	bufferStock RequestsBufferedStock
 	nextBackoff time.Duration
 	attempts    int
+
+	// CPU seconds required to complete the request.
+	cpuSecondsRequired time.Duration
+	cpuSecondsConsumed time.Duration
 }
 
 var reqNumber int
