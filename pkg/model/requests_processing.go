@@ -33,7 +33,7 @@ type requestsProcessingStock struct {
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
-	return fmt.Sprintf("RequestsProcessing [%d]", rps.replicaNumber)
+	return simulator.StockName(fmt.Sprintf("RequestsProcessing [%d]", rps.replicaNumber))
 }
 
 func (rps *requestsProcessingStock) KindStocked() simulator.EntityKind {
@@ -67,9 +67,8 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestSink simulator.SinkStock, replicaMaxRPSCapacity int64) RequestsProcessingStock {
 	// TODO: respect replicaMaxRPSCapacity
 	return &requestsProcessingStock{
-		env:              env,
-		replicaNumber:    replicaNumber,
-		requestsComplete: requestSink,
-		cpu:              NewCpuStock(env, requestSink),
+		env:           env,
+		replicaNumber: replicaNumber,
+		cpu:           NewCpuStock(env, requestSink),
 	}
 }

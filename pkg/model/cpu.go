@@ -57,12 +57,10 @@ func (cpu *cpuStock) Count() uint64 {
 }
 
 func (cpu *cpuStock) EntitiesInStock() []*simulator.Entity {
-	es := make([]*simulator.Entity, len(cpu.processes))
-	for i := 0; i < len(cpu.processes); i++ {
-		e := cpu.processes[i]
-		es[i] = &e
-	}
-	return es
+	// TODO: change the interface to return []Entity (an interface),
+	// not []*Entity.
+	panic("not implemented")
+	return nil
 }
 
 func (cpu *cpuStock) KindStocked() simulator.EntityKind {
@@ -73,7 +71,7 @@ func (cpu *cpuStock) Name() simulator.StockName {
 	return "CPU"
 }
 
-func (cpu *cpuStock) Remove() Entity {
+func (cpu *cpuStock) Remove() simulator.Entity {
 	if len(cpu.processes) == 0 {
 		return nil
 	}
@@ -86,7 +84,7 @@ func (cpu *cpuStock) Remove() Entity {
 	return p
 }
 
-func NewCpuStock(env simulator.Env, requestSink simulator.SinkStock) {
+func NewCpuStock(env simulator.Environment, requestSink simulator.SinkStock) *cpuStock {
 	return &cpuStock{
 		env:        env,
 		terminated: requestSink,

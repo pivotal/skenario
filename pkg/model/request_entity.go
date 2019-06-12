@@ -70,9 +70,10 @@ func (re *requestEntity) NextBackoff() (backoff time.Duration, outOfAttempts boo
 func NewRequestEntity(env simulator.Environment, buffer RequestsBufferedStock) RequestEntity {
 	reqNumber++
 	return &requestEntity{
-		env:         env,
-		number:      reqNumber,
-		bufferStock: buffer,
-		nextBackoff: 100 * time.Millisecond,
+		env:                env,
+		number:             reqNumber,
+		bufferStock:        buffer,
+		nextBackoff:        100 * time.Millisecond,
+		cpuSecondsRequired: 500 * time.Millisecond,
 	}
 }
