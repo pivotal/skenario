@@ -3,59 +3,93 @@ package model
 import (
 	"fmt"
 	"skenario/pkg/simulator"
+	"time"
 )
+
+var timeSlice = 100 * time.Millisecond
 
 type CpuStock interface {
 	simulator.ThroughStock
 }
 
 type cpuStock struct {
-	finished simulator.SinkStock
-	requests []*requestEntity
+	env        simulator.Environment
+	terminated simulator.SinkStock
+	processes  []*requestEntity
 }
 
-func (cs *cpuStock) Add(entity simulator.Entity) error {
+func (cpu *cpuStock) scheduleInterrupt() {
+	p := cpu.processes[0]
+	// Schedule the minimum of remaining required cpu seconds and
+	// round-robin time-slice.
+	duration := p.cpuSecondsRequired - p.cpuSecondsConsumed
+	if duration > timeSlice {
+		duration = timeSlice
+	}
+	// Record CPU consumption and schedule interrupt.
+	p.cpuSecondsConsumed += duration
+	cpu.env.AddToSchedule(simulator.NewMovement(
+		"process_interrupt",
+		cpu.env.CurrentMovementTime().Add(duration),
+		cpu,
+		cpu,
+	))
+}
+
+func (cpu *cpuStock) Add(entity simulator.Entity) error {
 	req, ok := entity.(*requestEntity)
 	if !ok {
 		return fmt.Errorf("cpu stock wants requestEntity. got %T", entity)
 	}
-	if len(cs.requests) == 0 {
-		// Schedule the first CPU tick.
+	if req.cpuSecondsRequired <= req.cpuSecondsConsumed {
+		return cpu.terminated.Add(req)
 	}
-	cs.requests = append(cs.requests, req)
+	cpu.processes = append(cpu.processes, req)
+	if len(cpu.processes) == 1 {
+		// Schedule the first CPU tick.
+		cpu.scheduleInterrupt()
+	}
 	return nil
 }
 
-func (cs *cpuStock) Count() uint64 {
-	return len(requests)
+func (cpu *cpuStock) Count() uint64 {
+	return uint64(len(cpu.processes))
 }
 
-func (cs *cpuStock) EntitiesInStock() []*Entity {
-	return cs.requests
+func (cpu *cpuStock) EntitiesInStock() []*simulator.Entity {
+	es := make([]*simulator.Entity, len(cpu.processes))
+	for i := 0; i < len(cpu.processes); i++ {
+		e := cpu.processes[i]
+		es[i] = &e
+	}
+	return es
 }
 
-func (cs *cpuStock) KindStocked() EntityKind {
-	return "Requests"
+func (cpu *cpuStock) KindStocked() simulator.EntityKind {
+	return "Processes"
 }
 
-func (cs *cpuStock) Name() StockName {
+func (cpu *cpuStock) Name() simulator.StockName {
 	return "CPU"
 }
 
-func (cs *cpuStock) Remove() Entity {
-	cnt := len(cs.requests)
-	if cnt == 0 {
+func (cpu *cpuStock) Remove() Entity {
+	if len(cpu.processes) == 0 {
 		return nil
 	}
-	r := cs.requests[0]
-	r.cpuSecondsConsumed += time.Milliseconds * 100
-	cs.requests = cs.requests[1:]
-	if len(cs.requests) != 0 {
+	p := cpu.processes[0]
+	cpu.processes = cpu.processes[1:]
+	if len(cpu.processes) != 0 {
 		// Schedule the next CPU tick.
+		cpu.scheduleInterrupt()
 	}
-	if r.cpuSecondsRequired <= r.cpuSecondsConsumed {
-		// Send the request to the finished sink.
-		// Return the next request in the queue.
+	return p
+}
+
+func NewCpuStock(env simulator.Env, requestSink simulator.SinkStock) {
+	return &cpuStock{
+		env:        env,
+		terminated: requestSink,
+		processes:  make([]*requestEntity, 0),
 	}
-	return r
 }
