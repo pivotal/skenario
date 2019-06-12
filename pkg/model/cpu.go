@@ -64,7 +64,7 @@ func (cpu *cpuStock) EntitiesInStock() []*simulator.Entity {
 }
 
 func (cpu *cpuStock) KindStocked() simulator.EntityKind {
-	return "Processes"
+	return "Process"
 }
 
 func (cpu *cpuStock) Name() simulator.StockName {

@@ -37,7 +37,7 @@ func (rps *requestsProcessingStock) Name() simulator.StockName {
 }
 
 func (rps *requestsProcessingStock) KindStocked() simulator.EntityKind {
-	return "Requests"
+	return "Request"
 }
 
 func (rps *requestsProcessingStock) Count() uint64 {
