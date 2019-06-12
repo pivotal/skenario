@@ -98,6 +98,8 @@ github.com/knative/pkg v0.0.0-20190330034653-916205998db9 h1:WE+sMoCzGTt6OhWGWkX
 github.com/knative/pkg v0.0.0-20190330034653-916205998db9/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
 github.com/knative/serving v0.5.1 h1:D+1epq7gKDQsEzcFJ+c4NtDDURXViaGYwlzdjcsibEM=
 github.com/knative/serving v0.5.1/go.mod h1:ljvMfwQy2qanaM/8xnBSK4Mz3Vv2NawC2fo5kFRJS1A=
+github.com/knative/serving v0.6.1 h1:Q9MYY1nebuoykvYIqIR5faOOPpdomURC0p1RJQPZfbk=
+github.com/knative/serving v0.6.1/go.mod h1:ljvMfwQy2qanaM/8xnBSK4Mz3Vv2NawC2fo5kFRJS1A=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1 h1:mweAR1A6xJ3oS2pRaGiHgQ4OO8tzTaLawm8vnODuwDk=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
