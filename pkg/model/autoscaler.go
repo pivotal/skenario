@@ -62,7 +62,7 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
 	logger := logging.FromContext(env.Context())
 
-	collector, scraper := newMetricsComponents(logger, config, cluster)
+	collector, scraper := NewMetricsComponents(logger, config, cluster)
 	kpa := newKpa(logger, config, cluster, collector)
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
@@ -126,7 +126,7 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 	return as
 }
 
-func newMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) (*autoscaler.MetricCollector, *autoscaler.ServiceScraper) {
+func NewMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) (*autoscaler.MetricCollector, *autoscaler.ServiceScraper) {
 	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
 	clusterAsScrapeClient := cluster.(autoscaler.ScrapeClient)
 

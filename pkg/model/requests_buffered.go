@@ -16,6 +16,7 @@
 package model
 
 import (
+	"github.com/knative/serving/pkg/autoscaler"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -31,6 +32,7 @@ type requestsBufferedStock struct {
 	replicas       ReplicasActiveStock
 	requestsFailed simulator.SinkStock
 	countRequests  int
+	collector      *autoscaler.MetricCollector
 }
 
 func (rbs *requestsBufferedStock) Name() simulator.StockName {
@@ -88,17 +90,26 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 				rbs,
 			))
 		}
+
+		theTime := rbs.env.CurrentMovementTime()
+		rbs.collector.Record("activator", autoscaler.Stat{
+			Time:                             &theTime,
+			PodName:                          "activator",
+			AverageConcurrentRequests:        float64(rbs.delegate.Count()),
+			RequestCount:                     int32(rbs.delegate.Count()),
+		})
 	}
 
 	return addResult
 }
 
-func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsBufferedStock {
+func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock, collector *autoscaler.MetricCollector) RequestsBufferedStock {
 	return &requestsBufferedStock{
 		env:            env,
 		delegate:       simulator.NewThroughStock("RequestsBuffered", "Request"),
 		replicas:       replicas,
 		requestsFailed: requestsFailed,
 		countRequests:  0,
+		collector:      collector,
 	}
 }
