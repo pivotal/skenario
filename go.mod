@@ -16,7 +16,7 @@ require (
 	github.com/knative/build v0.3.1-0.20190321182147-dd3ceb332392 // indirect
 	github.com/knative/caching v0.0.0-20190329233554-babf400eeec0 // indirect
 	github.com/knative/pkg v0.0.0-20190330034653-916205998db9
-	github.com/knative/serving v0.5.1
+	github.com/knative/serving v0.7.0
 	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
