@@ -16,7 +16,7 @@
 package model
 
 import (
-	"github.com/knative/serving/pkg/autoscaler"
+	"knative.dev/serving/pkg/autoscaler"
 	"math/rand"
 	"time"
 

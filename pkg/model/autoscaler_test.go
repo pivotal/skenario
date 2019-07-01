@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
+	"knative.dev/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"

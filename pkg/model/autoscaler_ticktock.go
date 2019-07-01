@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
+	"knative.dev/serving/pkg/autoscaler"
 
 	"skenario/pkg/simulator"
 )

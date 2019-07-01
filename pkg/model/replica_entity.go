@@ -18,7 +18,7 @@ package model
 import (
 	"fmt"
 
-	"github.com/knative/serving/pkg/autoscaler"
+	"knative.dev/serving/pkg/autoscaler"
 	corev1 "k8s.io/api/core/v1"
 	informers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"

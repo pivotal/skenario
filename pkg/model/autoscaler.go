@@ -18,17 +18,17 @@ package model
 import (
 	"context"
 	"fmt"
-	"github.com/knative/serving/pkg/apis/serving"
+	"knative.dev/serving/pkg/apis/serving"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
-	"github.com/knative/pkg/logging"
-	"github.com/knative/serving/pkg/resources"
+	"knative.dev/pkg/logging"
+	"knative.dev/serving/pkg/resources"
 	"go.uber.org/zap"
 
 	"skenario/pkg/simulator"
 
-	"github.com/knative/serving/pkg/autoscaler"
+	"knative.dev/serving/pkg/autoscaler"
 )
 
 const (

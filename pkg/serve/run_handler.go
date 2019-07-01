@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
-	"github.com/knative/pkg/logging"
+	"knative.dev/pkg/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
