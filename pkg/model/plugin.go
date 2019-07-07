@@ -4,9 +4,10 @@ import "time"
 
 // BEGIN INTERFACE
 
-var (
-	SkInterfaceVersion = 1
-	SkCpu              = "cpu"
+const (
+	SkInterfaceVersion  = 1
+	SkMetricCpu         = "cpu"
+	SkMetricConcurrency = "concurrency"
 )
 
 type SkAutoscaler interface {
@@ -24,27 +25,56 @@ type SkStat interface {
 
 // END INTERFACE
 
-type PodCpuStat struct {
+type podCpuStat struct {
 	time               time.Time
 	averageUtilization int32
 }
 
-func (s *PodCpuStat) Time() int64 {
+var _ SkStat = (*podCpuStat)(nil)
+
+func (s *podCpuStat) Time() int64 {
 	return s.time.UnixNano()
 }
 
-func (s *PodCpuStat) Metric() string {
-	return SkCpu
+func (s *podCpuStat) Metric() string {
+	return SkMetricCpu
 }
 
-func (s *PodCpuStat) Value() (int32, bool) {
+func (s *podCpuStat) Value() (int32, bool) {
 	return 0, false
 }
 
-func (s *PodCpuStat) AverageValue() (int32, bool) {
+func (s *podCpuStat) AverageValue() (int32, bool) {
 	return 0, false
 }
 
-func (s *PodCpuStat) AverageUtilization() (int32, bool) {
+func (s *podCpuStat) AverageUtilization() (int32, bool) {
 	return s.averageUtilization, true
+}
+
+type podConcurrencyStat struct {
+	time         time.Time
+	averageValue int32
+}
+
+var _ SkStat = (*podConcurrencyStat)(nil)
+
+func (s *podConcurrencyStat) Time() int64 {
+	return s.time.UnixNano()
+}
+
+func (s *podConcurrencyStat) Metric() string {
+	return SkMetricConcurrency
+}
+
+func (s *podConcurrencyStat) Value() (int32, bool) {
+	return 0, false
+}
+
+func (s *podConcurrencyStat) AverageValue() (int32, bool) {
+	return s.averageValue, true
+}
+
+func (s *podConcurrencyStat) AverageUtilization() (int32, bool) {
+	return 0, false
 }
