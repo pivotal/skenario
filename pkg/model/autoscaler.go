@@ -16,9 +16,10 @@
 package model
 
 import (
+	"fmt"
+	"plugin"
 	"time"
 
-	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
 
 	"skenario/pkg/simulator"
@@ -54,16 +55,35 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 }
 
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
-	logger := logging.FromContext(env.Context())
+	// logger := logging.FromContext(env.Context())
 
-	epiSource := cluster.(EndpointInformerSource)
-	kpa := newKpa(logger, epiSource, config)
+	// Build a Knative autoscaler
+	// epiSource := cluster.(EndpointInformerSource)
+	// kpa := newKpa(logger, epiSource, config)
+
+	// Build a Kubernetes HPA
+	p, err := plugin.Open("/usr/local/google/home/josephburnett/hpaplugin")
+	if err != nil {
+		panic(err)
+	}
+	s, err := p.Lookup("k8s.io.kubernetes.pkg.controller.podautoscaler.NewSkAutoscaler")
+	if err != nil {
+		panic(err)
+	}
+	f, ok := s.(func(string) (SkAutoscaler, error))
+	if !ok {
+		panic(fmt.Sprintf("%v cannot build an SkAutoscaler", s))
+	}
+	a, err := f(hpaYaml)
+	if err != nil {
+		panic(err)
+	}
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
 	kas := &knativeAutoscaler{
 		env:      env,
-		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, kpa, cluster),
+		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, a, cluster),
 	}
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
@@ -77,6 +97,28 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 
 	return kas
 }
+
+const hpaYaml = `
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa
+  namespace: default
+spec:
+  maxReplicas: 10
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 50
+        type: Utilization
+    type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: deployment
+`
 
 func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig KnativeAutoscalerConfig) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{

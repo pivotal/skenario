@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
-
 	"skenario/pkg/simulator"
 )
 
@@ -32,7 +30,7 @@ type autoscalerTicktockStock struct {
 	env              simulator.Environment
 	cluster          ClusterModel
 	autoscalerEntity simulator.Entity
-	autoscaler       autoscaler.UniScaler
+	autoscaler       SkAutoscaler
 	desiredSource    simulator.ThroughStock
 	desiredSink      simulator.ThroughStock
 }
@@ -65,7 +63,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	currentTime := asts.env.CurrentMovementTime()
 
 	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime)
-	autoscalerDesired, _ := asts.autoscaler.Scale(asts.env.Context(), currentTime)
+	autoscalerDesired, _ := asts.autoscaler.Scale(currentTime.UnixNano())
 
 	delta := autoscalerDesired - int32(asts.cluster.Desired().Count())
 
@@ -118,12 +116,12 @@ func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 	}
 }
 
-func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, scaler autoscaler.UniScaler, cluster ClusterModel) AutoscalerTicktockStock {
+func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, autoscaler SkAutoscaler, cluster ClusterModel) AutoscalerTicktockStock {
 	return &autoscalerTicktockStock{
 		env:              env,
 		cluster:          cluster,
 		autoscalerEntity: scalerEntity,
-		autoscaler:       scaler,
+		autoscaler:       autoscaler,
 		desiredSource:    simulator.NewThroughStock("DesiredSource", "Desired"),
 		desiredSink:      simulator.NewThroughStock("DesiredSink", "Desired"),
 	}

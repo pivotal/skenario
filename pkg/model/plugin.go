@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"skenario/pkg/simulator"
+	"time"
+)
 
 // BEGIN INTERFACE
 
@@ -91,4 +94,25 @@ func (s *podConcurrencyStat) Metric() string {
 
 func (s *podConcurrencyStat) Value() int32 {
 	return s.averageConcurrency
+}
+
+// HORIZONTAL POD AUTOSCALER
+
+type horizontalPodAutoscaler struct {
+	env      simulator.Environment
+	tickTock AutoscalerTicktockStock
+}
+
+func NewHorizontalPodAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel) {
+	hpa := &horizontalPodAutoscaler{
+		env: env,
+	}
+	for theTime := startAt.Add(15 * time.Second).Add(time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(15 * time.Second) {
+		hpa.env.AddToSchedule(simulator.NewMovement(
+			"autoscaler_tick",
+			theTime,
+			hpa.tickTock,
+			hpa.tickTock,
+		))
+	}
 }

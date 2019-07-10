@@ -18,7 +18,6 @@ package model
 import (
 	"fmt"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	informers "k8s.io/client-go/informers/core/v1"
@@ -31,7 +30,7 @@ type Replica interface {
 	Activate()
 	Deactivate()
 	RequestsProcessing() RequestsProcessingStock
-	Stat() autoscaler.Stat
+	Stats() []SkStat
 }
 
 type ReplicaEntity interface {
@@ -107,18 +106,27 @@ func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 	return re.requestsProcessing
 }
 
-func (re *replicaEntity) Stat() autoscaler.Stat {
+func (re *replicaEntity) Stats() []SkStat {
 	atTime := re.env.CurrentMovementTime()
-	stat := autoscaler.Stat{
-		Time:                      &atTime,
-		PodName:                   string(re.Name()),
-		AverageConcurrentRequests: float64(re.requestsProcessing.Count()),
-		RequestCount:              re.requestsProcessing.RequestCount(),
-	}
+	stats := make([]SkStat, 0)
+
+	stats = append(stats, &podConcurrencyStat{
+		time:               atTime,
+		podName:            string(re.Name()),
+		averageConcurrency: int32(re.requestsProcessing.Count()),
+	})
+
+	stats = append(stats, &podCpuStat{
+		time:              atTime,
+		podName:           string(re.Name()),
+		averageMillicores: int32(100),
+		// TODO: calculate cpu usage based on request time in cpu stock
+	})
 
 	re.numRequestsSinceStat = 0
+	// TODO: report request count
 
-	return stat
+	return stats
 }
 
 func (re *replicaEntity) Name() simulator.EntityName {
