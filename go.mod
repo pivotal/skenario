@@ -51,12 +51,12 @@ require (
 	k8s.io/code-generator v0.0.0-20190627204931-86aa6a6a5cf3 // indirect
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30 // indirect
 	k8s.io/utils v0.0.0-20190221042446-c2654d5206da // indirect
-	knative.dev/pkg v0.0.0-20190627143708-1864f499dcaa
+	knative.dev/pkg v0.0.0-20190710005859-e2418a08c195
 	knative.dev/serving v0.7.1
 	sigs.k8s.io/structured-merge-diff v0.0.0-20190302045857-e85c7b244fd2 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
 
-replace knative.dev/serving => /Users/jchesterpivotal/go/src/knative.dev/serving
+replace knative.dev/serving => /Users/pivotal/go/src/knative.dev/serving
 
-replace knative.dev/pkg => /Users/jchesterpivotal/go/src/knative.dev/pkg
+replace knative.dev/pkg => /Users/pivotal/go/src/knative.dev/pkg

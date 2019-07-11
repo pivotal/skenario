@@ -58,8 +58,8 @@ func (re *replicaEntity) Stat() autoscaler.Stat {
 	stat := autoscaler.Stat{
 		Time:                      &atTime,
 		PodName:                   string(re.Name()),
-		AverageConcurrentRequests: float64(re.requestsProcessing.Count()),
-		RequestCount:              re.requestsProcessing.RequestCount(),
+		//AverageConcurrentRequests: float64(re.requestsProcessing.Count()),
+		RequestCount:              float64(re.requestsProcessing.RequestCount()),
 	}
 
 	re.numRequestsSinceStat = 0

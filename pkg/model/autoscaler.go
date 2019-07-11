@@ -128,7 +128,6 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 
 func NewMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) (*autoscaler.MetricCollector, *autoscaler.ServiceScraper) {
 	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
-	clusterAsScrapeClient := cluster.(autoscaler.ScrapeClient)
 
 	metric := &autoscaler.Metric{
 		ObjectMeta: v1.ObjectMeta{
@@ -141,7 +140,7 @@ func NewMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerCo
 			PanicWindow:  kconfig.PanicWindow,
 		},
 	}
-	scraper, err := autoscaler.NewServiceScraper(metric, clusterAsReadyPods, clusterAsScrapeClient)
+	scraper, err := autoscaler.NewServiceScraper(metric, clusterAsReadyPods)
 	if err != nil {
 		panic(fmt.Errorf("could not create service scraper: %s", err.Error()))
 	}

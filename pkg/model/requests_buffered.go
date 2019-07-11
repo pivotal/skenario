@@ -96,20 +96,19 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 			Time:                             &theTime,
 			PodName:                          "activator",
 			AverageConcurrentRequests:        float64(rbs.delegate.Count()),
-			RequestCount:                     int32(rbs.delegate.Count()),
+			RequestCount:                     float64(rbs.delegate.Count()),
 		})
 	}
 
 	return addResult
 }
 
-func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock, collector *autoscaler.MetricCollector) RequestsBufferedStock {
+func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsBufferedStock {
 	return &requestsBufferedStock{
 		env:            env,
 		delegate:       simulator.NewThroughStock("RequestsBuffered", "Request"),
 		replicas:       replicas,
 		requestsFailed: requestsFailed,
 		countRequests:  0,
-		collector:      collector,
 	}
 }
