@@ -38,6 +38,7 @@ type ClusterModel interface {
 	CurrentLaunching() uint64
 	CurrentActive() uint64
 	BufferStock() RequestsBufferedStock
+	ActiveStock() ReplicasActiveStock
 }
 
 type clusterModel struct {
@@ -75,8 +76,8 @@ func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 	return cm.requestsInBuffer
 }
 
-func (cm *clusterModel) ReadyCount() (int, error) {
-	return int(cm.replicasActive.Count()) + 1, nil
+func (cm *clusterModel) ActiveStock() ReplicasActiveStock {
+	return cm.replicasActive
 }
 
 func (cm *clusterModel) Scrape(url string) (*autoscaler.Stat, error) {

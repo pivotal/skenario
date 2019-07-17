@@ -62,8 +62,9 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
 	logger := logging.FromContext(env.Context())
 
+	readyPodCounter := NewClusterReadyCounter(cluster.ActiveStock())
 	collector, scraper := NewMetricsComponents(logger, config, cluster)
-	kpa := newKpa(logger, config, cluster, collector)
+	kpa := newKpa(logger, config, readyPodCounter, collector)
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
@@ -94,7 +95,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 	return kas
 }
 
-func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel, collector *autoscaler.MetricCollector) *autoscaler.Autoscaler {
+func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, readyCounter resources.ReadyPodCounter, collector *autoscaler.MetricCollector) *autoscaler.Autoscaler {
 	deciderSpec := autoscaler.DeciderSpec{
 		ServiceName:       testName,
 		TickInterval:      kconfig.TickInterval,
@@ -109,13 +110,11 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 		logger.Fatalf("could not create stats reporter: %s", err.Error())
 	}
 
-	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
-
 	as, err := autoscaler.New(
 		testNamespace,
 		testName,
 		collector,
-		clusterAsReadyPods,
+		readyCounter,
 		deciderSpec,
 		statsReporter,
 	)
@@ -127,7 +126,7 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster 
 }
 
 func NewMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) (*autoscaler.MetricCollector, *autoscaler.ServiceScraper) {
-	clusterAsReadyPods := cluster.(resources.ReadyPodCounter)
+	readyCounter := NewClusterReadyCounter(cluster.ActiveStock())
 
 	metric := &autoscaler.Metric{
 		ObjectMeta: v1.ObjectMeta{
@@ -136,11 +135,12 @@ func NewMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerCo
 			Labels:    map[string]string{serving.RevisionLabelKey: testName},
 		},
 		Spec: autoscaler.MetricSpec{
+			ScrapeTarget: testName,
 			StableWindow: kconfig.StableWindow,
 			PanicWindow:  kconfig.PanicWindow,
 		},
 	}
-	scraper, err := autoscaler.NewServiceScraper(metric, clusterAsReadyPods)
+	scraper, err := autoscaler.NewServiceScraper(metric, readyCounter)
 	if err != nil {
 		panic(fmt.Errorf("could not create service scraper: %s", err.Error()))
 	}
