@@ -16,8 +16,7 @@
 package model
 
 import (
-	"knative.dev/serving/pkg/autoscaler"
-	"math/rand"
+	"knative.dev/pkg/logging"
 	"time"
 
 	corev1informers "k8s.io/client-go/informers/core/v1"
@@ -80,19 +79,16 @@ func (cm *clusterModel) ActiveStock() ReplicasActiveStock {
 	return cm.replicasActive
 }
 
-func (cm *clusterModel) Scrape(url string) (*autoscaler.Stat, error) {
-	replicas := cm.replicasActive.EntitiesInStock()
-	rep := (*replicas[rand.Intn(len(replicas))]).(ReplicaEntity)
-	stat := rep.Stat()
-
-	return &stat, nil
-}
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
+
 	replicasActive := NewReplicasActiveStock()
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
-	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed)
 	replicasTerminated := simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica"))
+
+	logger := logging.FromContext(env.Context())
+	collector := NewMetricCollector(logger, KnativeAutoscalerConfig{}, replicasActive)
+	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed, collector)
 
 	cm := &clusterModel{
 		env:                 env,

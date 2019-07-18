@@ -29,7 +29,7 @@ type ScraperTicktock interface {
 type scraperTicktock struct {
 	scraperEntity simulator.Entity
 	collector     *autoscaler.MetricCollector
-	scraper       *autoscaler.ServiceScraper
+	scraper       autoscaler.StatsScraper
 }
 
 func (st *scraperTicktock) Name() simulator.StockName {
@@ -68,7 +68,7 @@ func (st *scraperTicktock) Add(entity simulator.Entity) error {
 	return nil
 }
 
-func NewScraperTicktockStock(collector *autoscaler.MetricCollector, scraper *autoscaler.ServiceScraper) ScraperTicktock {
+func NewScraperTicktockStock(collector *autoscaler.MetricCollector, scraper autoscaler.StatsScraper) ScraperTicktock {
 	return &scraperTicktock{
 		scraperEntity: simulator.NewEntity("Scraper", "KnativeScraper"),
 		collector:     collector,

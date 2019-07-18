@@ -63,7 +63,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 	logger := logging.FromContext(env.Context())
 
 	readyPodCounter := NewClusterReadyCounter(cluster.ActiveStock())
-	collector, scraper := NewMetricsComponents(logger, config, cluster)
+	collector := NewMetricCollector(logger, config, cluster.ActiveStock())
 	kpa := newKpa(logger, config, readyPodCounter, collector)
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
@@ -82,7 +82,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 		))
 	}
 
-	scraperTickTock := NewScraperTicktockStock(collector, scraper)
+	scraperTickTock := NewScraperTicktockStock(collector, NewClusterServiceScraper(cluster.ActiveStock()))
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
 		kas.env.AddToSchedule(simulator.NewMovement(
 			"scraper_tick",
@@ -125,8 +125,8 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, readyCou
 	return as
 }
 
-func NewMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, cluster ClusterModel) (*autoscaler.MetricCollector, *autoscaler.ServiceScraper) {
-	readyCounter := NewClusterReadyCounter(cluster.ActiveStock())
+func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, activeStock ReplicasActiveStock) (*autoscaler.MetricCollector) {
+	scraper := NewClusterServiceScraper(activeStock)
 
 	metric := &autoscaler.Metric{
 		ObjectMeta: v1.ObjectMeta{
@@ -140,22 +140,18 @@ func NewMetricsComponents(logger *zap.SugaredLogger, kconfig KnativeAutoscalerCo
 			PanicWindow:  kconfig.PanicWindow,
 		},
 	}
-	scraper, err := autoscaler.NewServiceScraper(metric, readyCounter)
-	if err != nil {
-		panic(fmt.Errorf("could not create service scraper: %s", err.Error()))
-	}
 
 	clusterStatScraper := func(metric *autoscaler.Metric) (autoscaler.StatsScraper, error) {
 		return scraper, nil
 	}
 
 	collector := autoscaler.NewMetricCollector(clusterStatScraper, logger)
-	_, err = collector.Create(context.Background(), metric)
+	_, err := collector.Create(context.Background(), metric)
 	if err != nil {
 		panic(fmt.Errorf("could not create metric collector: %s", err.Error()))
 	}
 
-	return collector, scraper
+	return collector
 }
 
 type foo struct{}
