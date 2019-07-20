@@ -63,8 +63,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 	logger := logging.FromContext(env.Context())
 
 	readyPodCounter := NewClusterReadyCounter(cluster.ActiveStock())
-	collector := NewMetricCollector(logger, config, cluster.ActiveStock())
-	kpa := newKpa(logger, config, readyPodCounter, collector)
+	kpa := newKpa(logger, config, readyPodCounter, cluster.Collector())
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
@@ -82,7 +81,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 		))
 	}
 
-	scraperTickTock := NewScraperTicktockStock(collector, NewClusterServiceScraper(cluster.ActiveStock()))
+	scraperTickTock := NewScraperTicktockStock(cluster.Collector(), NewClusterServiceScraper(cluster.ActiveStock()))
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
 		kas.env.AddToSchedule(simulator.NewMovement(
 			"scraper_tick",

@@ -17,6 +17,8 @@ package model
 
 import (
 	"knative.dev/pkg/logging"
+	"knative.dev/serving/pkg/autoscaler"
+
 	"time"
 
 	corev1informers "k8s.io/client-go/informers/core/v1"
@@ -38,6 +40,7 @@ type ClusterModel interface {
 	CurrentActive() uint64
 	BufferStock() RequestsBufferedStock
 	ActiveStock() ReplicasActiveStock
+	Collector() *autoscaler.MetricCollector
 }
 
 type clusterModel struct {
@@ -54,6 +57,7 @@ type clusterModel struct {
 	requestsFailed      simulator.SinkStock
 	kubernetesClient    kubernetes.Interface
 	endpointsInformer   corev1informers.EndpointsInformer
+	collector           *autoscaler.MetricCollector
 }
 
 func (cm *clusterModel) Env() simulator.Environment {
@@ -79,6 +83,9 @@ func (cm *clusterModel) ActiveStock() ReplicasActiveStock {
 	return cm.replicasActive
 }
 
+func (cm *clusterModel) Collector() *autoscaler.MetricCollector {
+	return cm.collector
+}
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
 
@@ -101,6 +108,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 		replicasTerminated:  replicasTerminated,
 		requestsInBuffer:    bufferStock,
 		requestsFailed:      requestsFailed,
+		collector:           collector,
 	}
 
 	desiredConf := ReplicasConfig{
