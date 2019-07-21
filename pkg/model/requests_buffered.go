@@ -92,7 +92,7 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 		}
 
 		theTime := rbs.env.CurrentMovementTime()
-		rbs.collector.Record("activator", autoscaler.Stat{
+		rbs.collector.Record("simulator-namespace/revisionService", autoscaler.Stat{
 			Time:                      &theTime,
 			PodName:                   "activator",
 			AverageConcurrentRequests: float64(rbs.delegate.Count()),

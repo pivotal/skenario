@@ -124,7 +124,7 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, readyCou
 	return as
 }
 
-func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, activeStock ReplicasActiveStock) (*autoscaler.MetricCollector) {
+func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, activeStock ReplicasActiveStock) *autoscaler.MetricCollector {
 	scraper := NewClusterServiceScraper(activeStock)
 
 	metric := &autoscaler.Metric{
@@ -151,18 +151,4 @@ func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConf
 	}
 
 	return collector
-}
-
-type foo struct{}
-
-func (*foo) Scrape(url string) (*autoscaler.Stat, error) {
-	naow := time.Now()
-	return &autoscaler.Stat{
-		Time:                             &naow,
-		PodName:                          "foo-123",
-		AverageConcurrentRequests:        10,
-		AverageProxiedConcurrentRequests: 20,
-		RequestCount:                     30,
-		ProxiedRequestCount:              10,
-	}, nil
 }

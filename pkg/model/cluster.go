@@ -88,13 +88,15 @@ func (cm *clusterModel) Collector() *autoscaler.MetricCollector {
 }
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
-
 	replicasActive := NewReplicasActiveStock()
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	replicasTerminated := simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica"))
 
 	logger := logging.FromContext(env.Context())
-	collector := NewMetricCollector(logger, KnativeAutoscalerConfig{}, replicasActive)
+	collector := NewMetricCollector(logger, KnativeAutoscalerConfig{
+		StableWindow:           60 * time.Second,
+		PanicWindow:            6 * time.Second,
+	}, replicasActive)
 	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed, collector)
 
 	cm := &clusterModel{
