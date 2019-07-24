@@ -16,6 +16,7 @@
 package model
 
 import (
+	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/serving/pkg/autoscaler"
 	"time"
 
@@ -91,14 +92,15 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 			))
 		}
 
-		theTime := rbs.env.CurrentMovementTime()
-		rbs.collector.Record("simulator-namespace/revisionService", autoscaler.Stat{
-			Time:                      &theTime,
-			PodName:                   "activator",
-			AverageConcurrentRequests: float64(rbs.delegate.Count()),
-			RequestCount:              float64(rbs.delegate.Count()),
-		})
 	}
+	theTime := rbs.env.CurrentMovementTime()
+	stat := autoscaler.Stat{
+		Time:                      &theTime,
+		PodName:                   "activator",
+		AverageConcurrentRequests: float64(rbs.delegate.Count()) / 2.0,
+		RequestCount:              float64(rbs.delegate.Count()),
+	}
+	rbs.collector.Record(types.NamespacedName{Namespace: "simulator-namespace", Name: "revisionService"}, stat)
 
 	return addResult
 }

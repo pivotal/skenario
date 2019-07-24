@@ -18,13 +18,14 @@ package model
 import (
 	"context"
 	"fmt"
-	"knative.dev/serving/pkg/apis/serving"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/serving/pkg/apis/autoscaling/v1alpha1"
+	"knative.dev/serving/pkg/apis/serving"
 	"time"
 
+	"go.uber.org/zap"
 	"knative.dev/pkg/logging"
 	"knative.dev/serving/pkg/resources"
-	"go.uber.org/zap"
 
 	"skenario/pkg/simulator"
 
@@ -127,20 +128,20 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, readyCou
 func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, activeStock ReplicasActiveStock) *autoscaler.MetricCollector {
 	scraper := NewClusterServiceScraper(activeStock)
 
-	metric := &autoscaler.Metric{
+	metric := &v1alpha1.Metric{
 		ObjectMeta: v1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 			Labels:    map[string]string{serving.RevisionLabelKey: testName},
 		},
-		Spec: autoscaler.MetricSpec{
+		Spec: v1alpha1.MetricSpec{
 			ScrapeTarget: testName,
 			StableWindow: kconfig.StableWindow,
 			PanicWindow:  kconfig.PanicWindow,
 		},
 	}
 
-	clusterStatScraper := func(metric *autoscaler.Metric) (autoscaler.StatsScraper, error) {
+	clusterStatScraper := func(metric *v1alpha1.Metric) (autoscaler.StatsScraper, error) {
 		return scraper, nil
 	}
 

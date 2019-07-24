@@ -16,6 +16,7 @@
 package model
 
 import (
+	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/serving/pkg/autoscaler"
 	"math/rand"
 )
@@ -31,7 +32,7 @@ func (cm *clusterServiceScraper) Scrape() (*autoscaler.StatMessage, error) {
 		stat := rep.Stat()
 
 		return &autoscaler.StatMessage{
-			Key:  "ActiveInstances",
+			Key:  types.NamespacedName{Namespace:testName, Name:testName},
 			Stat: stat,
 		}, nil
 	}

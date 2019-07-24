@@ -44,7 +44,6 @@ type replicaEntity struct {
 	endpointAddress      corev1.EndpointAddress
 	requestsProcessing   RequestsProcessingStock
 	requestsComplete     simulator.SinkStock
-	numRequestsSinceStat int32
 }
 
 var replicaNum int
@@ -55,14 +54,12 @@ func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 
 func (re *replicaEntity) Stat() autoscaler.Stat {
 	atTime := re.env.CurrentMovementTime()
+	count := float64(re.requestsProcessing.RequestCount())
 	stat := autoscaler.Stat{
 		Time:                      &atTime,
 		PodName:                   string(re.Name()),
-		//AverageConcurrentRequests: float64(re.requestsProcessing.Count()),
-		RequestCount:              float64(re.requestsProcessing.RequestCount()),
+		AverageConcurrentRequests: count,
 	}
-
-	re.numRequestsSinceStat = 0
 
 	return stat
 }
