@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/serving/pkg/autoscaler"
 	"math/rand"
+	"time"
 )
 
 type clusterServiceScraper struct {
@@ -26,14 +27,47 @@ type clusterServiceScraper struct {
 }
 
 func (cm *clusterServiceScraper) Scrape() (*autoscaler.StatMessage, error) {
-	if cm.replicasActive.Count() > 0 {
-		replicas := cm.replicasActive.EntitiesInStock()
-		rep := (*replicas[rand.Intn(len(replicas))]).(ReplicaEntity)
-		stat := rep.Stat()
+	replicaCount := cm.replicasActive.Count()
+
+	if replicaCount > 0 {
+
+		var (
+			now                   *time.Time
+			avgConcurrency        float64
+			avgProxiedConcurrency float64
+			reqCount              float64
+			proxiedReqCount       float64
+		)
+
+		idx := 0
+		if replicaCount > 3 {
+			idx = 3
+		} else {
+			idx = int(replicaCount)
+		}
+
+		for i := 0; i < idx; i++ {
+			replicas := cm.replicasActive.EntitiesInStock()
+			rep := (*replicas[rand.Intn(len(replicas))]).(ReplicaEntity)
+			stat := rep.Stat()
+
+			now = stat.Time
+			avgConcurrency += stat.AverageConcurrentRequests
+			avgProxiedConcurrency += stat.AverageProxiedConcurrentRequests
+			reqCount += stat.RequestCount
+			proxiedReqCount += stat.ProxiedRequestCount
+		}
 
 		return &autoscaler.StatMessage{
-			Key:  types.NamespacedName{Namespace:testName, Name:testName},
-			Stat: stat,
+			Key: types.NamespacedName{Namespace: testName, Name: testName},
+			Stat: autoscaler.Stat{
+				Time:                             now,
+				PodName:                          "averaged-pods",
+				AverageConcurrentRequests:        avgConcurrency,
+				AverageProxiedConcurrentRequests: avgProxiedConcurrency,
+				RequestCount:                     reqCount,
+				ProxiedRequestCount:              proxiedReqCount,
+			},
 		}, nil
 	}
 
