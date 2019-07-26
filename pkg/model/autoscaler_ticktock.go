@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"skenario/pkg/simulator"
+
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
 )
 
 type AutoscalerTicktockStock interface {
@@ -30,7 +32,7 @@ type autoscalerTicktockStock struct {
 	env              simulator.Environment
 	cluster          ClusterModel
 	autoscalerEntity simulator.Entity
-	autoscaler       SkAutoscaler
+	autoscaler       skplug.Autoscaler
 	desiredSource    simulator.ThroughStock
 	desiredSink      simulator.ThroughStock
 }
@@ -63,7 +65,10 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	currentTime := asts.env.CurrentMovementTime()
 
 	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime)
-	autoscalerDesired, _ := asts.autoscaler.Scale(currentTime.UnixNano())
+	autoscalerDesired, err := asts.autoscaler.Scale("")
+	if err != nil {
+		panic(err)
+	}
 
 	delta := autoscalerDesired - int32(asts.cluster.Desired().Count())
 
@@ -116,7 +121,7 @@ func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 	}
 }
 
-func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, autoscaler SkAutoscaler, cluster ClusterModel) AutoscalerTicktockStock {
+func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, autoscaler skplug.Autoscaler, cluster ClusterModel) AutoscalerTicktockStock {
 	return &autoscalerTicktockStock{
 		env:              env,
 		cluster:          cluster,

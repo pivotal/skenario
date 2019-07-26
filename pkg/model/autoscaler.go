@@ -16,14 +16,14 @@
 package model
 
 import (
-	"fmt"
-	"plugin"
+	"log"
 	"time"
 
 	"go.uber.org/zap"
 
 	"skenario/pkg/simulator"
 
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/knative/serving/pkg/autoscaler"
 )
 
@@ -54,36 +54,31 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 	return kas.env
 }
 
-func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
-	// logger := logging.FromContext(env.Context())
+type stubCluster struct{}
+
+// TODO: actually list running pods.
+func (c *stubCluster) ListPods() ([]*skplug.Pod, error) {
+	return nil, nil
+}
+
+func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig, autoscaler skplug.Autoscaler) KnativeAutoscalerModel {
 
 	// Build a Knative autoscaler
 	// epiSource := cluster.(EndpointInformerSource)
 	// kpa := newKpa(logger, epiSource, config)
 
-	// Build a Kubernetes HPA
-	p, err := plugin.Open("/usr/local/google/home/josephburnett/hpaplugin")
-	if err != nil {
-		panic(err)
-	}
-	s, err := p.Lookup("k8s.io.kubernetes.pkg.controller.podautoscaler.NewSkAutoscaler")
-	if err != nil {
-		panic(err)
-	}
-	f, ok := s.(func(string) (SkAutoscaler, error))
-	if !ok {
-		panic(fmt.Sprintf("%v cannot build an SkAutoscaler", s))
-	}
-	a, err := f(hpaYaml)
-	if err != nil {
-		panic(err)
-	}
-
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
+
+	key, err := autoscaler.Create(hpaYaml, &stubCluster{})
+	if err != nil {
+		panic(err)
+	}
+	// TODO: remember the key to scope autoscalers
+	log.Printf("Create autoscaler %v", key)
 
 	kas := &knativeAutoscaler{
 		env:      env,
-		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, a, cluster),
+		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, autoscaler, cluster),
 	}
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {

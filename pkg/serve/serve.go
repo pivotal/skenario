@@ -61,5 +61,8 @@ func (ss *SkenarioServer) Shutdown() {
 		log.Fatalf("shutdown error: %s", err.Error())
 	}
 
+	log.Println("Shutting down autoscaler plugin")
+	shutdownAutoscalerPlugin()
+
 	log.Println("Done.")
 }

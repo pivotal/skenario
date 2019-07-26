@@ -18,6 +18,7 @@ package model
 import (
 	"fmt"
 
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	informers "k8s.io/client-go/informers/core/v1"
@@ -30,7 +31,7 @@ type Replica interface {
 	Activate()
 	Deactivate()
 	RequestsProcessing() RequestsProcessingStock
-	Stats() []SkStat
+	Stats() []*skplug.Stat
 }
 
 type ReplicaEntity interface {
@@ -106,21 +107,22 @@ func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 	return re.requestsProcessing
 }
 
-func (re *replicaEntity) Stats() []SkStat {
+func (re *replicaEntity) Stats() []*skplug.Stat {
 	atTime := re.env.CurrentMovementTime()
-	stats := make([]SkStat, 0)
+	stats := make([]*skplug.Stat, 0)
 
-	stats = append(stats, &podConcurrencyStat{
-		time:               atTime,
-		podName:            string(re.Name()),
-		averageConcurrency: int32(re.requestsProcessing.Count()),
-	})
+	// stats = append(stats, &podConcurrencyStat{
+	// 	time:               atTime,
+	// 	podName:            string(re.Name()),
+	// 	averageConcurrency: int32(re.requestsProcessing.Count()),
+	// })
 
-	stats = append(stats, &podCpuStat{
-		time:              atTime,
-		podName:           string(re.Name()),
-		averageMillicores: int32(100),
+	stats = append(stats, &skplug.Stat{
+		Time:    atTime.UnixNano(),
+		PodName: string(re.Name()),
+		Metric:  "cpu",
 		// TODO: calculate cpu usage based on request time in cpu stock
+		Value: (50),
 	})
 
 	re.numRequestsSinceStat = 0
