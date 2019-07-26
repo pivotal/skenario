@@ -33,7 +33,7 @@ type requestsBufferedStock struct {
 	replicas       ReplicasActiveStock
 	requestsFailed simulator.SinkStock
 	countRequests  int
-	collector      *autoscaler.MetricCollector
+	collector      autoscaler.Collector
 }
 
 func (rbs *requestsBufferedStock) Name() simulator.StockName {
@@ -105,7 +105,7 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 	return addResult
 }
 
-func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock, collector *autoscaler.MetricCollector) RequestsBufferedStock {
+func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock, collector autoscaler.Collector) RequestsBufferedStock {
 	return &requestsBufferedStock{
 		env:            env,
 		delegate:       simulator.NewThroughStock("RequestsBuffered", "Request"),

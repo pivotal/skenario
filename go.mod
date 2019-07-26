@@ -47,6 +47,6 @@ require (
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
 
-replace knative.dev/serving => /Users/jchesterpivotal/go/src/knative.dev/serving
+replace knative.dev/serving => /Users/pivotal/go/src/knative.dev/serving
 
-replace knative.dev/pkg => /Users/jchesterpivotal/go/src/knative.dev/pkg
+replace knative.dev/pkg => /Users/pivotal/go/src/knative.dev/pkg

@@ -35,10 +35,14 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 	var subject RequestEntity
 	var rawSubject *requestEntity
 	var envFake *FakeEnvironment
+	var collectorFake *FakeCollector
 	var bufferStock RequestsBufferedStock
+	var sinkStock simulator.SinkStock
 
 	it.Before(func() {
-		bufferStock = NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil)
+		sinkStock = simulator.NewSinkStock("TestSinkStock", "Request")
+		collectorFake = &FakeCollector{}
+		bufferStock = NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), sinkStock, collectorFake)
 		envFake = new(FakeEnvironment)
 		subject = NewRequestEntity(envFake, bufferStock)
 		rawSubject = subject.(*requestEntity)

@@ -150,12 +150,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("sets RequestCount based on the number of movements to RequestsProcessing", func() {
-				assert.Equal(t, int32(2), stat.RequestCount)
-			})
-
-			it("resets the RequestCount counter after each call", func() {
-				stat = subject.Stat()
-				assert.Equal(t, int32(0), stat.RequestCount)
+				assert.Equal(t, float64(2), stat.RequestCount)
 			})
 		})
 	})

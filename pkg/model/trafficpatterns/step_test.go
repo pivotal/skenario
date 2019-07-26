@@ -35,13 +35,15 @@ func testStep(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
 	var config StepConfig
 	var envFake *model.FakeEnvironment
+	var collectorFake *model.FakeCollector
 	var trafficSource model.TrafficSource
 	var bufferStock model.RequestsBufferedStock
 
 	it.Before(func() {
+		collectorFake = new(model.FakeCollector)
 		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(20 * time.Second)
-		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"), collectorFake)
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
 
 		config = StepConfig{

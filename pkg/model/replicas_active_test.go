@@ -48,19 +48,6 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("Add()", func() {
-		var replicaFake *FakeReplica
-
-		it.Before(func() {
-			replicaFake = new(FakeReplica)
-			subject.Add(replicaFake)
-		})
-
-		it("tells the Replica entity that it is active", func() {
-			assert.True(t, replicaFake.ActivateCalled)
-		})
-	})
-
 	describe("Remove()", func() {
 		var replicaFake *FakeReplica
 
@@ -68,10 +55,6 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 			replicaFake = new(FakeReplica)
 			subject.Add(replicaFake)
 			subject.Remove()
-		})
-
-		it("tells the Replica entity that it is terminating", func() {
-			assert.True(t, replicaFake.DeactivateCalled)
 		})
 
 		it("returns nil if it is empty", func() {

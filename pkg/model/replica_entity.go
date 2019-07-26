@@ -54,11 +54,13 @@ func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 
 func (re *replicaEntity) Stat() autoscaler.Stat {
 	atTime := re.env.CurrentMovementTime()
-	count := float64(re.requestsProcessing.RequestCount())
+	count := float64(re.requestsProcessing.Count())
+	avgCount := float64(re.requestsProcessing.RequestCount())
 	stat := autoscaler.Stat{
 		Time:                      &atTime,
 		PodName:                   string(re.Name()),
-		AverageConcurrentRequests: count,
+		RequestCount:              count,
+		AverageConcurrentRequests: avgCount,
 	}
 
 	return stat

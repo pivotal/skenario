@@ -33,9 +33,11 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 	var subject TrafficSource
 	var rawSubject *trafficSource
 	var envFake *FakeEnvironment
+	var collectorFake *FakeCollector
 
 	it.Before(func() {
-		requestsBuffered := NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"))
+		collectorFake = &FakeCollector{}
+		requestsBuffered := NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"), collectorFake)
 		envFake = new(FakeEnvironment)
 
 		subject = NewTrafficSource(envFake, requestsBuffered)

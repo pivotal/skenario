@@ -95,6 +95,8 @@ func saturateClamp(fractionUtilised float64) float64 {
 		return 0.96
 	} else if fractionUtilised > 0.0 {
 		return fractionUtilised
+	} else if math.IsNaN(fractionUtilised) {
+		panic("fractionUtilised is NaN")
 	}
 
 	return 0.01

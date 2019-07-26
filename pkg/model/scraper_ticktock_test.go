@@ -30,11 +30,13 @@ func TestScraperTicktock(t *testing.T) {
 func testScraperTicktock(t *testing.T, describe spec.G, it spec.S) {
 	var subject ScraperTicktock
 	var rawSubject *scraperTicktock
-	var scaler *foo
+	var collectorFake *FakeCollector
+	var scraperFake *FakeScraper
 
 	it.Before(func() {
-		scaler = &foo{}
-		subject = NewScraperTicktockStock(scaler)
+		collectorFake = new(FakeCollector)
+		scraperFake = new(FakeScraper)
+		subject = NewScraperTicktockStock (collectorFake, scraperFake)
 		rawSubject = subject.(*scraperTicktock)
 	})
 

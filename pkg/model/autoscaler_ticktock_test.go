@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"knative.dev/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +42,6 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 		envFake = new(FakeEnvironment)
 		envFake.TheTime = time.Unix(0, 0)
 		autoscalerFake = &fakeAutoscaler{
-			recorded:   make([]autoscaler.Stat, 0),
 			scaleTimes: make([]time.Time, 0),
 		}
 
@@ -122,27 +120,6 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 				it("triggers the autoscaler calculation with the current time", func() {
 					assert.Equal(t, time.Unix(0, 0), autoscalerFake.scaleTimes[0])
-				})
-			})
-
-			describe("updating statistics", func() {
-				var rawCluster *clusterModel
-				onceForBuffer := 1
-				onceForReplica := 1
-
-				it.Before(func() {
-					rawCluster = cluster.(*clusterModel)
-					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", 100)
-					err := rawCluster.replicasActive.Add(newReplica)
-					assert.NoError(t, err)
-
-					ent := subject.Remove()
-					err = subject.Add(ent)
-					assert.NoError(t, err)
-				})
-
-				it("delegates statistics updating to ClusterModel", func() {
-					assert.Len(t, autoscalerFake.recorded, onceForBuffer+onceForReplica)
 				})
 			})
 

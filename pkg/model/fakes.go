@@ -17,6 +17,8 @@ package model
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/types"
+	"knative.dev/serving/pkg/apis/autoscaling/v1alpha1"
 	"knative.dev/serving/pkg/autoscaler"
 	"time"
 
@@ -67,14 +69,6 @@ func (*FakeReplica) Kind() simulator.EntityKind {
 	return "Replica"
 }
 
-func (fr *FakeReplica) Activate() {
-	fr.ActivateCalled = true
-}
-
-func (fr *FakeReplica) Deactivate() {
-	fr.DeactivateCalled = true
-}
-
 func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.RequestsProcessingCalled = true
 	if fr.ProcessingStock == nil {
@@ -87,4 +81,29 @@ func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
 func (fr *FakeReplica) Stat() autoscaler.Stat {
 	fr.StatCalled = true
 	return autoscaler.Stat{}
+}
+
+type FakeCollector struct {
+	
+}
+
+func (fc *FakeCollector) CreateOrUpdate(*v1alpha1.Metric) error {
+	panic("implement me")
+}
+
+func (fc *FakeCollector) Record(key types.NamespacedName, stat autoscaler.Stat) {
+	panic("implement me")
+}
+
+func (fc *FakeCollector) Delete(context.Context, string, string) error {
+	panic("implement me")
+}
+
+
+type FakeScraper struct {
+
+}
+
+func (fs *FakeScraper) Scrape() (*autoscaler.StatMessage, error) {
+	panic("implement me")
 }

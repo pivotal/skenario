@@ -37,6 +37,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 	var replicaStock ReplicasActiveStock
 	var requestsFailedStock simulator.SinkStock
 	var replicaFake *FakeReplica
+	var collectorFake *FakeCollector
 
 	it.Before(func() {
 		requestsFailedStock = simulator.NewSinkStock("RequestsFailed", "Request")
@@ -46,7 +47,8 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 		it.Before(func() {
 			envFake = new(FakeEnvironment)
 			replicaStock = NewReplicasActiveStock()
-			subject = NewRequestsBufferedStock(envFake, replicaStock, nil)
+			collectorFake = &FakeCollector{}
+			subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock, collectorFake)
 			rawSubject = subject.(*requestsBufferedStock)
 		})
 
@@ -78,7 +80,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				replicaFake.FakeReplicaNum = 33
 				replicaStock.Add(replicaFake)
 
-				subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+				subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock, collectorFake)
 
 				subject.Add(NewRequestEntity(envFake, subject))
 				subject.Add(NewRequestEntity(envFake, subject))
@@ -105,7 +107,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					replicaFake = new(FakeReplica)
 					replicaStock.Add(replicaFake)
 
-					subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+					subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock, collectorFake)
 
 					subject.Add(request)
 				})
@@ -123,7 +125,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock, collectorFake)
 
 						subject.Add(request)
 					})
@@ -144,7 +146,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock, collectorFake)
 
 						subject.Add(request)
 						subject.Add(request)
@@ -163,7 +165,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock, collectorFake)
 
 						for i := 0; i < 19; i++ {
 							subject.Add(request)

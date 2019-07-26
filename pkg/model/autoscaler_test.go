@@ -20,14 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"knative.dev/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/informers/core/v1"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
-
+	"knative.dev/serving/pkg/autoscaler"
 	"skenario/pkg/simulator"
 )
 
@@ -36,39 +32,22 @@ func TestAutoscaler(t *testing.T) {
 }
 
 type fakeAutoscaler struct {
-	recorded   []autoscaler.Stat
 	scaleTimes []time.Time
 	cantDecide bool
 	scaleTo    int32
 }
 
-func (fa *fakeAutoscaler) Record(ctx context.Context, stat autoscaler.Stat) {
-	fa.recorded = append(fa.recorded, stat)
-}
-
-func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, bool) {
+func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, int32, bool) {
 	if fa.cantDecide {
-		return 0, false
+		return 0, 0, false
 	}
 
 	fa.scaleTimes = append(fa.scaleTimes, time)
-	return fa.scaleTo, true
+	return fa.scaleTo, 0, true
 }
 
 func (fa *fakeAutoscaler) Update(autoscaler.DeciderSpec) error {
 	panic("implement me")
-}
-
-type fakeEndpointsInformerSource struct {
-	epInformerCalled bool
-}
-
-func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
-	feis.epInformerCalled = true
-
-	fakeClient := k8sfakes.NewSimpleClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-	return informerFactory.Core().V1().Endpoints()
 }
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {

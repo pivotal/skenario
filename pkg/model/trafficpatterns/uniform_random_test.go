@@ -35,15 +35,17 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 	var subject Pattern
 	var config UniformConfig
 	var envFake *model.FakeEnvironment
+	var collectorFake *model.FakeCollector
 	var trafficSource model.TrafficSource
 	var bufferStock model.RequestsBufferedStock
 	var startAt time.Time
 	var runFor time.Duration
 
 	it.Before(func() {
+		collectorFake = new(model.FakeCollector)
 		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(10 * time.Second)
-		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"), collectorFake)
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
 		startAt = time.Unix(0, 1)
 		runFor = 1 * time.Second
