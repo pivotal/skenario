@@ -41,13 +41,13 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		requestsFailedStock = simulator.NewSinkStock("RequestsFailed", "Request")
+		collectorFake = &FakeCollector{}
 	})
 
 	describe("NewRequestsBufferedStock()", func() {
 		it.Before(func() {
 			envFake = new(FakeEnvironment)
 			replicaStock = NewReplicasActiveStock()
-			collectorFake = &FakeCollector{}
 			subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock, collectorFake)
 			rawSubject = subject.(*requestsBufferedStock)
 		})

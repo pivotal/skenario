@@ -84,26 +84,30 @@ func (fr *FakeReplica) Stat() autoscaler.Stat {
 }
 
 type FakeCollector struct {
-	
+	CreateOrUpdateCalled int
+	RecordCalled         int
+	DeleteCalled         int
 }
 
 func (fc *FakeCollector) CreateOrUpdate(*v1alpha1.Metric) error {
-	panic("implement me")
+	fc.CreateOrUpdateCalled++
+	return nil
 }
 
 func (fc *FakeCollector) Record(key types.NamespacedName, stat autoscaler.Stat) {
-	panic("implement me")
+	fc.RecordCalled++
 }
 
 func (fc *FakeCollector) Delete(context.Context, string, string) error {
-	panic("implement me")
+	fc.DeleteCalled++
+	return nil
 }
 
-
 type FakeScraper struct {
-
+	ScrapeCalled int
 }
 
 func (fs *FakeScraper) Scrape() (*autoscaler.StatMessage, error) {
-	panic("implement me")
+	fs.ScrapeCalled++
+	return &autoscaler.StatMessage{}, nil
 }
