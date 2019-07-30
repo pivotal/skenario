@@ -133,6 +133,8 @@ func (env *environment) Context() context.Context {
 	return env.ctx
 }
 
+var environmentSequence int32 = 0
+
 func (env *environment) CPUUtilizations() []*CPUUtilization {
 	return env.cpuUtilizations
 }

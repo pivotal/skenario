@@ -9,7 +9,7 @@ import (
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
 )
 
-var autoscaler skplug.Autoscaler
+var pluginServer skplug.Plugin
 var client *plugin.Client
 
 func init() {
@@ -39,9 +39,9 @@ func init() {
 		os.Exit(1)
 	}
 
-	// We should have an Autoscaler now! This feels like a normal interface
+	// We should have a Plugin now! This feels like a normal interface
 	// implementation but is in fact over an RPC connection.
-	autoscaler = raw.(skplug.Autoscaler)
+	pluginServer = raw.(skplug.Plugin)
 }
 
 func shutdownAutoscalerPlugin() {

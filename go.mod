@@ -44,3 +44,5 @@ require (
 	k8s.io/kube-openapi v0.0.0-20190225204428-d50a959ae76a // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
+
+replace github.com/josephburnett/sk-plugin => ../sk-plugin

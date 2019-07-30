@@ -30,9 +30,10 @@ type AutoscalerTicktockStock interface {
 
 type autoscalerTicktockStock struct {
 	env              simulator.Environment
+	partition        string
 	cluster          ClusterModel
 	autoscalerEntity simulator.Entity
-	autoscaler       skplug.Autoscaler
+	plugin           skplug.Plugin
 	desiredSource    simulator.ThroughStock
 	desiredSink      simulator.ThroughStock
 }
@@ -64,8 +65,8 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	currentTime := asts.env.CurrentMovementTime()
 
-	asts.cluster.RecordToAutoscaler(asts.autoscaler, &currentTime)
-	autoscalerDesired, err := asts.autoscaler.Scale("")
+	asts.cluster.RecordToAutoscaler(asts.plugin, &currentTime)
+	autoscalerDesired, err := asts.plugin.Scale(asts.partition, currentTime.UnixNano())
 	if err != nil {
 		panic(err)
 	}
@@ -121,12 +122,13 @@ func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 	}
 }
 
-func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, autoscaler skplug.Autoscaler, cluster ClusterModel) AutoscalerTicktockStock {
+func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, plugin skplug.Plugin, cluster ClusterModel, partition string) AutoscalerTicktockStock {
 	return &autoscalerTicktockStock{
 		env:              env,
+		partition:        partition,
 		cluster:          cluster,
 		autoscalerEntity: scalerEntity,
-		autoscaler:       autoscaler,
+		plugin:           plugin,
 		desiredSource:    simulator.NewThroughStock("DesiredSource", "Desired"),
 		desiredSink:      simulator.NewThroughStock("DesiredSink", "Desired"),
 	}

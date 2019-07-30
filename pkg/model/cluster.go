@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -41,7 +42,7 @@ type ClusterModel interface {
 	Desired() ReplicasDesiredStock
 	CurrentLaunching() uint64
 	CurrentActive() uint64
-	RecordToAutoscaler(autoscaler skplug.Autoscaler, atTime *time.Time)
+	RecordToAutoscaler(autoscaler skplug.Plugin, atTime *time.Time)
 	RoutingStock() RequestsRoutingStock
 	ActiveStock() simulator.ThroughStock
 }
@@ -52,6 +53,7 @@ type EndpointInformerSource interface {
 
 type clusterModel struct {
 	env                 simulator.Environment
+	partition           string
 	config              ClusterConfig
 	replicasConfig      ReplicasConfig
 	replicasDesired     ReplicasDesiredStock
@@ -81,14 +83,14 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(autoscaler skplug.Autoscaler, atTime *time.Time) {
+func (cm *clusterModel) RecordToAutoscaler(plugin skplug.Plugin, atTime *time.Time) {
 	// first report for the RoutingStock
-	stats := make([]*skplug.Stat, 0)
-	stats = append(stats, &skplug.Stat{
+	stats := make([]*proto.Stat, 0)
+	stats = append(stats, &proto.Stat{
 		Time:    atTime.UnixNano(),
 		PodName: "RoutingStock",
-		Metric:  "concurrency",
-		Value:   int32(cm.requestsInRouting.Count()),
+		Type:    proto.MetricType_CONCURRENT_REQUESTS_MILLIS,
+		Value:   int32(cm.requestsInRouting.Count() * 1000),
 	})
 	// TODO: report request count
 
@@ -97,7 +99,7 @@ func (cm *clusterModel) RecordToAutoscaler(autoscaler skplug.Autoscaler, atTime 
 		r := (*e).(ReplicaEntity)
 		stats = append(stats, r.Stats()...)
 	}
-	err := autoscaler.Stat(stats)
+	err := plugin.Stat(cm.partition, stats)
 	if err != nil {
 		panic(err)
 	}
@@ -115,7 +117,7 @@ func (cm *clusterModel) ActiveStock() simulator.ThroughStock {
 	return cm.replicasActive
 }
 
-func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
+func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig, partition string) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 	endpointsInformer := informerFactory.Core().V1().Endpoints()
@@ -139,6 +141,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 
 	cm := &clusterModel{
 		env:                 env,
+		partition:           partition,
 		config:              config,
 		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
