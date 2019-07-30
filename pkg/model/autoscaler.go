@@ -47,9 +47,8 @@ type KnativeAutoscalerModel interface {
 }
 
 type knativeAutoscaler struct {
-	env       simulator.Environment
-	partition string
-	tickTock  AutoscalerTicktockStock
+	env      simulator.Environment
+	tickTock AutoscalerTicktockStock
 }
 
 func (kas *knativeAutoscaler) Env() simulator.Environment {
@@ -63,11 +62,11 @@ func (c *stubCluster) ListPods() ([]*skplug.Pod, error) {
 	return nil, nil
 }
 
-func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig, plugin skplug.Plugin, partition string) KnativeAutoscalerModel {
+func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
-	err := plugin.Event(partition, startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
+	err := env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
 		// TODO: select type and plugin based on the scenario.
 		Type: "hpa.v2beta2.autoscaling.k8s.io",
 		Yaml: hpaYaml,
@@ -75,12 +74,11 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Created autoscaler %v", partition)
+	log.Printf("Created autoscaler.")
 
 	kas := &knativeAutoscaler{
-		env:       env,
-		partition: partition,
-		tickTock:  NewAutoscalerTicktockStock(env, autoscalerEntity, plugin, cluster, partition),
+		env:      env,
+		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, cluster),
 	}
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {

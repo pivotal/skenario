@@ -23,6 +23,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+
+	"skenario/pkg/plugin"
 )
 
 type SkenarioServer struct {
@@ -62,7 +64,7 @@ func (ss *SkenarioServer) Shutdown() {
 	}
 
 	log.Println("Shutting down autoscaler plugin")
-	shutdownAutoscalerPlugin()
+	plugin.Shutdown()
 
 	log.Println("Done.")
 }

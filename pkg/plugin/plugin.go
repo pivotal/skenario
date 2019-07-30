@@ -1,12 +1,15 @@
-package serve
+package plugin
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 )
 
 var pluginServer skplug.Plugin
@@ -44,6 +47,30 @@ func init() {
 	pluginServer = raw.(skplug.Plugin)
 }
 
-func shutdownAutoscalerPlugin() {
+func Shutdown() {
 	client.Kill()
+}
+
+type PluginPartition struct {
+	partition string
+}
+
+var partitionSequence int32 = 0
+
+func NewPluginPartition() *PluginPartition {
+	return &PluginPartition{
+		partition: strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
+	}
+}
+
+func (p *PluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
+	return pluginServer.Event(p.partition, time, typ, object)
+}
+
+func (p *PluginPartition) Stat(stat []*proto.Stat) error {
+	return pluginServer.Stat(p.partition, stat)
+}
+
+func (p *PluginPartition) Scale(time int64) (rec int32, err error) {
+	return pluginServer.Scale(p.partition, time)
 }

@@ -19,8 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"sync/atomic"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
@@ -104,7 +102,6 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
-	partition := strconv.Itoa(int(atomic.AddInt32(&environmentSequence, 1)))
 
 	clusterConf := buildClusterConfig(runReq)
 	kpaConf := buildKpaConfig(runReq)
@@ -120,9 +117,9 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		Timeout:       runReq.RequestTimeout,
 	}
 
-	cluster := model.NewCluster(env, clusterConf, replicasConfig, partition)
-	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf, pluginServer, partition)
-	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock(), requestConfig)
+	cluster := model.NewCluster(env, clusterConf, replicasConfig)
+	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
+	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock())
 
 	var traffic trafficpatterns.Pattern
 	switch runReq.TrafficPattern {
