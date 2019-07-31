@@ -17,6 +17,9 @@ package model
 
 import (
 	"skenario/pkg/simulator"
+
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 )
 
 type ReplicasActiveStock interface {
@@ -24,6 +27,7 @@ type ReplicasActiveStock interface {
 }
 
 type replicasActiveStock struct {
+	env      simulator.Environment
 	delegate simulator.ThroughStock
 }
 
@@ -52,6 +56,11 @@ func (ras *replicasActiveStock) Remove() simulator.Entity {
 	replica := entity.(Replica)
 	replica.Deactivate()
 
+	now := ras.env.CurrentMovementTime().UnixNano()
+	ras.env.Plugin().Event(now, proto.EventType_DELETE, &skplug.Pod{
+		Name: string(entity.Name()),
+	})
+
 	return entity
 }
 
@@ -59,11 +68,21 @@ func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
 	replica := entity.(Replica)
 	replica.Activate()
 
+	now := ras.env.CurrentMovementTime().UnixNano()
+	ras.env.Plugin().Event(now, proto.EventType_CREATE, &skplug.Pod{
+		Name: string(entity.Name()),
+		// TODO: enumerate states in proto.
+		State:          "active",
+		LastTransition: now,
+		CpuRequest:     1000,
+	})
+
 	return ras.delegate.Add(entity)
 }
 
-func NewReplicasActiveStock() ReplicasActiveStock {
+func NewReplicasActiveStock(env simulator.Environment) ReplicasActiveStock {
 	return &replicasActiveStock{
+		env:      env,
 		delegate: simulator.NewThroughStock("ReplicasActive", "Replica"),
 	}
 }

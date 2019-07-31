@@ -132,7 +132,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
 	endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
-	replicasActive := NewReplicasActiveStock()
+	replicasActive := NewReplicasActiveStock(env)
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	routingStock := NewRequestsRoutingStock(env, replicasActive, requestsFailed)
 	replicasTerminated := simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica"))
@@ -158,6 +158,13 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	}
 
 	cm.replicasDesired = NewReplicasDesiredStock(env, desiredConf, cm.replicaSource, cm.replicasLaunching, cm.replicasActive, cm.replicasTerminating)
+
+	// TODO: create initial replicas config.
+	// Create the first pod since HPA can't scale from zero.
+	err := cm.replicasActive.Add(cm.replicaSource.Remove())
+	if err != nil {
+		panic(err)
+	}
 
 	rs := cm.replicaSource.(*replicaSource)
 	for i := 0; i < int(config.InitialNumberOfReplicas); i++ {
