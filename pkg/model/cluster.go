@@ -159,17 +159,9 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 
 	cm.replicasDesired = NewReplicasDesiredStock(env, desiredConf, cm.replicaSource, cm.replicasLaunching, cm.replicasActive, cm.replicasTerminating)
 
-	// TODO: create initial replicas config.
-	// Create the first pod since HPA can't scale from zero.
-	err := cm.replicasActive.Add(cm.replicaSource.Remove())
-	if err != nil {
-		panic(err)
-	}
-
 	rs := cm.replicaSource.(*replicaSource)
 	for i := 0; i < int(config.InitialNumberOfReplicas); i++ {
 		replicasActive.Add(NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), &rs.failedSink))
 	}
-
 	return cm
 }

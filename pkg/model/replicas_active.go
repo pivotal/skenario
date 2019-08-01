@@ -57,9 +57,12 @@ func (ras *replicasActiveStock) Remove() simulator.Entity {
 	replica.Deactivate()
 
 	now := ras.env.CurrentMovementTime().UnixNano()
-	ras.env.Plugin().Event(now, proto.EventType_DELETE, &skplug.Pod{
+	err := ras.env.Plugin().Event(now, proto.EventType_DELETE, &skplug.Pod{
 		Name: string(entity.Name()),
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	return entity
 }
@@ -69,13 +72,16 @@ func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
 	replica.Activate()
 
 	now := ras.env.CurrentMovementTime().UnixNano()
-	ras.env.Plugin().Event(now, proto.EventType_CREATE, &skplug.Pod{
+	err := ras.env.Plugin().Event(now, proto.EventType_CREATE, &skplug.Pod{
 		Name: string(entity.Name()),
 		// TODO: enumerate states in proto.
 		State:          "active",
 		LastTransition: now,
 		CpuRequest:     1000,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	return ras.delegate.Add(entity)
 }
