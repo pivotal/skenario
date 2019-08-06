@@ -17,7 +17,6 @@ package model
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -67,7 +66,6 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("autoscalerDesired", autoscalerDesired)
 
 	delta := autoscalerDesired - int32(asts.cluster.Desired().Count())
 

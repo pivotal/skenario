@@ -74,6 +74,8 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 	if err != nil {
 		panic(err)
 	}
+	log.Printf("Created autoscaler.")
+
 	// TODO: create initial replicas config.
 	// Create the first pod since HPA can't scale from zero.
 	cm := cluster.(*clusterModel)
@@ -81,7 +83,6 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Created autoscaler.")
 
 	kas := &knativeAutoscaler{
 		env:      env,
