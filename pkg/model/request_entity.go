@@ -37,6 +37,8 @@ type requestEntity struct {
 
 	cpuSecondsRequired time.Duration
 	cpuSecondsConsumed time.Duration
+
+	startTime *time.Time
 }
 
 var reqNumber int

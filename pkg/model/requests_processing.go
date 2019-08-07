@@ -69,17 +69,13 @@ func (rps *requestsProcessingStock) Remove() simulator.Entity {
 	*rps.occupiedCPUCapacityMillisPerSecond -= *request.utilizationForRequestMillisPerSecond
 	return request
 
-	//if rps.processesActive.Count() > 0 {
-	//	return rps.Remove()
-	//}
-	//if rps.processesOnCpu.Count() > 0 {
-	//	return rps.Remove()
+	//if rps.processesTerminated.Count() > 0 {
+	//	return rps.processesTerminated.Remove()
 	//}
 	//return nil
 }
 
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
-
 	var totalTime time.Duration
 
 	// TODO: this isn't correct anymore because it's used for interrupts.
@@ -112,6 +108,11 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 
 	return rps.delegate.Add(entity)
 
+	//if req.startTime == nil {
+	//	now := rps.env.CurrentMovementTime()
+	//	req.startTime = &now
+	//}
+	//
 	//// Enqueue or complete the request.
 	//if req.cpuSecondsRemaining() > 0 {
 	//	err := rps.processesActive.Add(entity)
@@ -126,9 +127,12 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	//	rps.env.AddToSchedule(simulator.NewMovement(
 	//		"complete_request",
 	//		rps.env.CurrentMovementTime().Add(time.Nanosecond),
-	//		rps.processesTerminated,
+	//		rps,
 	//		rps.requestsComplete,
 	//	))
+	//	now := rps.env.CurrentMovementTime()
+	//	latency := now.Sub(*req.startTime)
+	//	// log.Printf("latecy: %v\n", latency)
 	//}
 	//
 	//// Fill the CPU and schedule an interrupt.
