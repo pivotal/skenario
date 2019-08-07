@@ -49,6 +49,10 @@ func (re *requestEntity) Kind() simulator.EntityKind {
 	return "Request"
 }
 
+func (re *requestEntity) cpuSecondsRemaining() time.Duration {
+	return re.cpuSecondsRequired - re.cpuSecondsConsumed
+}
+
 func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingStock, requestConfig RequestConfig) RequestEntity {
 	reqNumber++
 	utilizationForRequest := 0.0
