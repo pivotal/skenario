@@ -17,8 +17,7 @@ package model
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
+	"log"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -35,6 +34,7 @@ type requestsProcessingStock struct {
 	replicaNumber                      int
 	requestsComplete                   simulator.SinkStock
 	requestsFailed                     *simulator.SinkStock
+	requestsExhausted                  simulator.ThroughStock
 	numRequestsSinceLast               int32
 	totalCPUCapacityMillisPerSecond    *float64
 	occupiedCPUCapacityMillisPerSecond *float64
@@ -65,8 +65,20 @@ func (rps *requestsProcessingStock) Remove() simulator.Entity {
 
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	var totalTime time.Duration
-	rps.numRequestsSinceLast++
-	request := *entity.(*requestEntity)
+
+	// TODO: this isn't correct anymore
+	//rps.numRequestsSinceLast++
+
+	log.Printf("processing: %v  exhausted: %v  completed: %v\n",
+		len(rps.EntitiesInStock()),
+		len(rps.requestsExhausted.EntitiesInStock()),
+		len(rps.requestsComplete.EntitiesInStock()))
+
+	request, ok := *entity.(*requestEntity)
+	if !ok {
+		return fmt.Errorf("requests processing stock only supports request entities. got %T", entity)
+	}
+
 	isRequestSuccessful := true
 
 	rps.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)
@@ -88,6 +100,39 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	}
 
 	return rps.delegate.Add(entity)
+
+	//cpuSecondsRemaining := req.cpuSecondsRequired - req.cpuSecondsConsumed
+	//
+	//// Request requires processing
+	//if cpuSecondsRemaining > 0 {
+	//	interruptSeconds := cpuSecondsRemaining
+	//	if interruptSeconds > 200*time.Millisecond {
+	//		interruptSeconds = 200 * time.Millisecond
+	//	}
+	//	req.cpuSecondsConsumed += interruptSeconds
+	//	rps.env.AddToSchedule(simulator.NewMovement(
+	//		"interrupt_request",
+	//		rps.env.CurrentMovementTime().Add(interruptSeconds),
+	//		rps,
+	//		rps,
+	//	))
+	//	return rps.delegate.Add(entity)
+	//}
+	//
+	//// Request is exhausted
+	//rps.env.AddToSchedule(simulator.NewMovement(
+	//	"interrupt_request",
+	//	rps.env.CurrentMovementTime().Add(time.Nanosecond),
+	//	rps,
+	//	rps,
+	//))
+	//rps.env.AddToSchedule(simulator.NewMovement(
+	//	"complete_request",
+	//	rps.env.CurrentMovementTime().Add(2*time.Nanosecond),
+	//	rps.requestsExhausted,
+	//	rps.requestsComplete,
+	//))
+	//return rps.requestsExhausted.Add(entity)
 }
 
 func (rps *requestsProcessingStock) calculateCPUUtilizationForRequest(request requestEntity, totalTime *time.Duration, isRequestSuccessful *bool) {
@@ -138,6 +183,7 @@ func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, re
 		replicaNumber:                      replicaNumber,
 		requestsComplete:                   requestComplete,
 		requestsFailed:                     requestFailed,
+		requestsExhausted:                  simulator.NewThroughStock("RequestsProcessing", "Request"),
 		occupiedCPUCapacityMillisPerSecond: occupiedCPUCapacityMillisPerSecond,
 		totalCPUCapacityMillisPerSecond:    totalCPUCapacityMillisPerSecond,
 	}

@@ -34,6 +34,9 @@ type requestEntity struct {
 	requestConfig                        RequestConfig
 	routingStock                         RequestsRoutingStock
 	utilizationForRequestMillisPerSecond *float64
+
+	cpuSecondsRequired time.Duration
+	cpuSecondsConsumed time.Duration
 }
 
 var reqNumber int
@@ -55,5 +58,7 @@ func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingSto
 		routingStock:                         routingStock,
 		requestConfig:                        requestConfig,
 		utilizationForRequestMillisPerSecond: &utilizationForRequest,
+
+		cpuSecondsRequired: 500 * time.Millisecond,
 	}
 }
