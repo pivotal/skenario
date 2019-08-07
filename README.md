@@ -19,7 +19,7 @@ for background and notes.
 First, launch the server:
 
 ```
-$ go run cmd/serve/main.go
+$ go run cmd/skenario/main.go
 ```
 
 Then go to [https://localhost:3000](https://localhost:3000) to see the user interface.
