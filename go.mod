@@ -17,7 +17,6 @@ require (
 	github.com/knative/caching v0.0.0-20190329233554-babf400eeec0 // indirect
 	github.com/knative/pkg v0.0.0-20190330034653-916205998db9
 	github.com/knative/serving v0.5.1
-	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
@@ -33,7 +32,7 @@ require (
 	golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6 // indirect
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/sys v0.0.0-20190426135247-a129542de9ae // indirect
-	golang.org/x/text v0.3.2
+	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20190202010724-74b699b93c15
