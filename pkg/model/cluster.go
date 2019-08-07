@@ -31,6 +31,8 @@ type ClusterConfig struct {
 	LaunchDelay      time.Duration
 	TerminateDelay   time.Duration
 	NumberOfRequests uint
+
+	KnativeAutoscalerSpecific
 }
 
 type ClusterModel interface {
@@ -94,8 +96,10 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 
 	logger := logging.FromContext(env.Context())
 	collector := NewMetricCollector(logger, KnativeAutoscalerConfig{
-		StableWindow:           60 * time.Second,
-		PanicWindow:            6 * time.Second,
+		DeciderSpec: autoscaler.DeciderSpec{
+			StableWindow: 60 * time.Second,
+		},
+		KnativeAutoscalerSpecific: config.KnativeAutoscalerSpecific,
 	}, replicasActive)
 	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed, collector)
 

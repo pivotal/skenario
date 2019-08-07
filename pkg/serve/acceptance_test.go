@@ -100,7 +100,6 @@ func setParams(t *testing.T, page *agouti.Page) {
 		"terminateDelay":         "1",
 		"tickInterval":           "2",
 		"stableWindow":           "60",
-		"panicWindow":            "6",
 		"scaleToZeroGracePeriod": "30",
 		"targetConcurrency":      "1",
 		"maxScaleUpRate":         "100",

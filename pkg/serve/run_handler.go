@@ -19,14 +19,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"knative.dev/serving/pkg/autoscaler"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
-	"knative.dev/pkg/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"knative.dev/pkg/logging"
 
 	"skenario/pkg/data"
 	"skenario/pkg/model"
@@ -71,10 +72,10 @@ type SkenarioRunRequest struct {
 	TerminateDelay         time.Duration `json:"terminate_delay"`
 	TickInterval           time.Duration `json:"tick_interval"`
 	StableWindow           time.Duration `json:"stable_window"`
-	PanicWindow            time.Duration `json:"panic_window"`
+	PanicWindowPercentage float64	`json:"panic_window_percentage"`
 	ScaleToZeroGracePeriod time.Duration `json:"scale_to_zero_grace_period"`
 	TargetConcurrency      float64       `json:"target_concurrency"`
-	ReplicaMaxRPS          int64         `json:"replica_max_rps"`
+	TotalConcurrency          int64         `json:"total_concurrency"`
 	MaxScaleUpRate         float64       `json:"max_scale_up_rate"`
 
 	UniformConfig    trafficpatterns.UniformConfig    `json:"uniform_config,omitempty"`
@@ -101,7 +102,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	replicasConfig := model.ReplicasConfig{
 		LaunchDelay:    runReq.LaunchDelay,
 		TerminateDelay: runReq.TerminateDelay,
-		MaxRPS:         runReq.ReplicaMaxRPS,
+		MaxRPS:         runReq.TotalConcurrency,
 	}
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
@@ -287,17 +288,25 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 		LaunchDelay:      srr.LaunchDelay,
 		TerminateDelay:   srr.TerminateDelay,
 		NumberOfRequests: uint(srr.UniformConfig.NumberOfRequests),
+		KnativeAutoscalerSpecific: model.KnativeAutoscalerSpecific{
+			ScaleToZeroGracePeriod: srr.ScaleToZeroGracePeriod,
+			PanicWindowPercentage:  srr.PanicWindowPercentage,
+		},
 	}
 }
 
 func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
 	return model.KnativeAutoscalerConfig{
-		TickInterval:           srr.TickInterval,
-		StableWindow:           srr.StableWindow,
-		PanicWindow:            srr.PanicWindow,
-		ScaleToZeroGracePeriod: srr.ScaleToZeroGracePeriod,
-		TargetConcurrency:      srr.TargetConcurrency,
-		MaxScaleUpRate:         srr.MaxScaleUpRate,
+		DeciderSpec: autoscaler.DeciderSpec{
+			TickInterval:      srr.TickInterval,
+			StableWindow:      srr.StableWindow,
+			TargetConcurrency: srr.TargetConcurrency,
+			MaxScaleUpRate:    srr.MaxScaleUpRate,
+		},
+		KnativeAutoscalerSpecific: model.KnativeAutoscalerSpecific{
+			ScaleToZeroGracePeriod: srr.ScaleToZeroGracePeriod,
+			PanicWindowPercentage: srr.PanicWindowPercentage,
+		},
 	}
 }
 

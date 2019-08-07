@@ -47,7 +47,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 					TickInterval:     2 * time.Second,
 					RunFor:           20 * time.Second,
 					TrafficPattern:   "golang_rand_uniform",
-					ReplicaMaxRPS:    1,
+					totalConcurrency:    1,
 					UniformConfig: trafficpatterns.UniformConfig{
 						NumberOfRequests: 10,
 						StartAt:          time.Unix(0, 0),
@@ -169,7 +169,6 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 				LaunchDelay:            time.Second,
 				TickInterval:           11 * time.Second,
 				StableWindow:           22 * time.Second,
-				PanicWindow:            33 * time.Second,
 				ScaleToZeroGracePeriod: 44 * time.Second,
 				TargetConcurrency:      55,
 				MaxScaleUpRate:         77,
@@ -187,10 +186,6 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 
 		it("sets a stable window", func() {
 			assert.Equal(t, 22*time.Second, subject.StableWindow)
-		})
-
-		it("sets a panic window", func() {
-			assert.Equal(t, 33*time.Second, subject.PanicWindow)
 		})
 
 		it("sets a scale to zero grace period", func() {

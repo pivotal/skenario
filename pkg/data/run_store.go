@@ -73,6 +73,7 @@ func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simula
 }
 
 func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
+	//language=sql
 	srStmt, err := s.conn.Prepare(`insert into scenario_runs(
 									   recorded
 									 , simulated_duration
@@ -83,11 +84,12 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 									 , cluster_number_of_requests
 									 , autoscaler_tick_interval
 									 , autoscaler_stable_window
-									 , autoscaler_panic_window
+									 , autoscaler_panic_window_percentage
 									 , autoscaler_scale_to_zero_grace_period
 									 , autoscaler_target_concurrency
+									 , autoscaler_total_concurrency
 									 , autoscaler_max_scale_up_rate)
-									values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
+									values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
 	if err != nil {
 		return -1, err
 	}
@@ -102,9 +104,10 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 		int(s.clusterConf.NumberOfRequests),
 		s.kpaConf.TickInterval.Nanoseconds(),
 		s.kpaConf.StableWindow.Nanoseconds(),
-		s.kpaConf.PanicWindow.Nanoseconds(),
+		s.kpaConf.PanicWindowPercentage,
 		s.kpaConf.ScaleToZeroGracePeriod.Nanoseconds(),
 		s.kpaConf.TargetConcurrency,
+		s.kpaConf.TotalConcurrency,
 		s.kpaConf.MaxScaleUpRate,
 	)
 	if err != nil {
@@ -117,18 +120,19 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 }
 
 func (s *storer) scenarioData(scenarioRunId int64) error {
+	//language=sql
 	entityStmt, err := s.conn.Prepare(`insert into entities(name, kind) values (?, ?) on conflict do nothing`)
 	if err != nil {
 		return err
 	}
 	defer entityStmt.Close()
-
+	//language=sql
 	stockStmt, err := s.conn.Prepare(`insert into stocks(name, kind_stocked) values (?, ?) on conflict do nothing`)
 	if err != nil {
 		return err
 	}
 	defer stockStmt.Close()
-
+	//language=sql
 	movementStmt, err := s.conn.Prepare(`insert into completed_movements(
             occurs_at
            , kind
@@ -183,7 +187,7 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 			return err
 		}
 	}
-
+	//language=sql
 	ignoredStmt, err := s.conn.Prepare(`insert into ignored_movements(
 		occurs_at
 	  , kind

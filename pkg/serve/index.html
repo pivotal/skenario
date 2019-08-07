@@ -79,10 +79,10 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="panicWindow">Panic Window (seconds)</label>
+                    <label class="label" for="panicWindowPercentage">Panic Window Percentage</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="panicWindow" value="6" min="1" step="1"/>
+                    <input type="number" style="width: 5em" id="panicWindowPercentage" value="10" min="1" max="100" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -103,10 +103,10 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="replicaMaxRPS">Replica Max RPS Capacity</label>
+                    <label class="label" for="totalConcurrency">Total Concurrency</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="replicaMaxRPS" value="101" min="1" step="1"/>
+                    <input type="number" style="width: 5em" id="totalConcurrency" value="101" min="1" step="1"/>
                 </div>
             </div>
 
@@ -396,10 +396,10 @@
         let terminateDelay = parseInt(document.querySelector("input[id='terminateDelay']").value);
         let tickInterval = parseInt(document.querySelector("input[id='tickInterval']").value);
         let stableWindow = parseInt(document.querySelector("input[id='stableWindow']").value);
-        let panicWindow = parseInt(document.querySelector("input[id='panicWindow']").value);
+        let panicWindowPercentage = parseInt(document.querySelector("input[id='panicWindowPercentage']").value);
         let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
         let targetConcurrency = parseFloat(document.querySelector("input[id='targetConcurrency']").value);
-        let replicaMaxRPS = parseInt(document.querySelector("input[id='replicaMaxRPS']").value);
+        let totalConcurrency = parseInt(document.querySelector("input[id='totalConcurrency']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
 
 
@@ -410,10 +410,10 @@
             terminate_delay: terminateDelay * second,
             tick_interval: tickInterval * second,
             stable_window: stableWindow * second,
-            panic_window: panicWindow * second,
+            panic_window_percentage: panicWindowPercentage,
             scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
             target_concurrency: targetConcurrency,
-            replica_max_rps: replicaMaxRPS,
+            total_concurrency: totalConcurrency,
             max_scale_up_rate: maxScaleUpRate,
 
             traffic_pattern: trafficPattern,

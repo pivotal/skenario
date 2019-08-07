@@ -37,14 +37,15 @@ const (
 	testName      = "revisionService"
 )
 
-type KnativeAutoscalerConfig struct {
-	TickInterval           time.Duration
-	StableWindow           time.Duration
-	PanicWindow            time.Duration
-	PanicThreshold         float64
+type KnativeAutoscalerSpecific struct {
 	ScaleToZeroGracePeriod time.Duration
-	TargetConcurrency      float64
-	MaxScaleUpRate         float64
+	PanicWindowPercentage  float64
+}
+
+type KnativeAutoscalerConfig struct {
+	autoscaler.DeciderSpec
+
+	KnativeAutoscalerSpecific
 }
 
 type KnativeAutoscalerModel interface {
@@ -96,14 +97,7 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 }
 
 func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, readyCounter resources.ReadyPodCounter, collector *autoscaler.MetricCollector) *autoscaler.Autoscaler {
-	deciderSpec := autoscaler.DeciderSpec{
-		ServiceName:       testName,
-		TickInterval:      kconfig.TickInterval,
-		MaxScaleUpRate:    kconfig.MaxScaleUpRate,
-		TargetConcurrency: kconfig.TargetConcurrency,
-		PanicThreshold:    kconfig.PanicThreshold,
-		StableWindow:      kconfig.StableWindow,
-	}
+	kconfig.ServiceName = testName
 
 	statsReporter, err := autoscaler.NewStatsReporter(testNamespace, testName, "config-1", "revision-1")
 	if err != nil {
@@ -115,7 +109,7 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, readyCou
 		testName,
 		collector,
 		readyCounter,
-		deciderSpec,
+		kconfig.DeciderSpec,
 		statsReporter,
 	)
 	if err != nil {
@@ -128,6 +122,10 @@ func newKpa(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, readyCou
 func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConfig, activeStock ReplicasActiveStock) *autoscaler.MetricCollector {
 	scraper := NewClusterServiceScraper(activeStock)
 
+	stableWindow := float64(kconfig.StableWindow)
+	panicFraction := kconfig.PanicWindowPercentage / 100
+	panicWindow := time.Duration(panicFraction * stableWindow)
+
 	metric := &v1alpha1.Metric{
 		ObjectMeta: v1.ObjectMeta{
 			Namespace: testNamespace,
@@ -137,7 +135,7 @@ func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConf
 		Spec: v1alpha1.MetricSpec{
 			ScrapeTarget: testName,
 			StableWindow: kconfig.StableWindow,
-			PanicWindow:  kconfig.PanicWindow,
+			PanicWindow:  panicWindow,
 		},
 	}
 
