@@ -24,6 +24,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 	"knative.dev/serving/pkg/autoscaler"
+
 	"skenario/pkg/simulator"
 )
 
@@ -61,7 +62,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		config = ClusterConfig{}
-		replicasConfig = ReplicasConfig{time.Second,time.Second, 100}
+		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
 		envFake = &FakeEnvironment{
 			Movements:   make([]simulator.Movement, 0),
 			TheTime:     startAt,
@@ -72,7 +73,8 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewKnativeAutoscaler()", func() {
 		it.Before(func() {
-			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval: 60 * time.Second})
+			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{
+				DeciderSpec: autoscaler.DeciderSpec{TickInterval: 60 * time.Second}})
 			rawSubject = subject.(*knativeAutoscaler)
 		})
 

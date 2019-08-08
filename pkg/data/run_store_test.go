@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"knative.dev/serving/pkg/autoscaler"
+
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -55,11 +57,16 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			NumberOfRequests: 33,
 		}
 		kpaConf = model.KnativeAutoscalerConfig{
-			TickInterval:           11 * time.Second,
-			StableWindow:           22 * time.Second,
-			ScaleToZeroGracePeriod: 44 * time.Second,
-			TargetConcurrency:      5.5,
-			MaxScaleUpRate:         77,
+			DeciderSpec: autoscaler.DeciderSpec{
+				TickInterval:      11 * time.Second,
+				StableWindow:      22 * time.Second,
+				TargetConcurrency: 5.5,
+				MaxScaleUpRate:    77,
+			},
+			KnativeAutoscalerSpecific: model.KnativeAutoscalerSpecific{
+				ScaleToZeroGracePeriod: 44 * time.Second,
+				PanicWindowPercentage:  55.0,
+			},
 		}
 	})
 
@@ -139,6 +146,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			var concurrency, maxScaleUp float64
 
 			it.Before(func() {
+				//language=sql
 				singleQuery(t, conn, `
 					select cluster_launch_delay
 						 , cluster_terminate_delay
@@ -147,9 +155,9 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 						 , autoscaler_stable_window
 						 , autoscaler_scale_to_zero_grace_period
 						 , autoscaler_target_concurrency
-						 , autoscaler_total_concurrency
+						 , autoscaler_max_scale_up_rate
 					from scenario_runs `,
-					&launchDelay, &termDelay, &numRequests, &tickInterval, &stableWindow,  &scaleToZeroGrace,
+					&launchDelay, &termDelay, &numRequests, &tickInterval, &stableWindow, &scaleToZeroGrace,
 					&concurrency, &maxScaleUp,
 				)
 			})
