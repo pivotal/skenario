@@ -27,6 +27,45 @@ type RequestsProcessingStock interface {
 	RequestCount() int32
 }
 
+type cpuUsage struct {
+	window           time.Duration
+	activeTimeSlices [][2]time.Time
+}
+
+func NewCpuUsage(window time.Duration) *cpuUsage {
+	return &cpuUsage{
+		window:           window,
+		activeTimeSlices: make([][2]time.Time, 0),
+	}
+}
+
+func (c *cpuUsage) active(from, to time.Time) {
+	c.activeTimeSlices = append(c.activeTimeSlices, [2]time.Time{from, to})
+}
+
+func (c *cpuUsage) trim(now time.Time) {
+	trimmed := make([][2]time.Time, 0)
+	for _, t := range c.activeTimeSlices {
+		if t[1].Before(now.Add(-c.window)) {
+			continue
+		}
+		if t[0].Before(now.Add(-c.window)) {
+			t[0] = now.Add(-c.window)
+		}
+		trimmed = append(trimmed, t)
+	}
+	c.activeTimeSlices = trimmed
+}
+
+func (c *cpuUsage) usage(now time.Time) float64 {
+	c.trim(now)
+	var activeNanos int64
+	for _, a := range c.activeTimeSlices {
+		activeNanos += a[1].Sub(a[0]).Nanoseconds()
+	}
+	return float64(activeNanos) / float64(c.window.Nanoseconds())
+}
+
 type requestsProcessingStock struct {
 	env                                simulator.Environment
 	delegate                           simulator.ThroughStock
@@ -38,10 +77,11 @@ type requestsProcessingStock struct {
 	totalCPUCapacityMillisPerSecond    *float64
 	occupiedCPUCapacityMillisPerSecond *float64
 
-	// Internal process stocks.
+	// Internal process accounting.
 	processesActive     simulator.ThroughStock
 	processesOnCpu      simulator.ThroughStock
 	processesTerminated simulator.ThroughStock
+	cpuUsage            *cpuUsage
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -108,8 +148,8 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 
 	return rps.delegate.Add(entity)
 
+	//now := rps.env.CurrentMovementTime()
 	//if req.startTime == nil {
-	//	now := rps.env.CurrentMovementTime()
 	//	req.startTime = &now
 	//}
 	//
@@ -126,12 +166,11 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	//	}
 	//	rps.env.AddToSchedule(simulator.NewMovement(
 	//		"complete_request",
-	//		rps.env.CurrentMovementTime().Add(time.Nanosecond),
+	//		now.Add(time.Nanosecond),
 	//		rps,
 	//		rps.requestsComplete,
 	//	))
-	//	now := rps.env.CurrentMovementTime()
-	//	latency := now.Sub(*req.startTime)
+	//	// latency := now.Sub(*req.startTime)
 	//	// log.Printf("latecy: %v\n", latency)
 	//}
 	//
@@ -142,13 +181,15 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	//	if interruptAfter > 200*time.Millisecond {
 	//		interruptAfter = 200 * time.Millisecond
 	//	}
+	//	interruptAt := now.Add(interruptAfter)
 	//	req.cpuSecondsConsumed += interruptAfter
 	//	rps.env.AddToSchedule(simulator.NewMovement(
 	//		"interrupt_process",
-	//		rps.env.CurrentMovementTime().Add(interruptAfter),
+	//		interruptAt,
 	//		rps.processesOnCpu,
 	//		rps,
 	//	))
+	//	rps.cpuUsage.active(now, interruptAt)
 	//	return rps.processesOnCpu.Add(entity)
 	//}
 	//return nil
@@ -208,6 +249,7 @@ func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, re
 		requestsExhausted:                  simulator.NewThroughStock("RequestsProcessing", "Request"),
 		occupiedCPUCapacityMillisPerSecond: occupiedCPUCapacityMillisPerSecond,
 		totalCPUCapacityMillisPerSecond:    totalCPUCapacityMillisPerSecond,
+		cpuUsage:              NewCpuUsage(15 * time.Second),
 	}
 }
 

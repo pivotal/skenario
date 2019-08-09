@@ -65,6 +65,6 @@ func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingSto
 		requestConfig:                        requestConfig,
 		utilizationForRequestMillisPerSecond: &utilizationForRequest,
 
-		cpuSecondsRequired: 500 * time.Millisecond,
+		cpuSecondsRequired: 100 * time.Millisecond,
 	}
 }
