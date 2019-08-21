@@ -87,6 +87,14 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
+                    <label class="label" for="panicThresholdPercentage">Panic Threshold Percentage</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="panicThresholdPercentage" value="200" min="1" max="1000" step="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
                     <label class="label" for="scaleToZeroGracePeriod">Scale to Zero Grace Period (seconds)</label>
                 </div>
                 <div class="control">
@@ -397,6 +405,7 @@
         let tickInterval = parseInt(document.querySelector("input[id='tickInterval']").value);
         let stableWindow = parseInt(document.querySelector("input[id='stableWindow']").value);
         let panicWindowPercentage = parseInt(document.querySelector("input[id='panicWindowPercentage']").value);
+        let panicThresholdPercentage = parseInt(document.querySelector("input[id='panicThresholdPercentage']").value);
         let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
         let targetConcurrency = parseFloat(document.querySelector("input[id='targetConcurrency']").value);
         let totalConcurrency = parseInt(document.querySelector("input[id='totalConcurrency']").value);
@@ -411,6 +420,7 @@
             tick_interval: tickInterval * second,
             stable_window: stableWindow * second,
             panic_window_percentage: panicWindowPercentage,
+            panic_threshold_percentage: panicThresholdPercentage,
             scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
             target_concurrency: targetConcurrency,
             total_concurrency: totalConcurrency,

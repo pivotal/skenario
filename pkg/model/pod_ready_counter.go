@@ -20,7 +20,7 @@ type clusterReadyCounter struct {
 }
 
 func (crc *clusterReadyCounter) ReadyCount() (int, error) {
-	return int(crc.replicasActive.Count()) + 1, nil
+	return int(crc.replicasActive.Count()), nil
 }
 
 func NewClusterReadyCounter(stock ReplicasActiveStock) *clusterReadyCounter {

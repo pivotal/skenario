@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"knative.dev/serving/pkg/autoscaler"
 	"net/http"
 	"os"
 	"time"
@@ -28,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"knative.dev/pkg/logging"
+	"knative.dev/serving/pkg/autoscaler"
 
 	"skenario/pkg/data"
 	"skenario/pkg/model"
@@ -68,15 +68,16 @@ type SkenarioRunRequest struct {
 	TrafficPattern   string        `json:"traffic_pattern"`
 	InMemoryDatabase bool          `json:"in_memory_database,omitempty"`
 
-	LaunchDelay            time.Duration `json:"launch_delay"`
-	TerminateDelay         time.Duration `json:"terminate_delay"`
-	TickInterval           time.Duration `json:"tick_interval"`
-	StableWindow           time.Duration `json:"stable_window"`
-	PanicWindowPercentage float64	`json:"panic_window_percentage"`
-	ScaleToZeroGracePeriod time.Duration `json:"scale_to_zero_grace_period"`
-	TargetConcurrency      float64       `json:"target_concurrency"`
-	TotalConcurrency          int64         `json:"total_concurrency"`
-	MaxScaleUpRate         float64       `json:"max_scale_up_rate"`
+	LaunchDelay              time.Duration `json:"launch_delay"`
+	TerminateDelay           time.Duration `json:"terminate_delay"`
+	TickInterval             time.Duration `json:"tick_interval"`
+	StableWindow             time.Duration `json:"stable_window"`
+	PanicWindowPercentage    float64       `json:"panic_window_percentage"`
+	PanicThresholdPercentage float64       `json:"panic_threshold_percentage"`
+	ScaleToZeroGracePeriod   time.Duration `json:"scale_to_zero_grace_period"`
+	TargetConcurrency        float64       `json:"target_concurrency"`
+	TotalConcurrency         float64       `json:"total_concurrency"`
+	MaxScaleUpRate           float64       `json:"max_scale_up_rate"`
 
 	UniformConfig    trafficpatterns.UniformConfig    `json:"uniform_config,omitempty"`
 	RampConfig       trafficpatterns.RampConfig       `json:"ramp_config,omitempty"`
@@ -102,7 +103,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	replicasConfig := model.ReplicasConfig{
 		LaunchDelay:    runReq.LaunchDelay,
 		TerminateDelay: runReq.TerminateDelay,
-		MaxRPS:         runReq.TotalConcurrency,
+		MaxRPS:         int64(runReq.TotalConcurrency),
 	}
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
@@ -296,16 +297,20 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 }
 
 func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
+	panicThreshold := srr.TargetConcurrency * srr.PanicThresholdPercentage / 100.0
+
 	return model.KnativeAutoscalerConfig{
 		DeciderSpec: autoscaler.DeciderSpec{
 			TickInterval:      srr.TickInterval,
-			StableWindow:      srr.StableWindow,
-			TargetConcurrency: srr.TargetConcurrency,
 			MaxScaleUpRate:    srr.MaxScaleUpRate,
+			TargetConcurrency: srr.TargetConcurrency,
+			TotalConcurrency:  srr.TotalConcurrency,
+			PanicThreshold:    panicThreshold,
+			StableWindow:      srr.StableWindow,
 		},
 		KnativeAutoscalerSpecific: model.KnativeAutoscalerSpecific{
 			ScaleToZeroGracePeriod: srr.ScaleToZeroGracePeriod,
-			PanicWindowPercentage: srr.PanicWindowPercentage,
+			PanicWindowPercentage:  srr.PanicWindowPercentage,
 		},
 	}
 }
