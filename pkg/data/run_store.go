@@ -106,8 +106,8 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 		s.kpaConf.StableWindow.Nanoseconds(),
 		s.kpaConf.PanicWindowPercentage,
 		s.kpaConf.ScaleToZeroGracePeriod.Nanoseconds(),
-		s.kpaConf.TargetConcurrency,
-		s.kpaConf.TotalConcurrency,
+		s.kpaConf.TargetValue,
+		s.kpaConf.TotalValue,
 		s.kpaConf.MaxScaleUpRate,
 	)
 	if err != nil {

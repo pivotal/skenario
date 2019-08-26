@@ -193,7 +193,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		it("sets a target concurrency", func() {
-			assert.Equal(t, 55.0, subject.TargetConcurrency)
+			assert.Equal(t, 55.0, subject.TargetValue)
 		})
 
 		it("sets a max scale up rate", func() {

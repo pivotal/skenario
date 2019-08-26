@@ -301,12 +301,12 @@ func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
 
 	return model.KnativeAutoscalerConfig{
 		DeciderSpec: autoscaler.DeciderSpec{
-			TickInterval:      srr.TickInterval,
-			MaxScaleUpRate:    srr.MaxScaleUpRate,
-			TargetConcurrency: srr.TargetConcurrency,
-			TotalConcurrency:  srr.TotalConcurrency,
-			PanicThreshold:    panicThreshold,
-			StableWindow:      srr.StableWindow,
+			TickInterval:   srr.TickInterval,
+			MaxScaleUpRate: srr.MaxScaleUpRate,
+			TargetValue:    srr.TargetConcurrency,
+			TotalValue:     srr.TotalConcurrency,
+			PanicThreshold: panicThreshold,
+			StableWindow:   srr.StableWindow,
 		},
 		KnativeAutoscalerSpecific: model.KnativeAutoscalerSpecific{
 			ScaleToZeroGracePeriod: srr.ScaleToZeroGracePeriod,

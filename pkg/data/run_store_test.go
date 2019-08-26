@@ -58,10 +58,10 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 		}
 		kpaConf = model.KnativeAutoscalerConfig{
 			DeciderSpec: autoscaler.DeciderSpec{
-				TickInterval:      11 * time.Second,
-				StableWindow:      22 * time.Second,
-				TargetConcurrency: 5.5,
-				MaxScaleUpRate:    77,
+				TickInterval:   11 * time.Second,
+				StableWindow:   22 * time.Second,
+				TargetValue:    5.5,
+				MaxScaleUpRate: 77,
 			},
 			KnativeAutoscalerSpecific: model.KnativeAutoscalerSpecific{
 				ScaleToZeroGracePeriod: 44 * time.Second,

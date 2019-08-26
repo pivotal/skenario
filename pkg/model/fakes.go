@@ -98,7 +98,7 @@ func (fc *FakeCollector) Record(key types.NamespacedName, stat autoscaler.Stat) 
 	fc.RecordCalled++
 }
 
-func (fc *FakeCollector) Delete(context.Context, string, string) error {
+func (fc *FakeCollector) Delete(string, string) error {
 	fc.DeleteCalled++
 	return nil
 }

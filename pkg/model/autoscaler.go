@@ -16,7 +16,6 @@
 package model
 
 import (
-	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/serving/pkg/apis/autoscaling/v1alpha1"
@@ -144,7 +143,7 @@ func NewMetricCollector(logger *zap.SugaredLogger, kconfig KnativeAutoscalerConf
 	}
 
 	collector := autoscaler.NewMetricCollector(clusterStatScraper, logger)
-	_, err := collector.Create(context.Background(), metric)
+	err := collector.CreateOrUpdate(metric)
 	if err != nil {
 		panic(fmt.Errorf("could not create metric collector: %s", err.Error()))
 	}
