@@ -16,12 +16,6 @@
 package model
 
 import (
-	"encoding/binary"
-	"net"
-
-	corev1informers "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-
 	"skenario/pkg/simulator"
 )
 
@@ -34,11 +28,8 @@ type ReplicaSource interface {
 }
 
 type replicaSource struct {
-	env               simulator.Environment
-	kubernetesClient  kubernetes.Interface
-	endpointsInformer corev1informers.EndpointsInformer
-	nextIPValue       uint32
-	maxReplicaRPS     int64
+	env           simulator.Environment
+	maxReplicaRPS int64
 }
 
 func (rs *replicaSource) Name() simulator.StockName {
@@ -58,22 +49,12 @@ func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rs *replicaSource) Remove() simulator.Entity {
-	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), rs.maxReplicaRPS)
-}
-
-func (rs *replicaSource) Next() string {
-	ip := make(net.IP, 4)
-	binary.BigEndian.PutUint32(ip, rs.nextIPValue)
-
-	rs.nextIPValue++
-
-	return ip.String()
+	return NewReplicaEntity(rs.env, rs.maxReplicaRPS)
 }
 
 func NewReplicaSource(env simulator.Environment, maxReplicaRPS int64) ReplicaSource {
 	return &replicaSource{
-		env:               env,
-		nextIPValue:       1,
+		env:           env,
 		maxReplicaRPS: maxReplicaRPS,
 	}
 }

@@ -64,8 +64,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
+			firstReplica := NewReplicaEntity(envFake, 100)
+			secondReplica := NewReplicaEntity(envFake, 100)
 			rawSubject.replicasLaunching.Add(firstReplica)
 			rawSubject.replicasLaunching.Add(secondReplica)
 		})
@@ -80,8 +80,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
+			firstReplica := NewReplicaEntity(envFake, 100)
+			secondReplica := NewReplicaEntity(envFake, 100)
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 		})

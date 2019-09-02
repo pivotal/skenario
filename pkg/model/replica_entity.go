@@ -19,9 +19,6 @@ import (
 	"fmt"
 
 	"knative.dev/serving/pkg/autoscaler"
-	corev1 "k8s.io/api/core/v1"
-	informers "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
 
 	"skenario/pkg/simulator"
 )
@@ -39,9 +36,6 @@ type ReplicaEntity interface {
 type replicaEntity struct {
 	env                  simulator.Environment
 	number               int
-	kubernetesClient     kubernetes.Interface
-	endpointsInformer    informers.EndpointsInformer
-	endpointAddress      corev1.EndpointAddress
 	requestsProcessing   RequestsProcessingStock
 	requestsComplete     simulator.SinkStock
 }
@@ -74,24 +68,16 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 	return "Replica"
 }
 
-func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string, totalConcurrencyCapacity int64) ReplicaEntity {
+func NewReplicaEntity(env simulator.Environment, totalConcurrencyCapacity int64) ReplicaEntity {
 	replicaNum++
 
 	re := &replicaEntity{
 		env:               env,
 		number:            replicaNum,
-		kubernetesClient:  client,
-		endpointsInformer: endpointsInformer,
 	}
 
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
 	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, totalConcurrencyCapacity)
-
-
-	re.endpointAddress = corev1.EndpointAddress{
-		IP:       address,
-		Hostname: string(re.Name()),
-	}
 
 	return re
 }

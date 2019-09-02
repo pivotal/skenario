@@ -27,7 +27,6 @@ import (
 
 func TestReplicasSource(t *testing.T) {
 	spec.Run(t, "Replicas Launching source", testReplicasSource, spec.Report(report.Terminal{}))
-	spec.Run(t, "IPV4Sequence interface", testIPV4Sequence, spec.Report(report.Terminal{}))
 }
 
 func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
@@ -87,35 +86,4 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, simulator.EntityKind("Replica"), entity1.Kind())
 		})
 	})
-}
-
-func testIPV4Sequence(t *testing.T, describe spec.G, it spec.S) {
-	var rs ReplicaSource
-	var subject IPV4Sequence
-	var rawSubject *replicaSource
-	var envFake *FakeEnvironment
-
-	it.Before(func() {
-		rs = NewReplicaSource(envFake, 100)
-		subject = rs.(IPV4Sequence)
-		rawSubject = rs.(*replicaSource)
-	})
-
-	describe("NextIP()", func() {
-		var ipGiven string
-		it.Before(func() {
-			// twice to show we didn't succeed purely on init values
-			ipGiven = subject.Next()
-			ipGiven = subject.Next()
-		})
-
-		it("creates an IPv4 address string", func() {
-			assert.Equal(t, "0.0.0.2", ipGiven)
-		})
-
-		it("increments the next IP to give out", func() {
-			assert.Equal(t, uint32(3), rawSubject.nextIPValue)
-		})
-	})
-
 }

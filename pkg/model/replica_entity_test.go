@@ -19,17 +19,10 @@ import (
 	"fmt"
 	"testing"
 
-	"knative.dev/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"k8s.io/client-go/informers"
-	v1 "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
+	"knative.dev/serving/pkg/autoscaler"
 
 	"skenario/pkg/simulator"
 )
@@ -41,60 +34,22 @@ func TestReplicaEntity(t *testing.T) {
 func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 	var subject ReplicaEntity
 	var rawSubject *replicaEntity
-	var fakeClient kubernetes.Interface
-	var endpointsInformer v1.EndpointsInformer
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		fakeClient = k8sfakes.NewSimpleClientset()
-		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-		endpointsInformer = informerFactory.Core().V1().Endpoints()
-
-		newEndpoints := &corev1.Endpoints{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "Skenario Revision",
-			},
-			Subsets: []corev1.EndpointSubset{{
-				Addresses: []corev1.EndpointAddress{},
-			}},
-		}
-
-		fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
-		endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
-
 		envFake = new(FakeEnvironment)
 
-		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4", 100)
+		subject = NewReplicaEntity(envFake, 100)
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*replicaEntity)
 	})
 
 	describe("NewReplicaEntity()", func() {
-		var address corev1.EndpointAddress
-
-		it.Before(func() {
-			address = corev1.EndpointAddress{
-				IP:       "1.2.3.4",
-				Hostname: string(subject.Name()),
-			}
-		})
-
 		it("sets an Environment", func() {
 			assert.Equal(t, envFake, rawSubject.env)
 		})
 
-		it("sets a kubernetes client", func() {
-			assert.Equal(t, fakeClient, rawSubject.kubernetesClient)
-		})
-
-		it("sets an endpoints informer", func() {
-			assert.Equal(t, endpointsInformer, rawSubject.endpointsInformer)
-		})
-
-		it("sets its EndpointsAddress", func() {
-			assert.Equal(t, address, rawSubject.endpointAddress)
-		})
 
 		it("sets a RequestsComplete stock", func() {
 			assert.Equal(t, simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", rawSubject.number)), rawSubject.requestsComplete.Name())
@@ -104,7 +59,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 	describe("Entity interface", func() {
 		it("Name() creates sequential names", func() {
 			beforeName := subject.Name()
-			subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "9.8.7.6", 100)
+			subject = NewReplicaEntity(envFake, 100)
 			afterName := subject.Name()
 			assert.NotEqual(t, beforeName, afterName)
 		})

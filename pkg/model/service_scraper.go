@@ -16,10 +16,11 @@
 package model
 
 import (
-	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/serving/pkg/autoscaler"
 	"math/rand"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
+	"knative.dev/serving/pkg/autoscaler"
 )
 
 type clusterServiceScraper struct {
