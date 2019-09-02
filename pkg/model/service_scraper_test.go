@@ -21,7 +21,10 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"knative.dev/serving/pkg/autoscaler"
+
+	"skenario/pkg/simulator"
 )
 
 func TestClusterServiceScraper(t *testing.T) {
@@ -33,12 +36,14 @@ func testServiceScraper(t *testing.T, describe spec.G, it spec.S) {
 		subject        autoscaler.StatsScraper
 		rawSubject     *clusterServiceScraper
 		replicasActive ReplicasActiveStock
+		envFake        *FakeEnvironment
 	)
 
 	it.Before(func() {
 		replicasActive = NewReplicasActiveStock()
 		subject = NewClusterServiceScraper(replicasActive)
 		rawSubject = subject.(*clusterServiceScraper)
+		envFake = new(FakeEnvironment)
 	})
 
 	describe("NewClusterServiceScraper()", func() {
@@ -64,5 +69,67 @@ func testServiceScraper(t *testing.T, describe spec.G, it spec.S) {
 				assert.NoError(t, err)
 			})
 		})
+
+		describe("when there are <= 3 replicas active", func() {
+			var (
+				rawReplica *replicaEntity
+				statMsg    *autoscaler.StatMessage
+				err error
+			)
+
+			it.Before(func() {
+				replica := NewReplicaEntity(envFake, 10)
+				rawReplica = replica.(*replicaEntity)
+
+				rawReplica.requestsProcessing.Add(simulator.NewEntity("Test Processing Request", "Request"))
+				rawReplica.requestsComplete.Add(simulator.NewEntity("Test Complete Request", "Request"))
+				replicasActive.Add(replica)
+
+				statMsg, err = subject.Scrape()
+				require.NoError(t, err)
+			})
+
+			//describe("the Key", func() {
+			//	var key types.NamespacedName
+			//
+			//	it.Before(func() {
+			//		key = statMsg.Key
+			//	})
+			//
+			//	it("uses the common values key", func() {
+			//		assert.Equal(t, statKey, key)
+			//	})
+			//})
+
+			describe("the Stat", func() {
+				var stat autoscaler.Stat
+
+				it.Before(func() {
+					stat = statMsg.Stat
+				})
+
+				it("takes stats from all of the replicas", func() {
+					assert.Equal(t, 1, stat.AverageConcurrentRequests)
+					assert.Equal(t, 1, stat.AverageProxiedConcurrentRequests)
+					assert.Equal(t, 1, stat.RequestCount)
+					assert.Equal(t, 1, stat.ProxiedRequestCount)
+				})
+			})
+
+		})
+
+		// replica count <= 3
+		// sample all of the entities
+
+		// replica count > 3
+		// sample at random
+
+		// rep.Stat()
+
+		// on success returns aggregated values
+		// key is namespaced name ... which gets there how??
+
+		// "returns nil, nil"
+
 	})
 }

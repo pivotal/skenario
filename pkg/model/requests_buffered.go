@@ -16,9 +16,9 @@
 package model
 
 import (
-	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/serving/pkg/autoscaler"
 	"time"
+
+	"knative.dev/serving/pkg/autoscaler"
 
 	"skenario/pkg/simulator"
 )
@@ -99,8 +99,14 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 		PodName:                   "activator",
 		AverageConcurrentRequests: float64(rbs.delegate.Count()) / 2.0,
 		RequestCount:              float64(rbs.delegate.Count()),
+
+		// We set the proxied values to zero because here we masquerade as a pod.
+		// This is because the flow of stats in Skenario is not the same as in Knative,
+		// no metrics are sent via an internal channel.
+		AverageProxiedConcurrentRequests: 0,
+		ProxiedRequestCount:              0,
 	}
-	rbs.collector.Record(types.NamespacedName{Namespace: "simulator-namespace", Name: "revisionService"}, stat)
+	rbs.collector.Record(statKey, stat)
 
 	return addResult
 }

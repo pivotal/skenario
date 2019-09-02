@@ -19,7 +19,6 @@ import (
 	"math/rand"
 	"time"
 
-	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/serving/pkg/autoscaler"
 )
 
@@ -59,14 +58,14 @@ func (cm *clusterServiceScraper) Scrape() (*autoscaler.StatMessage, error) {
 		}
 
 		return &autoscaler.StatMessage{
-			Key: types.NamespacedName{Namespace: testName, Name: testName},
+			Key: statKey,
 			Stat: autoscaler.Stat{
 				Time:                             now,
-				PodName:                          "averaged-pods",
-				AverageConcurrentRequests:        avgConcurrency,
-				AverageProxiedConcurrentRequests: avgProxiedConcurrency,
-				RequestCount:                     reqCount,
-				ProxiedRequestCount:              proxiedReqCount,
+				PodName:                          "service-scraper",
+				AverageConcurrentRequests:        avgConcurrency / float64(idx),
+				AverageProxiedConcurrentRequests: avgProxiedConcurrency / float64(idx),
+				RequestCount:                     reqCount / float64(idx),
+				ProxiedRequestCount:              proxiedReqCount / float64(idx),
 			},
 		}, nil
 	}

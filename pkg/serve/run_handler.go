@@ -301,6 +301,7 @@ func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
 
 	return model.KnativeAutoscalerConfig{
 		DeciderSpec: autoscaler.DeciderSpec{
+			ScalingMetric: "concurrency",
 			TickInterval:   srr.TickInterval,
 			MaxScaleUpRate: srr.MaxScaleUpRate,
 			TargetValue:    srr.TargetConcurrency,
