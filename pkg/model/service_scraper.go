@@ -30,7 +30,6 @@ func (cm *clusterServiceScraper) Scrape() (*autoscaler.StatMessage, error) {
 	replicaCount := cm.replicasActive.Count()
 
 	if replicaCount > 0 {
-
 		var (
 			now                   *time.Time
 			avgConcurrency        float64
