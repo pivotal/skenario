@@ -22,7 +22,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/sclevine/agouti v3.0.0+incompatible
-	github.com/sclevine/spec v1.3.0
+	github.com/sclevine/spec v1.4.0
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.4.0
 	go.uber.org/atomic v1.3.2 // indirect
