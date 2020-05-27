@@ -31,8 +31,8 @@ func TestRequestsBuffered(t *testing.T) {
 }
 
 func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
-	var subject RequestsBufferedStock
-	var rawSubject *requestsBufferedStock
+	var subject RequestsRoutingStock
+	var rawSubject *requestsRoutingStock
 	var envFake *FakeEnvironment
 	var replicaStock ReplicasActiveStock
 	var requestsFailedStock simulator.SinkStock
@@ -42,12 +42,12 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 		requestsFailedStock = simulator.NewSinkStock("RequestsFailed", "Request")
 	})
 
-	describe("NewRequestsBufferedStock()", func() {
+	describe("NewRoutingBufferedStock()", func() {
 		it.Before(func() {
 			envFake = new(FakeEnvironment)
 			replicaStock = NewReplicasActiveStock()
-			subject = NewRequestsBufferedStock(envFake, replicaStock, nil)
-			rawSubject = subject.(*requestsBufferedStock)
+			subject = NewRequestsRoutingStock(envFake, replicaStock, nil)
+			rawSubject = subject.(*requestsRoutingStock)
 		})
 
 		it("creates a delegate ThroughStock", func() {
@@ -78,7 +78,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				replicaFake.FakeReplicaNum = 33
 				replicaStock.Add(replicaFake)
 
-				subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+				subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
 
 				subject.Add(NewRequestEntity(envFake, subject))
 				subject.Add(NewRequestEntity(envFake, subject))
@@ -105,7 +105,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 					replicaFake = new(FakeReplica)
 					replicaStock.Add(replicaFake)
 
-					subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+					subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
 
 					subject.Add(request)
 				})
@@ -123,7 +123,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+						subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
 
 						subject.Add(request)
 					})
@@ -144,7 +144,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+						subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
 
 						subject.Add(request)
 						subject.Add(request)
@@ -163,7 +163,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 						request = NewRequestEntity(envFake, subject)
 
 						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsBufferedStock(envFake, replicaStock, requestsFailedStock)
+						subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
 
 						for i := 0; i < 19; i++ {
 							subject.Add(request)

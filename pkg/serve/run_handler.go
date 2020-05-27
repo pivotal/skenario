@@ -62,6 +62,8 @@ type SkenarioRunRequest struct {
 	TrafficPattern   string        `json:"traffic_pattern"`
 	InMemoryDatabase bool          `json:"in_memory_database,omitempty"`
 
+	InitialNumberOfReplicas int `json:"initial_number_of_replicas"`
+
 	LaunchDelay            time.Duration `json:"launch_delay"`
 	TerminateDelay         time.Duration `json:"terminate_delay"`
 	TickInterval           time.Duration `json:"tick_interval"`
@@ -99,18 +101,18 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
 	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
-	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
+	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock())
 
 	var traffic trafficpatterns.Pattern
 	switch runReq.TrafficPattern {
 	case "golang_rand_uniform":
-		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.BufferStock(), runReq.UniformConfig)
+		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.RoutingStock(), runReq.UniformConfig)
 	case "step":
-		traffic = trafficpatterns.NewStep(env, trafficSource, cluster.BufferStock(), runReq.StepConfig)
+		traffic = trafficpatterns.NewStep(env, trafficSource, cluster.RoutingStock(), runReq.StepConfig)
 	case "ramp":
-		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.BufferStock(), runReq.RampConfig)
+		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.RoutingStock(), runReq.RampConfig)
 	case "sinusoidal":
-		traffic = trafficpatterns.NewSinusoidal(env, trafficSource, cluster.BufferStock(), runReq.SinusoidalConfig)
+		traffic = trafficpatterns.NewSinusoidal(env, trafficSource, cluster.RoutingStock(), runReq.SinusoidalConfig)
 	}
 
 	traffic.Generate()
@@ -277,9 +279,10 @@ func requestsPerSecond(dbFileName string, scenarioRunId int64) []RPS {
 
 func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 	return model.ClusterConfig{
-		LaunchDelay:      srr.LaunchDelay,
-		TerminateDelay:   srr.TerminateDelay,
-		NumberOfRequests: uint(srr.UniformConfig.NumberOfRequests),
+		LaunchDelay:             srr.LaunchDelay,
+		TerminateDelay:          srr.TerminateDelay,
+		NumberOfRequests:        uint(srr.UniformConfig.NumberOfRequests),
+		InitialNumberOfReplicas: srr.InitialNumberOfReplicas,
 	}
 }
 

@@ -36,14 +36,14 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 	var config UniformConfig
 	var envFake *model.FakeEnvironment
 	var trafficSource model.TrafficSource
-	var bufferStock model.RequestsBufferedStock
+	var bufferStock model.RequestsRoutingStock
 	var startAt time.Time
 	var runFor time.Duration
 
 	it.Before(func() {
 		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(10 * time.Second)
-		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		bufferStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
 		startAt = time.Unix(0, 1)
 		runFor = 1 * time.Second
@@ -79,7 +79,7 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, simulator.StockName("TrafficSource"), envFake.Movements[0].From().Name())
 		})
 
-		it("moves to buffer stock", func() {
+		it("moves to routingStock stock", func() {
 			assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
 		})
 

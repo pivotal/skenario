@@ -23,11 +23,11 @@ import (
 )
 
 type step struct {
-	env       simulator.Environment
-	rps       int
-	stepAfter time.Duration
-	source    model.TrafficSource
-	buffer    model.RequestsBufferedStock
+	env          simulator.Environment
+	rps          int
+	stepAfter    time.Duration
+	source       model.TrafficSource
+	routingStock model.RequestsRoutingStock
 }
 
 type StepConfig struct {
@@ -44,7 +44,7 @@ func (s *step) Generate() {
 	startAt := s.env.CurrentMovementTime().Add(s.stepAfter)
 
 	for t = startAt; t.Before(s.env.HaltTime()); t = t.Add(1 * time.Second) {
-		uniRand := NewUniformRandom(s.env, s.source, s.buffer, UniformConfig{
+		uniRand := NewUniformRandom(s.env, s.source, s.routingStock, UniformConfig{
 			NumberOfRequests: s.rps,
 			StartAt:          t,
 			RunFor:           time.Second,
@@ -53,12 +53,12 @@ func (s *step) Generate() {
 	}
 }
 
-func NewStep(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, config StepConfig) Pattern {
+func NewStep(env simulator.Environment, source model.TrafficSource, routingStock model.RequestsRoutingStock, config StepConfig) Pattern {
 	return &step{
-		env:       env,
-		rps:       config.RPS,
-		stepAfter: config.StepAfter,
-		source:    source,
-		buffer:    buffer,
+		env:          env,
+		rps:          config.RPS,
+		stepAfter:    config.StepAfter,
+		source:       source,
+		routingStock: routingStock,
 	}
 }

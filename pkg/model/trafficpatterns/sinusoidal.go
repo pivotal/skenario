@@ -28,7 +28,7 @@ type sinusoidal struct {
 	amplitude int
 	period    time.Duration
 	source    model.TrafficSource
-	buffer    model.RequestsBufferedStock
+	buffer    model.RequestsRoutingStock
 }
 
 type SinusoidalConfig struct {
@@ -61,7 +61,7 @@ func (s *sinusoidal) Generate() {
 	}
 }
 
-func NewSinusoidal(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, config SinusoidalConfig) Pattern {
+func NewSinusoidal(env simulator.Environment, source model.TrafficSource, buffer model.RequestsRoutingStock, config SinusoidalConfig) Pattern {
 	return &sinusoidal{
 		env:       env,
 		amplitude: config.Amplitude,

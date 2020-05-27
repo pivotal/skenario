@@ -38,7 +38,7 @@ func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 	var amplitude int
 	var period time.Duration
 	var trafficSource model.TrafficSource
-	var bufferStock model.RequestsBufferedStock
+	var bufferStock model.RequestsRoutingStock
 
 	it.Before(func() {
 		amplitude = 20
@@ -48,7 +48,7 @@ func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 		envFake.TheTime = time.Unix(0, 0)
 		envFake.TheHaltTime = envFake.TheTime.Add(30 * time.Second)
 
-		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		bufferStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, bufferStock)
 		config = SinusoidalConfig{
 			Amplitude: amplitude,

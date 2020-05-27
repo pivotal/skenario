@@ -25,7 +25,8 @@ import (
 type ramp struct {
 	env    simulator.Environment
 	source model.TrafficSource
-	buffer model.RequestsBufferedStock
+	buffer model.RequestsRoutingStock
+	sink   model.RequestsProcessingStock
 	deltaV int
 	maxRPS int
 }
@@ -65,7 +66,7 @@ func (r *ramp) Generate() {
 	}
 }
 
-func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsBufferedStock, config RampConfig) Pattern {
+func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsRoutingStock, config RampConfig) Pattern {
 	return &ramp{
 		env:    env,
 		source: source,

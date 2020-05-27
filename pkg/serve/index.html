@@ -47,6 +47,14 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
+                    <label class="label" for="initialNumberOfReplicas">Initial Number Of Replicas</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="initialNumberOfReplicas" value="1" min="1" step="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
                     <label class="label" for="launchDelay">Replica Launch Delay (seconds)</label>
                 </div>
                 <div class="control">
@@ -392,6 +400,7 @@
         document.getElementById("loading").innerText = "Loading...";
 
         let runFor = parseInt(document.querySelector("input[id='runFor'").value);
+        let initialNumberOfReplicas = parseInt(document.querySelector("input[id='initialNumberOfReplicas']").value);
         let launchDelay = parseInt(document.querySelector("input[id='launchDelay']").value);
         let terminateDelay = parseInt(document.querySelector("input[id='terminateDelay']").value);
         let tickInterval = parseInt(document.querySelector("input[id='tickInterval']").value);
@@ -406,6 +415,7 @@
         let second = 1000000000;
         let skenarioRunRequest = {
             run_for: runFor * second,
+            initial_number_of_replicas: initialNumberOfReplicas,
             launch_delay: launchDelay * second,
             terminate_delay: terminateDelay * second,
             tick_interval: tickInterval * second,

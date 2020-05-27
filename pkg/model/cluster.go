@@ -30,9 +30,10 @@ import (
 )
 
 type ClusterConfig struct {
-	LaunchDelay      time.Duration
-	TerminateDelay   time.Duration
-	NumberOfRequests uint
+	LaunchDelay             time.Duration
+	TerminateDelay          time.Duration
+	NumberOfRequests        uint
+	InitialNumberOfReplicas int
 }
 
 type ClusterModel interface {
@@ -41,7 +42,7 @@ type ClusterModel interface {
 	CurrentLaunching() uint64
 	CurrentActive() uint64
 	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
-	BufferStock() RequestsBufferedStock
+	RoutingStock() RequestsRoutingStock
 }
 
 type EndpointInformerSource interface {
@@ -58,10 +59,11 @@ type clusterModel struct {
 	replicasActive      simulator.ThroughStock
 	replicasTerminating ReplicasTerminatingStock
 	replicasTerminated  simulator.SinkStock
-	requestsInBuffer    simulator.ThroughStock
-	requestsFailed      simulator.SinkStock
-	kubernetesClient    kubernetes.Interface
-	endpointsInformer   corev1informers.EndpointsInformer
+	//TODO think how to rename it
+	requestsInBuffer  simulator.ThroughStock
+	requestsFailed    simulator.SinkStock
+	kubernetesClient  kubernetes.Interface
+	endpointsInformer corev1informers.EndpointsInformer
 }
 
 func (cm *clusterModel) Env() simulator.Environment {
@@ -101,7 +103,7 @@ func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
 	return cm.endpointsInformer
 }
 
-func (cm *clusterModel) BufferStock() RequestsBufferedStock {
+func (cm *clusterModel) RoutingStock() RequestsRoutingStock {
 	return cm.requestsInBuffer
 }
 
@@ -124,19 +126,19 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 
 	replicasActive := NewReplicasActiveStock()
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
-	bufferStock := NewRequestsBufferedStock(env, replicasActive, requestsFailed)
+	routingStock := NewRequestsRoutingStock(env, replicasActive, requestsFailed)
 	replicasTerminated := simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica"))
 
 	cm := &clusterModel{
 		env:                 env,
 		config:              config,
-		replicasConfig:		 replicasConfig,
+		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
 		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
 		replicasTerminating: NewReplicasTerminatingStock(env, replicasConfig, replicasTerminated),
 		replicasTerminated:  replicasTerminated,
-		requestsInBuffer:    bufferStock,
+		requestsInBuffer:    routingStock,
 		requestsFailed:      requestsFailed,
 		kubernetesClient:    fakeClient,
 		endpointsInformer:   endpointsInformer,
@@ -148,6 +150,12 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	}
 
 	cm.replicasDesired = NewReplicasDesiredStock(env, desiredConf, cm.replicaSource, cm.replicasLaunching, cm.replicasActive, cm.replicasTerminating)
+
+	//start with 1 active replica
+	rs := cm.replicaSource.(*replicaSource)
+	for i := 0; i < config.InitialNumberOfReplicas; i++ {
+		replicasActive.Add(NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), rs.maxReplicaRPS))
+	}
 
 	return cm
 }

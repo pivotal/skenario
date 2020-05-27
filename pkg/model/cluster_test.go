@@ -172,9 +172,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("BufferStock()", func() {
-		it("returns the configured buffer stock", func() {
-			assert.Equal(t, rawSubject.requestsInBuffer, subject.BufferStock())
+	describe("RoutingStock()", func() {
+		it("returns the configured routing stock", func() {
+			assert.Equal(t, rawSubject.requestsInBuffer, subject.RoutingStock())
 		})
 	})
 }
