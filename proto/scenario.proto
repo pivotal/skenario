@@ -47,7 +47,7 @@ message LoadCustom {
 }
 
 message LoadInterval {
-  int32 width_seconds = 1;
+  int32 width_milliseconds = 1;
   int32 amplitude_aps = 2;
 }
 
@@ -62,8 +62,8 @@ message Cluster {
 }
 
 message Workload {
-  int32 readiness_delay_seconds = 1;
-  int32 termination_delay_seconds = 2;
+  int32 readiness_delay_milliseconds = 1;
+  int32 termination_delay_milliseconds = 2;
 }
 
 message Plugin {
@@ -111,6 +111,6 @@ enum MetricResource {
 }
 
 message MetricPoint {
-  int32 time_millis = 1;
+  int32 time_milliseconds = 1;
   float64 value = 2;
 }
