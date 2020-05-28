@@ -1,0 +1,116 @@
+syntax = "proto3";
+package proto;
+
+message Scenario {
+  Load load = 1;
+  Cluster cluster = 2;
+  Workload workload = 3;
+  repeated Plugin plugin = 4;
+}
+
+message Load {
+  oneof arrival_rate_oneof {
+    LoadConstant constant = 1;
+    LoadPeriodic periodic = 3;
+    LoadCustom custom = 3;
+  }
+  oneof request_weight_oneof {
+    RequestConstant constant = 4;
+  }
+}
+
+message LoadConstant {
+  int32 arrivals_per_second = 1;
+}
+
+message LoadPeriodic {
+  oneof shape_oneof {
+    ShapeSine sine = 1;
+    ShapeAsdr asdr = 2;
+  }
+}
+
+message ShapeSine {
+  LoadInterval interval = 1;
+}
+
+message ShapeAsdr {
+  LoadInterval initial = 1;
+  LoadInterval attack = 2;
+  LoadInterval sustain = 3;
+  LoadInterval decay = 4;
+  LoadInterval release = 5;
+}
+
+message LoadCustom {
+  repeated LoadInterval interval = 1;
+}
+
+message LoadInterval {
+  int32 width_seconds = 1;
+  int32 amplitude_aps = 2;
+}
+
+message RequestConstant {
+  int32 cpu_milliseconds = 1;
+  int32 io_milliseconds = 2;
+  int32 memory_bytes = 3;
+}
+
+message Cluster {
+  // infinite capacity
+}
+
+message Workload {
+  int32 readiness_delay_seconds = 1;
+  int32 termination_delay_seconds = 2;
+}
+
+message Plugin {
+  string type = 1;
+  int32 version = 2;
+  PluginPoint point = 3;
+  Any configuration = 4;
+}
+
+enum PluginPoint {
+  HORIZONTAL_AUTOSCALING = 0;
+  VERTICAL_AUTOSCALING = 1;
+  REQUEST_ROUTING = 2;
+}
+
+message Result {
+  repeated ResultMetric metric = 1;
+}
+
+message Metric {
+  MetricType type = 1;
+  MetricResource resource = 2
+  repeated MetricPoint point = 3;
+}
+
+enum MetricType {
+  COUNT = 0;
+  AVERAGE = 1;
+  P50 = 2;
+  P90 = 3;
+  P99 = 4;
+  P100 = 5;
+}
+
+enum MetricResource {
+  CPU_USAGE_MILLIS = 0;
+  CPU_CAPACITY_MILLIS = 1;
+  MEMORY_USAGE_BYTES = 2;
+  MEMORY_CAPACITY_BYTES = 3;
+  WORK_ARRIVAL = 3;
+  WORK_SUCCESS = 4;
+  WORK_FAILURE = 5;
+  LATENCY_MILLIS = 6;
+  POD_COUNT = 7;
+}
+
+message MetricPoint {
+  int32 time_millis = 1;
+  float64 value = 2;
+}
