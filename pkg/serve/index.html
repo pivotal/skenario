@@ -137,7 +137,31 @@
             </div>
 
             <hr>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="requestTimeout">Request timeout (seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="requestTimeout" value="10.0" min="1" step="1"/>
+                </div>
+            </div>
 
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="requestCPUUtilization">Request CPU utilization </label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="requestCPUUtilization" value="200.0" min="1" step="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="requestIOUtilization">Request IO utilization </label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="requestIOUtilization" value="200.0" min="1" step="1"/>
+                </div>
+            </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
                     <label for="select-traffic-pattern" class="label">Traffic Pattern</label>
@@ -420,6 +444,9 @@
         let replicaMaxRPS = parseInt(document.querySelector("input[id='replicaMaxRPS']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
         let runInMemory = document.querySelector("input[id='runInMemory']").checked;
+        let requestTimeout = parseInt(document.querySelector("input[id='requestTimeout']").value);
+        let requestCPUUtilization = parseInt(document.querySelector("input[id='requestCPUUtilization']").value);
+        let requestIOUtilization = parseInt(document.querySelector("input[id='requestIOUtilization']").value);
 
         let second = 1000000000;
         let skenarioRunRequest = {
@@ -436,6 +463,9 @@
             replica_max_rps: replicaMaxRPS,
             max_scale_up_rate: maxScaleUpRate,
 
+            request_timeout: requestTimeout * second,
+            request_cpu_utilization: requestCPUUtilization,
+            request_io_utilization: requestIOUtilization,
             traffic_pattern: trafficPattern,
         };
 

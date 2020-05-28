@@ -47,7 +47,9 @@ type replicaEntity struct {
 	endpointAddress      corev1.EndpointAddress
 	requestsProcessing   RequestsProcessingStock
 	requestsComplete     simulator.SinkStock
+	requestsFailed       simulator.SinkStock
 	numRequestsSinceStat int32
+	totalCPUCapacity     int
 }
 
 var replicaNum int
@@ -134,11 +136,12 @@ func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, en
 		number:            replicaNum,
 		kubernetesClient:  client,
 		endpointsInformer: endpointsInformer,
+		totalCPUCapacity:  100,
 	}
 
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
-	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, replicaMaxRPSCapacity)
-
+	re.requestsFailed = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsFailed [%d]", re.number)), "Request")
+	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, re.requestsFailed, 100)
 
 	re.endpointAddress = corev1.EndpointAddress{
 		IP:       address,

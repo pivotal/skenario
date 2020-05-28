@@ -30,12 +30,14 @@ type RequestsProcessingStock interface {
 }
 
 type requestsProcessingStock struct {
-	env                   simulator.Environment
-	delegate              simulator.ThroughStock
-	replicaNumber         int
-	requestsComplete      simulator.SinkStock
-	numRequestsSinceLast  int32
-	replicaMaxRPSCapacity int64
+	env                  simulator.Environment
+	delegate             simulator.ThroughStock
+	replicaNumber        int
+	requestsComplete     simulator.SinkStock
+	requestsFailed       simulator.SinkStock
+	numRequestsSinceLast int32
+	totalCPUCapacity     int
+	currentUtilization   int
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -56,21 +58,37 @@ func (rps *requestsProcessingStock) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rps *requestsProcessingStock) Remove() simulator.Entity {
-	return rps.delegate.Remove()
+	request := rps.delegate.Remove().(*requestEntity)
+	rps.currentUtilization -= request.requestConfig.CPUUtilization
+	return request
 }
 
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	rps.numRequestsSinceLast++
+	request := entity.(*requestEntity)
+	rps.currentUtilization += request.requestConfig.CPUUtilization
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	totalTime := calculateTime(rps.delegate.Count(), rps.replicaMaxRPSCapacity, time.Second, rng)
+	totalTime := calculateTime(rps.currentUtilization, rps.totalCPUCapacity, time.Second, rng)
+	totalTime += time.Duration(request.requestConfig.IOUtilization)
 
-	rps.env.AddToSchedule(simulator.NewMovement(
-		"complete_request",
-		rps.env.CurrentMovementTime().Add(totalTime),
-		rps,
-		rps.requestsComplete,
-	))
+	if totalTime > request.requestConfig.Timeout {
+		rps.currentUtilization -= request.requestConfig.CPUUtilization
+		rps.env.AddToSchedule(simulator.NewMovement(
+			"request_failed",
+			rps.env.CurrentMovementTime().Add(1*time.Nanosecond),
+			rps,
+			rps.requestsFailed,
+		))
+	} else {
+		rps.env.AddToSchedule(simulator.NewMovement(
+			"complete_request",
+			rps.env.CurrentMovementTime().Add(totalTime),
+			rps,
+			rps.requestsComplete,
+		))
+	}
+
 	return rps.delegate.Add(entity)
 }
 
@@ -80,13 +98,16 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 	return rc
 }
 
-func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestSink simulator.SinkStock, replicaMaxRPSCapacity int64) RequestsProcessingStock {
+func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestComplete simulator.SinkStock,
+	requestFailed simulator.SinkStock, totalCPUCapacity int) RequestsProcessingStock {
 	return &requestsProcessingStock{
-		env:                   env,
-		delegate:              simulator.NewThroughStock("RequestsProcessing", "Request"),
-		replicaNumber:         replicaNumber,
-		requestsComplete:      requestSink,
-		replicaMaxRPSCapacity: replicaMaxRPSCapacity,
+		env:                env,
+		delegate:           simulator.NewThroughStock("RequestsProcessing", "Request"),
+		replicaNumber:      replicaNumber,
+		requestsComplete:   requestComplete,
+		requestsFailed:     requestFailed,
+		currentUtilization: 0,
+		totalCPUCapacity:   totalCPUCapacity,
 	}
 }
 
@@ -101,18 +122,18 @@ func saturateClamp(fractionUtilised float64) float64 {
 }
 
 // returns Sakasegawa's approximation for expected queueing time for an M/M/m queue
-func sakasegawaApproximation(fractionUtilised, maxRPS float64, baseServiceTime time.Duration) time.Duration {
-	powerTerm := math.Sqrt(2*(maxRPS+1)) - 1
-	utilizationTerm := math.Pow(fractionUtilised, powerTerm) / (maxRPS * (1 - fractionUtilised))
+func sakasegawaApproximation(fractionUtilised, totalCPUCapacity float64, baseServiceTime time.Duration) time.Duration {
+	powerTerm := math.Sqrt(2*(totalCPUCapacity+1)) - 1
+	utilizationTerm := math.Pow(fractionUtilised, powerTerm) / (totalCPUCapacity * (1 - fractionUtilised))
 
 	expected := time.Duration(utilizationTerm * float64(baseServiceTime))
 
 	return expected
 }
 
-func calculateTime(currentRequests uint64, maxRPS int64, baseServiceTime time.Duration, rng *rand.Rand) time.Duration {
-	fractionUtilised := saturateClamp(float64(currentRequests) / float64(maxRPS))
-	delayTime := 1 + sakasegawaApproximation(fractionUtilised, float64(maxRPS), baseServiceTime)
+func calculateTime(currentUtilization int, totalCPUCapacity int, baseServiceTime time.Duration, rng *rand.Rand) time.Duration {
+	fractionUtilised := saturateClamp(float64(currentUtilization) / float64(totalCPUCapacity))
+	delayTime := 1 + sakasegawaApproximation(fractionUtilised, float64(totalCPUCapacity), baseServiceTime)
 
 	delayRand := rng.Int63n(int64(delayTime))
 	totalTime := baseServiceTime + time.Duration(delayRand)

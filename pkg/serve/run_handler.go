@@ -74,6 +74,10 @@ type SkenarioRunRequest struct {
 	ReplicaMaxRPS          int64         `json:"replica_max_rps"`
 	MaxScaleUpRate         float64       `json:"max_scale_up_rate"`
 
+	RequestTimeout        time.Duration `json:"request_timeout"`
+	RequestCPUUtilization int           `json:"request_cpu_utilization"`
+	RequestIOUtilization  int           `json:"request_io_utilization"`
+
 	UniformConfig    trafficpatterns.UniformConfig    `json:"uniform_config,omitempty"`
 	RampConfig       trafficpatterns.RampConfig       `json:"ramp_config,omitempty"`
 	StepConfig       trafficpatterns.StepConfig       `json:"step_config,omitempty"`
@@ -99,9 +103,15 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		MaxRPS:         runReq.ReplicaMaxRPS,
 	}
 
+	requestConfig := model.RequestConfig{
+		CPUUtilization: runReq.RequestCPUUtilization,
+		IOUtilization:  runReq.RequestIOUtilization,
+		Timeout:        runReq.RequestTimeout,
+	}
+
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
 	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
-	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock())
+	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock(), requestConfig)
 
 	var traffic trafficpatterns.Pattern
 	switch runReq.TrafficPattern {

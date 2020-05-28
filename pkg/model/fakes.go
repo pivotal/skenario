@@ -78,7 +78,8 @@ func (fr *FakeReplica) Deactivate() {
 func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.RequestsProcessingCalled = true
 	if fr.ProcessingStock == nil {
-		return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"), 100)
+		return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-requestsComplete", "Request"),
+			simulator.NewSinkStock("fake-requestsFailed", "Request"), 100)
 	} else {
 		return fr.ProcessingStock
 	}

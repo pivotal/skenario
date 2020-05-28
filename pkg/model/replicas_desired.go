@@ -27,6 +27,12 @@ type ReplicasConfig struct {
 	MaxRPS         int64
 }
 
+type RequestConfig struct {
+	CPUUtilization int
+	IOUtilization  int
+	Timeout        time.Duration
+}
+
 type ReplicasDesiredStock interface {
 	simulator.ThroughStock
 }
