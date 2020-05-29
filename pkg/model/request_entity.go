@@ -32,7 +32,6 @@ type requestEntity struct {
 	env          simulator.Environment
 	number       int
 	routingStock RequestsRoutingStock
-	attempts     int
 }
 
 var reqNumber int

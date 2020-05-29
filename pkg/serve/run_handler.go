@@ -62,7 +62,7 @@ type SkenarioRunRequest struct {
 	TrafficPattern   string        `json:"traffic_pattern"`
 	InMemoryDatabase bool          `json:"in_memory_database,omitempty"`
 
-	InitialNumberOfReplicas int `json:"initial_number_of_replicas"`
+	InitialNumberOfReplicas uint `json:"initial_number_of_replicas"`
 
 	LaunchDelay            time.Duration `json:"launch_delay"`
 	TerminateDelay         time.Duration `json:"terminate_delay"`

@@ -23,12 +23,12 @@ import (
 )
 
 type ramp struct {
-	env    simulator.Environment
-	source model.TrafficSource
-	buffer model.RequestsRoutingStock
-	sink   model.RequestsProcessingStock
-	deltaV int
-	maxRPS int
+	env          simulator.Environment
+	source       model.TrafficSource
+	routingStock model.RequestsRoutingStock
+	sink         model.RequestsProcessingStock
+	deltaV       int
+	maxRPS       int
 }
 
 type RampConfig struct {
@@ -46,7 +46,7 @@ func (r *ramp) Generate() {
 	startAt := r.env.CurrentMovementTime()
 
 	for t = startAt; nextRPS <= r.maxRPS; t = t.Add(1 * time.Second) {
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, UniformConfig{
+		uniRand := NewUniformRandom(r.env, r.source, r.routingStock, UniformConfig{
 			NumberOfRequests: nextRPS,
 			StartAt:          t,
 			RunFor:           time.Second,
@@ -57,7 +57,7 @@ func (r *ramp) Generate() {
 
 	for ; nextRPS > 0; t = t.Add(1 * time.Second) {
 		nextRPS = nextRPS - r.deltaV
-		uniRand := NewUniformRandom(r.env, r.source, r.buffer, UniformConfig{
+		uniRand := NewUniformRandom(r.env, r.source, r.routingStock, UniformConfig{
 			NumberOfRequests: nextRPS,
 			StartAt:          t,
 			RunFor:           time.Second,
@@ -66,12 +66,12 @@ func (r *ramp) Generate() {
 	}
 }
 
-func NewRamp(env simulator.Environment, source model.TrafficSource, buffer model.RequestsRoutingStock, config RampConfig) Pattern {
+func NewRamp(env simulator.Environment, source model.TrafficSource, routingStock model.RequestsRoutingStock, config RampConfig) Pattern {
 	return &ramp{
-		env:    env,
-		source: source,
-		buffer: buffer,
-		deltaV: config.DeltaV,
-		maxRPS: config.MaxRPS,
+		env:          env,
+		source:       source,
+		routingStock: routingStock,
+		deltaV:       config.DeltaV,
+		maxRPS:       config.MaxRPS,
 	}
 }

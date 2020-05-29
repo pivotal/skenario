@@ -24,11 +24,11 @@ import (
 )
 
 type sinusoidal struct {
-	env       simulator.Environment
-	amplitude int
-	period    time.Duration
-	source    model.TrafficSource
-	buffer    model.RequestsRoutingStock
+	env          simulator.Environment
+	amplitude    int
+	period       time.Duration
+	source       model.TrafficSource
+	routingStock model.RequestsRoutingStock
 }
 
 type SinusoidalConfig struct {
@@ -52,7 +52,7 @@ func (s *sinusoidal) Generate() {
 		rps := ampl*math.Sin(twoPi*(tsec/perd)) + ampl
 		roundedRPS := int(math.Round(rps))
 
-		uniRand := NewUniformRandom(s.env, s.source, s.buffer, UniformConfig{
+		uniRand := NewUniformRandom(s.env, s.source, s.routingStock, UniformConfig{
 			NumberOfRequests: roundedRPS,
 			StartAt:          t,
 			RunFor:           time.Second,
@@ -61,12 +61,12 @@ func (s *sinusoidal) Generate() {
 	}
 }
 
-func NewSinusoidal(env simulator.Environment, source model.TrafficSource, buffer model.RequestsRoutingStock, config SinusoidalConfig) Pattern {
+func NewSinusoidal(env simulator.Environment, source model.TrafficSource, routingStock model.RequestsRoutingStock, config SinusoidalConfig) Pattern {
 	return &sinusoidal{
-		env:       env,
-		amplitude: config.Amplitude,
-		period:    config.Period,
-		source:    source,
-		buffer:    buffer,
+		env:          env,
+		amplitude:    config.Amplitude,
+		period:       config.Period,
+		source:       source,
+		routingStock: routingStock,
 	}
 }
