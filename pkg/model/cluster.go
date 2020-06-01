@@ -43,6 +43,7 @@ type ClusterModel interface {
 	CurrentActive() uint64
 	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
 	RoutingStock() RequestsRoutingStock
+	ActiveStock() simulator.ThroughStock
 }
 
 type EndpointInformerSource interface {
@@ -104,6 +105,10 @@ func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
 
 func (cm *clusterModel) RoutingStock() RequestsRoutingStock {
 	return cm.requestsInRouting
+}
+
+func (cm *clusterModel) ActiveStock() simulator.ThroughStock {
+	return cm.replicasActive
 }
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {

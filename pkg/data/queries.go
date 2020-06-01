@@ -68,6 +68,18 @@ order by arrived_at
 `
 
 // language=sql
+var CPUUtilizationQuery = `
+select
+    max(cpu_utilization)
+  , calculated_at
+from cpu_utilizations
+where scenario_run_id = ?
+group by calculated_at
+order by calculated_at
+;
+`
+
+// language=sql
 var RequestsPerSecondQuery = `
 select
     occurs_at / 1000000000        as occurs_at_second

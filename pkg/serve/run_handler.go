@@ -49,12 +49,18 @@ type RPS struct {
 	Requests int64 `json:"requests"`
 }
 
+type CPUUtilizationMetric struct {
+	CPUUtilization float64 `json:"cpu_utilization"`
+	CalculatedAt   int64   `json:"calculated_at"`
+}
+
 type SkenarioRunResponse struct {
-	RanFor            time.Duration  `json:"ran_for"`
-	TrafficPattern    string         `json:"traffic_pattern"`
-	TallyLines        []TallyLine    `json:"tally_lines"`
-	ResponseTimes     []ResponseTime `json:"response_times"`
-	RequestsPerSecond []RPS          `json:"requests_per_second"`
+	RanFor            time.Duration          `json:"ran_for"`
+	TrafficPattern    string                 `json:"traffic_pattern"`
+	TallyLines        []TallyLine            `json:"tally_lines"`
+	ResponseTimes     []ResponseTime         `json:"response_times"`
+	RequestsPerSecond []RPS                  `json:"requests_per_second"`
+	CPUUtilizations   []CPUUtilizationMetric `json:"cpu_utilizations"`
 }
 
 type SkenarioRunRequest struct {
@@ -146,7 +152,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	store := data.NewRunStore(conn)
-	scenarioRunId, err := store.Store(completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name(), runReq.RunFor)
+	scenarioRunId, err := store.Store(completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name(), runReq.RunFor, env.CPUUtilizations())
 	if err != nil {
 		fmt.Printf("there was an error saving data: %s", err.Error())
 	}
@@ -157,6 +163,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		TallyLines:        tallyLines(dbFileName, scenarioRunId),
 		ResponseTimes:     responseTimes(dbFileName, scenarioRunId),
 		RequestsPerSecond: requestsPerSecond(dbFileName, scenarioRunId),
+		CPUUtilizations:   cpuUtilizations(dbFileName, scenarioRunId),
 	}
 
 	err = json.NewEncoder(w).Encode(vds)
@@ -164,6 +171,46 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func cpuUtilizations(dbFileName string, scenarioRunId int64) []CPUUtilizationMetric {
+	totalConn, err := sqlite3.Open(dbFileName, sqlite3.OPEN_READONLY)
+	if err != nil {
+		panic(fmt.Errorf("could not open database file '%s': %s", dbFileName, err.Error()))
+	}
+	defer totalConn.Close()
+
+	cpuUtilizationStmt, err := totalConn.Prepare(data.CPUUtilizationQuery, scenarioRunId)
+	if err != nil {
+		panic(fmt.Errorf("could not prepare query: %s", err.Error()))
+	}
+
+	cpuUtilizations := make([]CPUUtilizationMetric, 0)
+
+	var cpuUtilization float64
+	var calculatedAt int64
+	for {
+		hasRow, err := cpuUtilizationStmt.Step()
+		if err != nil {
+			panic(fmt.Errorf("could not step: %s", err.Error()))
+		}
+
+		if !hasRow {
+			break
+		}
+
+		err = cpuUtilizationStmt.Scan(&cpuUtilization, &calculatedAt)
+		if err != nil {
+			panic(fmt.Errorf("could not scan: %s", err.Error()))
+		}
+
+		var metric = CPUUtilizationMetric{
+			CPUUtilization: cpuUtilization,
+			CalculatedAt:   calculatedAt,
+		}
+		cpuUtilizations = append(cpuUtilizations, metric)
+	}
+	return cpuUtilizations
 }
 
 func tallyLines(dbFileName string, scenarioRunId int64) []TallyLine {

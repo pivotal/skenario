@@ -36,8 +36,8 @@ type requestsProcessingStock struct {
 	requestsComplete     simulator.SinkStock
 	requestsFailed       simulator.SinkStock
 	numRequestsSinceLast int32
-	totalCPUCapacity     int
-	currentUtilization   int
+	totalCPUCapacity     *int
+	currentUtilization   *int
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -59,21 +59,21 @@ func (rps *requestsProcessingStock) EntitiesInStock() []*simulator.Entity {
 
 func (rps *requestsProcessingStock) Remove() simulator.Entity {
 	request := rps.delegate.Remove().(*requestEntity)
-	rps.currentUtilization -= request.requestConfig.CPUUtilization
+	*rps.currentUtilization -= request.requestConfig.CPUUtilization
 	return request
 }
 
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	rps.numRequestsSinceLast++
-	request := entity.(*requestEntity)
-	rps.currentUtilization += request.requestConfig.CPUUtilization
+	request := *entity.(*requestEntity)
+	*rps.currentUtilization += request.requestConfig.CPUUtilization
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	totalTime := calculateTime(rps.currentUtilization, rps.totalCPUCapacity, time.Second, rng)
+	totalTime := calculateTime(*rps.currentUtilization, *rps.totalCPUCapacity, time.Second, rng)
 	totalTime += time.Duration(request.requestConfig.IOUtilization)
 
 	if totalTime > request.requestConfig.Timeout {
-		rps.currentUtilization -= request.requestConfig.CPUUtilization
+		*rps.currentUtilization -= request.requestConfig.CPUUtilization
 		rps.env.AddToSchedule(simulator.NewMovement(
 			"request_failed",
 			rps.env.CurrentMovementTime().Add(1*time.Nanosecond),
@@ -99,14 +99,14 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 }
 
 func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestComplete simulator.SinkStock,
-	requestFailed simulator.SinkStock, totalCPUCapacity int) RequestsProcessingStock {
+	requestFailed simulator.SinkStock, totalCPUCapacity *int, currentUtilization *int) RequestsProcessingStock {
 	return &requestsProcessingStock{
 		env:                env,
 		delegate:           simulator.NewThroughStock("RequestsProcessing", "Request"),
 		replicaNumber:      replicaNumber,
 		requestsComplete:   requestComplete,
 		requestsFailed:     requestFailed,
-		currentUtilization: 0,
+		currentUtilization: currentUtilization,
 		totalCPUCapacity:   totalCPUCapacity,
 	}
 }

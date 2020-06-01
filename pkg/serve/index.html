@@ -422,6 +422,33 @@
                             title: "Response Time (ms)"
                         }
                     }
+                },
+                {
+                    height: 500,
+                    width: chartWidth,
+                    data: {name: "cpu_utilizations"},
+                    transform: [
+                        {calculate: "datum.cpu_utilization", as: "cpu_utilization"},
+                        {calculate: "datum.calculated_at / 1000000000", as: "calculated_at_sec"}
+                    ],
+                    mark: {
+                        type: "line",
+                        interpolate: "linear"
+                    },
+                    encoding: {
+                        x: {
+                            field: "calculated_at_sec",
+                            type: "quantitative",
+                            scale: {domain: scaleDomain},
+                            title: NO_TITLE
+                        },
+                        y: {
+                            field: "cpu_utilization",
+                            type: "quantitative",
+                            title: "CPU Utilization"
+                        }
+                    },
+
                 }
             ]
         };
@@ -523,7 +550,8 @@
                 let datasets = {
                     tally_lines: responseJson["tally_lines"],
                     response_times: responseJson["response_times"],
-                    requests_per_second: responseJson["requests_per_second"]
+                    requests_per_second: responseJson["requests_per_second"],
+                    cpu_utilizations: responseJson["cpu_utilizations"],
                 };
 
                 let ranForSec = responseJson["ran_for"] / second;

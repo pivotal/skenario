@@ -68,6 +68,16 @@ create table if not exists completed_movements
 
     scenario_run_id integer not null references scenario_runs (id)
 );
+
+create table if not exists cpu_utilizations
+(
+	id 					integer primary key,
+	cpu_utilization 	real 					not null,
+	calculated_at 		unsigned big integer 	not null,
+
+	scenario_run_id 	integer not null references scenario_runs (id)
+);
+
 create unique index if not exists move_once_per_run on completed_movements (occurs_at, scenario_run_id);
 
 create table if not exists ignored_movements
