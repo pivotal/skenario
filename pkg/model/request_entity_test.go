@@ -51,10 +51,6 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 		it("sets the routing stock", func() {
 			assert.Equal(t, routingStock, rawSubject.routingStock)
 		})
-
-		//it("sets the retry backoff duration to 100ms", func() {
-		//	assert.Equal(t, 100*time.Millisecond, rawSubject.nextBackoff)
-		//})
 	})
 
 	describe("Entity interface", func() {

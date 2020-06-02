@@ -141,7 +141,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			routingStockRecorded = autoscalerFake.recorded[0]
 		})
 
-		// TODO immediately record arrivals at rotingStock
+		// TODO immediately record arrivals at routingStock
 
 		it("records once for the buffer and once each replica in ReplicasActive", func() {
 			assert.Len(t, autoscalerFake.recorded, recordOnce+recordThrice)
