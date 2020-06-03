@@ -148,18 +148,18 @@
 
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="requestCPUUtilization">Request CPU utilization </label>
+                    <label class="label" for="requestCPUTimeMillis">Request CPU time (in milliseconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="requestCPUUtilization" value="200.0" min="1" step="1"/>
+                    <input type="number" style="width: 5em" id="requestCPUTimeMillis" value="200.0" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="requestIOUtilization">Request IO utilization </label>
+                    <label class="label" for="requestIOTimeMillis">Request IO time (in milliseconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="requestIOUtilization" value="200.0" min="1" step="1"/>
+                    <input type="number" style="width: 5em" id="requestIOTimeMillis" value="200.0" min="1" step="1"/>
                 </div>
             </div>
             <div class="field is-horizontal">
@@ -472,8 +472,8 @@
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
         let runInMemory = document.querySelector("input[id='runInMemory']").checked;
         let requestTimeout = parseInt(document.querySelector("input[id='requestTimeout']").value);
-        let requestCPUUtilization = parseInt(document.querySelector("input[id='requestCPUUtilization']").value);
-        let requestIOUtilization = parseInt(document.querySelector("input[id='requestIOUtilization']").value);
+        let requestCPUTimeMillis = parseInt(document.querySelector("input[id='requestCPUTimeMillis']").value);
+        let requestIOTimeMillis = parseInt(document.querySelector("input[id='requestIOTimeMillis']").value);
 
         let second = 1000000000;
         let skenarioRunRequest = {
@@ -491,8 +491,8 @@
             max_scale_up_rate: maxScaleUpRate,
 
             request_timeout: requestTimeout * second,
-            request_cpu_utilization: requestCPUUtilization,
-            request_io_utilization: requestIOUtilization,
+            request_cpu_time_millis: requestCPUTimeMillis,
+            request_io_time_millis: requestIOTimeMillis,
             traffic_pattern: trafficPattern,
         };
 
