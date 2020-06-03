@@ -79,8 +79,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
 			rawSubject.replicasLaunching.Add(firstReplica)
 			rawSubject.replicasLaunching.Add(secondReplica)
 		})
@@ -95,8 +95,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 		})
@@ -126,11 +126,11 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				scaleTimes: make([]time.Time, 0),
 			}
 
-			request := NewRequestEntity(envFake, rawSubject.requestsInRouting)
+			request := NewRequestEntity(envFake, rawSubject.requestsInRouting, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 			rawSubject.requestsInRouting.Add(request)
 
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
 
 			rawSubject.replicasActive.Add(replicaFake)
 

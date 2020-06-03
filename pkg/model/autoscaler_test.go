@@ -83,7 +83,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		config = ClusterConfig{}
-		replicasConfig = ReplicasConfig{time.Second,time.Second, 100}
+		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
 		envFake = &FakeEnvironment{
 			Movements:   make([]simulator.Movement, 0),
 			TheTime:     startAt,

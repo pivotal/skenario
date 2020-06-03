@@ -36,13 +36,13 @@ type movementPQ struct {
 
 func (mpq *movementPQ) EnqueueMovement(movement Movement) (wasShifted bool, scheduledAt time.Time, err error) {
 	wasShifted = false
-	i := 0*time.Nanosecond
+	i := 0 * time.Nanosecond
 	for {
 		key := occursAtToStr(movement.OccursAt().Add(i))
 
 		_, exists, err := mpq.heap.GetByKey(key)
 		if err != nil {
-			return false, time.Unix(0,-1), err
+			return false, time.Unix(0, -1), err
 		}
 
 		if exists {

@@ -58,7 +58,7 @@ func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rs *replicaSource) Remove() simulator.Entity {
-	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), rs.maxReplicaRPS)
+	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next())
 }
 
 func (rs *replicaSource) Next() string {
@@ -76,6 +76,6 @@ func NewReplicaSource(env simulator.Environment, client kubernetes.Interface, in
 		kubernetesClient:  client,
 		endpointsInformer: informer,
 		nextIPValue:       1,
-		maxReplicaRPS: maxReplicaRPS,
+		maxReplicaRPS:     maxReplicaRPS,
 	}
 }

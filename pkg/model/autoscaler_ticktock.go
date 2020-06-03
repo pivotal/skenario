@@ -98,16 +98,17 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	//calculate CPU utilization
 	countActiveReplicas := 0
-	cpuUtilizationValue := 0
+	totalCPUUtilization := 0 // total cpuUtilization for all active replicas in percentage
+
 	for _, en := range asts.cluster.ActiveStock().EntitiesInStock() {
 		replica := (*en).(*replicaEntity)
-		cpuUtilizationValue += replica.currentCPUUtilization / replica.totalCPUCapacity
+		totalCPUUtilization += replica.occupiedCPUCapacityMillis * 100 / replica.totalCPUCapacityMillis
 		countActiveReplicas++
 	}
 	if countActiveReplicas > 0 {
-		averageCPUUtilization := simulator.CPUUtilization{CPUUtilization: float64(cpuUtilizationValue / countActiveReplicas),
-			CalculatedAt: currentTime.Add(1 * time.Nanosecond)}
-		asts.env.AppendCPUUtilization(&averageCPUUtilization)
+		averageCPUUtilizationPerReplica := simulator.CPUUtilization{CPUUtilization: float64(totalCPUUtilization / countActiveReplicas),
+			CalculatedAt: currentTime}
+		asts.env.AppendCPUUtilization(&averageCPUUtilizationPerReplica)
 	}
 
 	return nil

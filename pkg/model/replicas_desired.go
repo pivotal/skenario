@@ -28,9 +28,9 @@ type ReplicasConfig struct {
 }
 
 type RequestConfig struct {
-	CPUUtilization int
-	IOUtilization  int
-	Timeout        time.Duration
+	CPUTimeMillis int
+	IOTimeMillis  int
+	Timeout       time.Duration
 }
 
 type ReplicasDesiredStock interface {

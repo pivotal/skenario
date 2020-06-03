@@ -132,7 +132,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
-					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", 100)
+					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22")
 					err := rawCluster.replicasActive.Add(newReplica)
 					assert.NoError(t, err)
 

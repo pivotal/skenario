@@ -80,9 +80,9 @@ type SkenarioRunRequest struct {
 	ReplicaMaxRPS          int64         `json:"replica_max_rps"`
 	MaxScaleUpRate         float64       `json:"max_scale_up_rate"`
 
-	RequestTimeout        time.Duration `json:"request_timeout"`
-	RequestCPUUtilization int           `json:"request_cpu_utilization"`
-	RequestIOUtilization  int           `json:"request_io_utilization"`
+	RequestTimeout       time.Duration `json:"request_timeout"`
+	RequestCPUTimeMillis int           `json:"request_cpu_time_millis"`
+	RequestIOTimeMillis  int           `json:"request_io_time_millis"`
 
 	UniformConfig    trafficpatterns.UniformConfig    `json:"uniform_config,omitempty"`
 	RampConfig       trafficpatterns.RampConfig       `json:"ramp_config,omitempty"`
@@ -110,9 +110,9 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requestConfig := model.RequestConfig{
-		CPUUtilization: runReq.RequestCPUUtilization,
-		IOUtilization:  runReq.RequestIOUtilization,
-		Timeout:        runReq.RequestTimeout,
+		CPUTimeMillis: runReq.RequestCPUTimeMillis,
+		IOTimeMillis:  runReq.RequestIOTimeMillis,
+		Timeout:       runReq.RequestTimeout,
 	}
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
