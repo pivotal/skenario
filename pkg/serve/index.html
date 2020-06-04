@@ -39,6 +39,15 @@
         <form>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
+                    <label class="label" for="runInMemory">Run In Memory</label>
+                </div>
+                <div class="control">
+                    <input type="checkbox" style="width: 5em" id="runInMemory" checked/>
+                </div>
+            </div>
+
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
                     <label class="label" for="runFor">Run For (seconds)</label>
                 </div>
                 <div class="control">
@@ -401,10 +410,11 @@
         let targetConcurrency = parseFloat(document.querySelector("input[id='targetConcurrency']").value);
         let replicaMaxRPS = parseInt(document.querySelector("input[id='replicaMaxRPS']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
-
+        let runInMemory = document.querySelector("input[id='runInMemory']").checked;
 
         let second = 1000000000;
         let skenarioRunRequest = {
+            in_memory_database: runInMemory,
             run_for: runFor * second,
             launch_delay: launchDelay * second,
             terminate_delay: terminateDelay * second,
@@ -458,11 +468,6 @@
                 };
 
                 break;
-        }
-
-        let currentUrl = new URL(window.location.href);
-        if (currentUrl.searchParams.get("inmemory")) {
-            skenarioRunRequest.in_memory_database = true
         }
 
         let fetchOpts = {
