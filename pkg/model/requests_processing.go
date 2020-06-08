@@ -30,14 +30,14 @@ type RequestsProcessingStock interface {
 }
 
 type requestsProcessingStock struct {
-	env                       simulator.Environment
-	delegate                  simulator.ThroughStock
-	replicaNumber             int
-	requestsComplete          simulator.SinkStock
-	requestsFailed            simulator.SinkStock
-	numRequestsSinceLast      int32
-	totalCPUCapacityMillis    *int
-	occupiedCPUCapacityMillis *int
+	env                                simulator.Environment
+	delegate                           simulator.ThroughStock
+	replicaNumber                      int
+	requestsComplete                   simulator.SinkStock
+	requestsFailed                     simulator.SinkStock
+	numRequestsSinceLast               int32
+	totalCPUCapacityMillisPerSecond    *int
+	occupiedCPUCapacityMillisPerSecond *int
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -59,49 +59,74 @@ func (rps *requestsProcessingStock) EntitiesInStock() []*simulator.Entity {
 
 func (rps *requestsProcessingStock) Remove() simulator.Entity {
 	request := rps.delegate.Remove().(*requestEntity)
-	*rps.occupiedCPUCapacityMillis -= *request.utilizationForRequest
+	*rps.occupiedCPUCapacityMillisPerSecond -= *request.utilizationForRequestMillisPerSecond
 	return request
 }
 
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
+	var totalTime time.Duration
 	rps.numRequestsSinceLast++
 	request := *entity.(*requestEntity)
+	isRequestSuccessful := true
 
-	freeCPUCapacityMillis := *rps.totalCPUCapacityMillis - *rps.occupiedCPUCapacityMillis
-	if freeCPUCapacityMillis == 0 {
-		freeCPUCapacityMillis = 1
-	}
-	cpuTime := request.requestConfig.CPUTimeMillis * 1000 / freeCPUCapacityMillis
-	processingTime := cpuTime + request.requestConfig.IOTimeMillis
-	utilizationForRequest := cpuTime * freeCPUCapacityMillis / processingTime
-	*request.utilizationForRequest = utilizationForRequest
-	*rps.occupiedCPUCapacityMillis += utilizationForRequest
+	rps.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	//calculate currentUtilization in percentage
-	currentUtilization := *rps.occupiedCPUCapacityMillis * 100 / *rps.totalCPUCapacityMillis
-	totalTime := calculateTime(currentUtilization, time.Duration(processingTime)*time.Millisecond, rng)
-
-	if totalTime > request.requestConfig.Timeout {
-		*rps.occupiedCPUCapacityMillis -= utilizationForRequest
-
-		rps.env.AddToSchedule(simulator.NewMovement(
-			"request_failed",
-			rps.env.CurrentMovementTime().Add(1*time.Nanosecond),
-			rps,
-			rps.requestsFailed,
-		))
-	} else {
+	if isRequestSuccessful {
 		rps.env.AddToSchedule(simulator.NewMovement(
 			"complete_request",
 			rps.env.CurrentMovementTime().Add(totalTime),
 			rps,
 			rps.requestsComplete,
 		))
+	} else {
+		rps.env.AddToSchedule(simulator.NewMovement(
+			"request_failed",
+			rps.env.CurrentMovementTime().Add(1*time.Nanosecond),
+			rps,
+			rps.requestsFailed,
+		))
 	}
 
 	return rps.delegate.Add(entity)
+}
+
+func (rps *requestsProcessingStock) calculateCPUUtilizationForRequest(request requestEntity, totalTime *time.Duration, isRequestSuccessful *bool) {
+	//step 1 calculate free cpu capacity
+	freeCPUCapacityMillisPerSecond := *rps.totalCPUCapacityMillisPerSecond - *rps.occupiedCPUCapacityMillisPerSecond
+
+	if freeCPUCapacityMillisPerSecond > 0 {
+		//step 2 Calculate how many cpu time we need to process this request, need to multiply by 1000
+		//to get cpuTimeMillis in milliseconds
+		cpuTimeMillis := request.requestConfig.CPUTimeMillis * 1000 / freeCPUCapacityMillisPerSecond
+
+		//step 3 Calculate how many time we need to process this request taking into account io time
+		processingTimeMillis := cpuTimeMillis + request.requestConfig.IOTimeMillis
+
+		//step 4 Calculate average cpu load for the request that is utilization for the request
+		utilizationForRequestMillisPerSecond := cpuTimeMillis * freeCPUCapacityMillisPerSecond / processingTimeMillis
+
+		*request.utilizationForRequestMillisPerSecond = utilizationForRequestMillisPerSecond
+
+		//step 5 Add  this utilization to occupied cpu capacity, we'll subtract it Remove() method
+		*rps.occupiedCPUCapacityMillisPerSecond += utilizationForRequestMillisPerSecond
+
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+		//step 6 Calculate currentUtilization in percentage
+		currentUtilization := *rps.occupiedCPUCapacityMillisPerSecond * 100 / *rps.totalCPUCapacityMillisPerSecond
+
+		//step 7 Calculate delay by sakasegawaApproximation which plus processing time forms total time for processing a request
+		*totalTime = calculateTime(currentUtilization, time.Duration(processingTimeMillis)*time.Millisecond, rng)
+
+		if *totalTime > request.requestConfig.Timeout {
+			//TODO: This is inaccurate because the request doesn't know it'll timeout ahead of time
+			//TODO: This can be fixed by adding the logic to include CPU usage for the duration of timeout
+			*rps.occupiedCPUCapacityMillisPerSecond -= utilizationForRequestMillisPerSecond
+			*isRequestSuccessful = false
+		}
+	} else {
+		*isRequestSuccessful = false
+	}
 }
 
 func (rps *requestsProcessingStock) RequestCount() int32 {
@@ -113,13 +138,13 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestComplete simulator.SinkStock,
 	requestFailed simulator.SinkStock, totalCPUCapacityMillis *int, occupiedCPUCapacityMillis *int) RequestsProcessingStock {
 	return &requestsProcessingStock{
-		env:                       env,
-		delegate:                  simulator.NewThroughStock("RequestsProcessing", "Request"),
-		replicaNumber:             replicaNumber,
-		requestsComplete:          requestComplete,
-		requestsFailed:            requestFailed,
-		occupiedCPUCapacityMillis: occupiedCPUCapacityMillis,
-		totalCPUCapacityMillis:    totalCPUCapacityMillis,
+		env:                                env,
+		delegate:                           simulator.NewThroughStock("RequestsProcessing", "Request"),
+		replicaNumber:                      replicaNumber,
+		requestsComplete:                   requestComplete,
+		requestsFailed:                     requestFailed,
+		occupiedCPUCapacityMillisPerSecond: occupiedCPUCapacityMillis,
+		totalCPUCapacityMillisPerSecond:    totalCPUCapacityMillis,
 	}
 }
 

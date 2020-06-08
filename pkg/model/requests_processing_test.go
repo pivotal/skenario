@@ -38,7 +38,10 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = new(FakeEnvironment)
-		subject = NewRequestsProcessingStock(envFake, 99, simulator.NewSinkStock("RequestsComplete", "Request"), 100)
+		totalCPUCapacityMillisPerSecond := 100
+		occupiedCPUCapacityMillisPerSecond := 0
+		subject = NewRequestsProcessingStock(envFake, 99, simulator.NewSinkStock("RequestsComplete", "Request"),
+			simulator.NewSinkStock("RequestsFailed", "Request"), &totalCPUCapacityMillisPerSecond, &occupiedCPUCapacityMillisPerSecond)
 		rawSubject = subject.(*requestsProcessingStock)
 	})
 
@@ -152,9 +155,9 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 				rng = rand.New(rand.NewSource(1))
 			})
 
-			describe("when currentRequests = 9, maxRPS = 10, baseServiceTime = 1 second", func() {
+			describe("when currentUtilization = 30 %, baseServiceTime = 1 second", func() {
 				it("returns base time + random value uniformly selected in range of sakasegawa approximation", func() {
-					assert.Equal(t, time.Duration(1329249318), calculateTime(9, 10, time.Second, rng))
+					assert.Equal(t, time.Duration(1329249318), calculateTime(30, time.Second, rng))
 				})
 			})
 		})

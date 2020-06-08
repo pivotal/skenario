@@ -185,6 +185,32 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 					})
 				})
 
+				describe("there is an updated cpu utilization value in environment", func() {
+					cpuUtilization := 0.0
+
+					it.Before(func() {
+						countActiveReplicas := 0
+						totalCPUUtilization := 0 // total cpuUtilization for all active replicas in percentage
+
+						for _, en := range cluster.ActiveStock().EntitiesInStock() {
+							replica := (*en).(*replicaEntity)
+							totalCPUUtilization += replica.occupiedCPUCapacityMillisPerSecond * 100 / replica.totalCPUCapacityMillisPerSecond
+							countActiveReplicas++
+						}
+						if countActiveReplicas > 0 {
+							cpuUtilization = float64(totalCPUUtilization / countActiveReplicas)
+
+						}
+					})
+
+					it("check correctness of calculated CPU utilization ", func() {
+						if cpuUtilization > 0 {
+							assert.Equal(t, cpuUtilization, envFake.TheCPUUtilizations[len(envFake.TheCPUUtilizations)-1].CPUUtilization)
+						}
+					})
+
+				})
+
 			})
 
 			describe.Pend("the autoscaler failed to make a recommendation", func() {

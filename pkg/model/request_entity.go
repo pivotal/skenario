@@ -29,11 +29,11 @@ type RequestEntity interface {
 }
 
 type requestEntity struct {
-	env                   simulator.Environment
-	number                int
-	requestConfig         RequestConfig
-	routingStock          RequestsRoutingStock
-	utilizationForRequest *int
+	env                                  simulator.Environment
+	number                               int
+	requestConfig                        RequestConfig
+	routingStock                         RequestsRoutingStock
+	utilizationForRequestMillisPerSecond *int
 }
 
 var reqNumber int
@@ -54,6 +54,6 @@ func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingSto
 		number:        reqNumber,
 		routingStock:  routingStock,
 		requestConfig: requestConfig,
-		utilizationForRequest: &utilizationForRequest,
+		utilizationForRequestMillisPerSecond: &utilizationForRequest,
 	}
 }

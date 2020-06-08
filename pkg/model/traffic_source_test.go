@@ -17,6 +17,7 @@ package model
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -38,7 +39,7 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 		routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"))
 		envFake = new(FakeEnvironment)
 
-		subject = NewTrafficSource(envFake, routingStock)
+		subject = NewTrafficSource(envFake, routingStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*trafficSource)
