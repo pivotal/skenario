@@ -143,7 +143,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		// TODO immediately record arrivals at routingStock
 
-		it("records once for the buffer and once each replica in ReplicasActive", func() {
+		it("records once for the routingStock and once each replica in ReplicasActive", func() {
 			assert.Len(t, autoscalerFake.recorded, recordOnce+recordThrice)
 		})
 
@@ -152,8 +152,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, &theTime, routingStockRecorded.Time)
 			})
 
-			it("sets the PodName to 'routingStock'", func() {
-				assert.Equal(t, "routingStock", routingStockRecorded.PodName)
+			it("sets the PodName to 'RoutingStock'", func() {
+				assert.Equal(t, "RoutingStock", routingStockRecorded.PodName)
 			})
 
 			it("sets AverageConcurrentRequests to the number of Requests in the routingStock", func() {

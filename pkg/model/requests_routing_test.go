@@ -16,21 +16,19 @@
 package model
 
 import (
-	"testing"
-	"time"
-
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"skenario/pkg/simulator"
 )
 
-func TestRequestsBuffered(t *testing.T) {
-	spec.Run(t, "RequestsBuffered stock", testRequestsBuffered, spec.Report(report.Terminal{}))
+func TestRequestsRouting(t *testing.T) {
+	spec.Run(t, "RequestsRouting stock", testRequestsRouting, spec.Report(report.Terminal{}))
 }
 
-func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
+func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 	var subject RequestsRoutingStock
 	var rawSubject *requestsRoutingStock
 	var envFake *FakeEnvironment
@@ -42,7 +40,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 		requestsFailedStock = simulator.NewSinkStock("RequestsFailed", "Request")
 	})
 
-	describe("NewRoutingBufferedStock()", func() {
+	describe("NewRoutingStock()", func() {
 		it.Before(func() {
 			envFake = new(FakeEnvironment)
 			replicaStock = NewReplicasActiveStock()
@@ -52,7 +50,7 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 
 		it("creates a delegate ThroughStock", func() {
 			assert.NotNil(t, rawSubject.delegate)
-			assert.Equal(t, simulator.StockName("RequestsBuffered"), rawSubject.delegate.Name())
+			assert.Equal(t, simulator.StockName("RequestsRouting"), rawSubject.delegate.Name())
 			assert.Equal(t, simulator.EntityKind("Request"), rawSubject.delegate.KindStocked())
 		})
 	})
@@ -111,74 +109,8 @@ func testRequestsBuffered(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules the Request to move to a Replica for processing", func() {
-					assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].From().Name())
+					assert.Equal(t, simulator.StockName("RequestsRouting"), envFake.Movements[0].From().Name())
 					assert.Contains(t, string(envFake.Movements[0].To().Name()), "RequestsProcessing")
-				})
-			})
-
-			describe("there are no Replicas active", func() {
-				describe("scheduling the first retry", func() {
-					it.Before(func() {
-						envFake = new(FakeEnvironment)
-						request = NewRequestEntity(envFake, subject)
-
-						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
-
-						subject.Add(request)
-					})
-
-					it("schedules a movement from the Buffer back to itself", func() {
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].From().Name())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
-					})
-
-					it("schedules the first retry movement to occur in ~100ms", func() {
-						assert.WithinDuration(t, envFake.TheTime.Add(100*time.Millisecond), envFake.Movements[0].OccursAt(), time.Millisecond)
-					})
-				})
-
-				describe("scheduling subsequent retries", func() {
-					it.Before(func() {
-						envFake = new(FakeEnvironment)
-						request = NewRequestEntity(envFake, subject)
-
-						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
-
-						subject.Add(request)
-						subject.Add(request)
-					})
-
-					it("on each retry it schedules a movement from Buffer back into itself", func() {
-						assert.Equal(t, simulator.MovementKind("buffer_backoff"), envFake.Movements[1].Kind())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[1].From().Name())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[1].To().Name())
-					})
-				})
-
-				describe("running out of retries", func() {
-					it.Before(func() {
-						envFake = new(FakeEnvironment)
-						request = NewRequestEntity(envFake, subject)
-
-						replicaStock = NewReplicasActiveStock()
-						subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
-
-						for i := 0; i < 19; i++ {
-							subject.Add(request)
-						}
-					})
-
-					it("schedules a movement from Buffer into RequestsFailed", func() {
-						assert.Equal(t, simulator.MovementKind("exhausted_attempts"), envFake.Movements[18].Kind())
-						assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[18].From().Name())
-						assert.Equal(t, simulator.StockName("RequestsFailed"), envFake.Movements[18].To().Name())
-					})
-
-					it("schedules the movement to occur as soon as possible, offset to prevent collisions", func() {
-						assert.Equal(t, envFake.TheTime.Add(1*time.Nanosecond), envFake.Movements[18].OccursAt())
-					})
 				})
 			})
 		})

@@ -35,10 +35,10 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		requestsBuffered := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"))
+		routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"))
 		envFake = new(FakeEnvironment)
 
-		subject = NewTrafficSource(envFake, requestsBuffered)
+		subject = NewTrafficSource(envFake, routingStock)
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*trafficSource)
@@ -49,8 +49,8 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, envFake, rawSubject.env)
 		})
 
-		it("sets the buffer", func() {
-			assert.Equal(t, simulator.StockName("RequestsBuffered"), rawSubject.requestsRouting.Name())
+		it("sets the routingStock", func() {
+			assert.Equal(t, simulator.StockName("RequestsRouting"), rawSubject.requestsRouting.Name())
 		})
 	})
 

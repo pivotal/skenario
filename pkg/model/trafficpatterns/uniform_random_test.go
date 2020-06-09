@@ -36,15 +36,15 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 	var config UniformConfig
 	var envFake *model.FakeEnvironment
 	var trafficSource model.TrafficSource
-	var bufferStock model.RequestsRoutingStock
+	var routingStock model.RequestsRoutingStock
 	var startAt time.Time
 	var runFor time.Duration
 
 	it.Before(func() {
 		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(10 * time.Second)
-		bufferStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
-		trafficSource = model.NewTrafficSource(envFake, bufferStock)
+		routingStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		trafficSource = model.NewTrafficSource(envFake, routingStock)
 		startAt = time.Unix(0, 1)
 		runFor = 1 * time.Second
 
@@ -54,7 +54,7 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 			RunFor:           runFor,
 		}
 
-		subject = NewUniformRandom(envFake, trafficSource, bufferStock, config)
+		subject = NewUniformRandom(envFake, trafficSource, routingStock, config)
 		subject.Generate()
 	})
 
@@ -69,9 +69,9 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 			assert.Len(t, envFake.Movements, 1000)
 		})
 
-		it("created 'arrive_at_buffer' movements", func() {
+		it("created 'arrive_at_routing_stock' movements", func() {
 			for _, mv := range envFake.Movements {
-				assert.Equal(t, simulator.MovementKind("arrive_at_buffer"), mv.Kind())
+				assert.Equal(t, simulator.MovementKind("arrive_at_routing_stock"), mv.Kind())
 			}
 		})
 
@@ -80,7 +80,7 @@ func testUniformRandom(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		it("moves to routingStock stock", func() {
-			assert.Equal(t, simulator.StockName("RequestsBuffered"), envFake.Movements[0].To().Name())
+			assert.Equal(t, simulator.StockName("RequestsRouting"), envFake.Movements[0].To().Name())
 		})
 
 		it("created movements between startAt and startAt+runFor", func() {

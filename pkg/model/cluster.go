@@ -81,10 +81,10 @@ func (cm *clusterModel) CurrentActive() uint64 {
 }
 
 func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
-	// first report for the buffer
+	// first report for the RoutingStock
 	scaler.Record(cm.env.Context(), autoscaler.Stat{
 		Time:                      atTime,
-		PodName:                   "Buffer",
+		PodName:                   "RoutingStock",
 		AverageConcurrentRequests: float64(cm.requestsInRouting.Count()),
 		RequestCount:              int32(cm.requestsInRouting.Count()),
 	})
