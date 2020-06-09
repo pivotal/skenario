@@ -48,8 +48,8 @@ func testSinusoidal(t *testing.T, describe spec.G, it spec.S) {
 		envFake.TheTime = time.Unix(0, 0)
 		envFake.TheHaltTime = envFake.TheTime.Add(30 * time.Second)
 
-		routingStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
-		trafficSource = model.NewTrafficSource(envFake, routingStock)
+		routingStockvv = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		trafficSource = model.NewTrafficSource(envFake, routingStock, model.RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 		config = SinusoidalConfig{
 			Amplitude: amplitude,
 			Period:    period,

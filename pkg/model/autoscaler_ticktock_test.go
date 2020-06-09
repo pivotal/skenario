@@ -189,8 +189,8 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 					cpuUtilization := 0.0
 
 					it.Before(func() {
-						countActiveReplicas := 0
-						totalCPUUtilization := 0 // total cpuUtilization for all active replicas in percentage
+						countActiveReplicas := 0.0
+						totalCPUUtilization := 0.0 // total cpuUtilization for all active replicas in percentage
 
 						for _, en := range cluster.ActiveStock().EntitiesInStock() {
 							replica := (*en).(*replicaEntity)

@@ -36,8 +36,8 @@ type requestsProcessingStock struct {
 	requestsComplete                   simulator.SinkStock
 	requestsFailed                     simulator.SinkStock
 	numRequestsSinceLast               int32
-	totalCPUCapacityMillisPerSecond    *int
-	occupiedCPUCapacityMillisPerSecond *int
+	totalCPUCapacityMillisPerSecond    *float64
+	occupiedCPUCapacityMillisPerSecond *float64
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -93,14 +93,14 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 func (rps *requestsProcessingStock) calculateCPUUtilizationForRequest(request requestEntity, totalTime *time.Duration, isRequestSuccessful *bool) {
 	//step 1 calculate free cpu capacity
 	freeCPUCapacityMillisPerSecond := *rps.totalCPUCapacityMillisPerSecond - *rps.occupiedCPUCapacityMillisPerSecond
-
-	if freeCPUCapacityMillisPerSecond > 0 {
+	const eps = 0.001
+	if freeCPUCapacityMillisPerSecond > eps {
 		//step 2 Calculate how many cpu time we need to process this request, need to multiply by 1000
 		//to get cpuTimeMillis in milliseconds
-		cpuTimeMillis := request.requestConfig.CPUTimeMillis * 1000 / freeCPUCapacityMillisPerSecond
+		cpuTimeMillis := float64(request.requestConfig.CPUTimeMillis) * 1000 / freeCPUCapacityMillisPerSecond
 
 		//step 3 Calculate how many time we need to process this request taking into account io time
-		processingTimeMillis := cpuTimeMillis + request.requestConfig.IOTimeMillis
+		processingTimeMillis := cpuTimeMillis + float64(request.requestConfig.IOTimeMillis)
 
 		//step 4 Calculate average cpu load for the request that is utilization for the request
 		utilizationForRequestMillisPerSecond := cpuTimeMillis * freeCPUCapacityMillisPerSecond / processingTimeMillis
@@ -131,7 +131,7 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 }
 
 func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestComplete simulator.SinkStock,
-	requestFailed simulator.SinkStock, totalCPUCapacityMillisPerSecond *int, occupiedCPUCapacityMillisPerSecond *int) RequestsProcessingStock {
+	requestFailed simulator.SinkStock, totalCPUCapacityMillisPerSecond *float64, occupiedCPUCapacityMillisPerSecond *float64) RequestsProcessingStock {
 	return &requestsProcessingStock{
 		env:                                env,
 		delegate:                           simulator.NewThroughStock("RequestsProcessing", "Request"),
@@ -163,8 +163,8 @@ func sakasegawaApproximation(fractionUtilised, totalCPUCapacity float64, baseSer
 	return expected
 }
 
-func calculateTime(currentUtilization int, baseServiceTime time.Duration, rng *rand.Rand) time.Duration {
-	fractionUtilised := saturateClamp(float64(currentUtilization) / float64(100))
+func calculateTime(currentUtilization float64, baseServiceTime time.Duration, rng *rand.Rand) time.Duration {
+	fractionUtilised := saturateClamp(currentUtilization / 100)
 	delayTime := 1 + sakasegawaApproximation(fractionUtilised, float64(100), baseServiceTime)
 
 	delayRand := rng.Int63n(int64(delayTime))

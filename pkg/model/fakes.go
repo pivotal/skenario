@@ -86,8 +86,8 @@ func (fr *FakeReplica) Deactivate() {
 
 func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.RequestsProcessingCalled = true
-	currentUtilization := 0
-	totalCPUCapacity := 100
+	currentUtilization := 0.0
+	totalCPUCapacity := 100.0
 	if fr.ProcessingStock == nil {
 		return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-requestsComplete", "Request"),
 			simulator.NewSinkStock("fake-requestsFailed", "Request"), &totalCPUCapacity, &currentUtilization)

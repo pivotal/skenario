@@ -38,8 +38,8 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = new(FakeEnvironment)
-		totalCPUCapacityMillisPerSecond := 100
-		occupiedCPUCapacityMillisPerSecond := 0
+		totalCPUCapacityMillisPerSecond := 100.0
+		occupiedCPUCapacityMillisPerSecond := 0.0
 		subject = NewRequestsProcessingStock(envFake, 99, simulator.NewSinkStock("RequestsComplete", "Request"),
 			simulator.NewSinkStock("RequestsFailed", "Request"), &totalCPUCapacityMillisPerSecond, &occupiedCPUCapacityMillisPerSecond)
 		rawSubject = subject.(*requestsProcessingStock)

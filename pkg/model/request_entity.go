@@ -33,7 +33,7 @@ type requestEntity struct {
 	number                               int
 	requestConfig                        RequestConfig
 	routingStock                         RequestsRoutingStock
-	utilizationForRequestMillisPerSecond *int
+	utilizationForRequestMillisPerSecond *float64
 }
 
 var reqNumber int
@@ -48,7 +48,7 @@ func (re *requestEntity) Kind() simulator.EntityKind {
 
 func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingStock, requestConfig RequestConfig) RequestEntity {
 	reqNumber++
-	utilizationForRequest := 0
+	utilizationForRequest := 0.0
 	return &requestEntity{
 		env:           env,
 		number:        reqNumber,

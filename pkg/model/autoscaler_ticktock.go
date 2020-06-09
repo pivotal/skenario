@@ -108,11 +108,11 @@ func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 
 	for _, en := range asts.cluster.ActiveStock().EntitiesInStock() {
 		replica := (*en).(*replicaEntity)
-		totalCPUUtilization += float64(replica.occupiedCPUCapacityMillisPerSecond*100) / float64(replica.totalCPUCapacityMillisPerSecond)
+		totalCPUUtilization += replica.occupiedCPUCapacityMillisPerSecond * 100 / replica.totalCPUCapacityMillisPerSecond
 		countActiveReplicas++
 	}
 	if countActiveReplicas > 0 {
-		averageCPUUtilizationPerReplica := simulator.CPUUtilization{CPUUtilization: float64(totalCPUUtilization / countActiveReplicas),
+		averageCPUUtilizationPerReplica := simulator.CPUUtilization{CPUUtilization: totalCPUUtilization / countActiveReplicas,
 			CalculatedAt: asts.env.CurrentMovementTime()}
 		asts.env.AppendCPUUtilization(&averageCPUUtilizationPerReplica)
 	}

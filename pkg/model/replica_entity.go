@@ -49,8 +49,8 @@ type replicaEntity struct {
 	requestsComplete                   simulator.SinkStock
 	requestsFailed                     simulator.SinkStock
 	numRequestsSinceStat               int32
-	totalCPUCapacityMillisPerSecond    int
-	occupiedCPUCapacityMillisPerSecond int
+	totalCPUCapacityMillisPerSecond    float64
+	occupiedCPUCapacityMillisPerSecond float64
 }
 
 var replicaNum int
