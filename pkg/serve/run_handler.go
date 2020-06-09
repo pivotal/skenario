@@ -80,7 +80,7 @@ type SkenarioRunRequest struct {
 	ReplicaMaxRPS          int64         `json:"replica_max_rps"`
 	MaxScaleUpRate         float64       `json:"max_scale_up_rate"`
 
-	RequestTimeout       time.Duration `json:"request_timeout"`
+	RequestTimeout       time.Duration `json:"request_timeout_nanos"`
 	RequestCPUTimeMillis int           `json:"request_cpu_time_millis"`
 	RequestIOTimeMillis  int           `json:"request_io_time_millis"`
 

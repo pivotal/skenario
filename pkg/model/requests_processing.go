@@ -81,7 +81,7 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	} else {
 		rps.env.AddToSchedule(simulator.NewMovement(
 			"request_failed",
-			rps.env.CurrentMovementTime().Add(1*time.Nanosecond),
+			rps.env.CurrentMovementTime().Add(request.requestConfig.Timeout),
 			rps,
 			rps.requestsFailed,
 		))
@@ -118,12 +118,7 @@ func (rps *requestsProcessingStock) calculateCPUUtilizationForRequest(request re
 		//step 7 Calculate delay by sakasegawaApproximation which plus processing time forms total time for processing a request
 		*totalTime = calculateTime(currentUtilization, time.Duration(processingTimeMillis)*time.Millisecond, rng)
 
-		if *totalTime > request.requestConfig.Timeout {
-			//TODO: This is inaccurate because the request doesn't know it'll timeout ahead of time
-			//TODO: This can be fixed by adding the logic to include CPU usage for the duration of timeout
-			*rps.occupiedCPUCapacityMillisPerSecond -= utilizationForRequestMillisPerSecond
-			*isRequestSuccessful = false
-		}
+		*isRequestSuccessful = *totalTime <= request.requestConfig.Timeout
 	} else {
 		*isRequestSuccessful = false
 	}
@@ -136,15 +131,15 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 }
 
 func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestComplete simulator.SinkStock,
-	requestFailed simulator.SinkStock, totalCPUCapacityMillis *int, occupiedCPUCapacityMillis *int) RequestsProcessingStock {
+	requestFailed simulator.SinkStock, totalCPUCapacityMillisPerSecond *int, occupiedCPUCapacityMillisPerSecond *int) RequestsProcessingStock {
 	return &requestsProcessingStock{
 		env:                                env,
 		delegate:                           simulator.NewThroughStock("RequestsProcessing", "Request"),
 		replicaNumber:                      replicaNumber,
 		requestsComplete:                   requestComplete,
 		requestsFailed:                     requestFailed,
-		occupiedCPUCapacityMillisPerSecond: occupiedCPUCapacityMillis,
-		totalCPUCapacityMillisPerSecond:    totalCPUCapacityMillis,
+		occupiedCPUCapacityMillisPerSecond: occupiedCPUCapacityMillisPerSecond,
+		totalCPUCapacityMillisPerSecond:    totalCPUCapacityMillisPerSecond,
 	}
 }
 

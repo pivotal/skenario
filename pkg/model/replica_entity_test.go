@@ -18,6 +18,7 @@ package model
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
@@ -179,9 +180,11 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				rawSubject = subject.(*replicaEntity)
 
-				request1 = simulator.NewEntity("request-1", simulator.EntityKind("Request"))
+				request1 = NewRequestEntity(envFake, NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil),
+					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request1)
-				request2 = simulator.NewEntity("request-2", simulator.EntityKind("Request"))
+				request2 = NewRequestEntity(envFake, NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil),
+					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request2)
 
 				stat = subject.Stat()
