@@ -139,10 +139,10 @@
             <hr>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="requestTimeout">Request timeout (seconds)</label>
+                    <label class="label" for="requestTimeoutSec">Request timeout (in seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="requestTimeout" value="10.0" min="1" step="1"/>
+                    <input type="number" style="width: 5em" id="requestTimeoutSec" value="10.0" min="1" step="1"/>
                 </div>
             </div>
 
@@ -471,7 +471,7 @@
         let replicaMaxRPS = parseInt(document.querySelector("input[id='replicaMaxRPS']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
         let runInMemory = document.querySelector("input[id='runInMemory']").checked;
-        let requestTimeout = parseInt(document.querySelector("input[id='requestTimeout']").value);
+        let requestTimeoutSec = parseInt(document.querySelector("input[id='requestTimeoutSec']").value);
         let requestCPUTimeMillis = parseInt(document.querySelector("input[id='requestCPUTimeMillis']").value);
         let requestIOTimeMillis = parseInt(document.querySelector("input[id='requestIOTimeMillis']").value);
 
@@ -490,7 +490,7 @@
             replica_max_rps: replicaMaxRPS,
             max_scale_up_rate: maxScaleUpRate,
 
-            request_timeout: requestTimeout * second,
+            request_timeout_nanos: requestTimeoutSec * second,
             request_cpu_time_millis: requestCPUTimeMillis,
             request_io_time_millis: requestIOTimeMillis,
             traffic_pattern: trafficPattern,
