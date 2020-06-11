@@ -34,7 +34,7 @@ type requestsProcessingStock struct {
 	delegate                           simulator.ThroughStock
 	replicaNumber                      int
 	requestsComplete                   simulator.SinkStock
-	requestsFailed                     simulator.SinkStock
+	requestsFailed                     *simulator.SinkStock
 	numRequestsSinceLast               int32
 	totalCPUCapacityMillisPerSecond    *float64
 	occupiedCPUCapacityMillisPerSecond *float64
@@ -83,7 +83,7 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 			"request_failed",
 			rps.env.CurrentMovementTime().Add(request.requestConfig.Timeout),
 			rps,
-			rps.requestsFailed,
+			*rps.requestsFailed,
 		))
 	}
 
@@ -131,7 +131,7 @@ func (rps *requestsProcessingStock) RequestCount() int32 {
 }
 
 func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, requestComplete simulator.SinkStock,
-	requestFailed simulator.SinkStock, totalCPUCapacityMillisPerSecond *float64, occupiedCPUCapacityMillisPerSecond *float64) RequestsProcessingStock {
+	requestFailed *simulator.SinkStock, totalCPUCapacityMillisPerSecond *float64, occupiedCPUCapacityMillisPerSecond *float64) RequestsProcessingStock {
 	return &requestsProcessingStock{
 		env:                                env,
 		delegate:                           simulator.NewThroughStock("RequestsProcessing", "Request"),

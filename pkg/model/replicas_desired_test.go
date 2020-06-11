@@ -125,7 +125,8 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("there are active replicas but no launching replicas", func() {
 			it.Before(func() {
-				newReplica := NewReplicaEntity(envFake, nil, nil, "1.2.1.2")
+				failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+				newReplica := NewReplicaEntity(envFake, nil, nil, "1.2.1.2", &failedSink)
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 
@@ -141,7 +142,8 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		//TODO: this won't work properly without batch movement: https://github.com/pivotal/skenario/issues/7
 		describe.Pend("there is a mix of active and launching replicas", func() {
 			it.Before(func() {
-				newReplica := NewReplicaEntity(envFake, nil, nil, "3.4.3.4")
+				failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+				newReplica := NewReplicaEntity(envFake, nil, nil, "3.4.3.4", &failedSink)
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))

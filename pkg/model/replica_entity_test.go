@@ -64,8 +64,8 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
 		envFake = new(FakeEnvironment)
-
-		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4")
+		failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4", &failedSink)
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*replicaEntity)
@@ -105,7 +105,8 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 	describe("Entity interface", func() {
 		it("Name() creates sequential names", func() {
 			beforeName := subject.Name()
-			subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "9.8.7.6")
+			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+			subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "9.8.7.6", &failedSink)
 			afterName := subject.Name()
 			assert.NotEqual(t, beforeName, afterName)
 		})

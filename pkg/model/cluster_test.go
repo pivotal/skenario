@@ -16,6 +16,7 @@
 package model
 
 import (
+	"skenario/pkg/simulator"
 	"testing"
 	"time"
 
@@ -79,8 +80,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
+			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", &failedSink)
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", &failedSink)
 			rawSubject.replicasLaunching.Add(firstReplica)
 			rawSubject.replicasLaunching.Add(secondReplica)
 		})
@@ -95,8 +97,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
+			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", &failedSink)
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", &failedSink)
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 		})
@@ -128,9 +131,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 			request := NewRequestEntity(envFake, rawSubject.requestsInRouting, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 			rawSubject.requestsInRouting.Add(request)
-
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11")
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22")
+			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", &failedSink)
+			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", &failedSink)
 
 			rawSubject.replicasActive.Add(replicaFake)
 

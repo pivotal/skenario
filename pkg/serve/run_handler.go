@@ -139,11 +139,11 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dbFileName string
-	if runReq.InMemoryDatabase {
-		dbFileName = "file::memory:?cache=shared"
-	} else {
-		dbFileName = "skenario.db"
-	}
+	//if runReq.InMemoryDatabase {
+	dbFileName = "file::memory:?cache=shared"
+	//} else {
+	//	dbFileName = "skenario.db"
+	//}
 
 	conn, err := sqlite3.Open(dbFileName)
 	if err != nil {

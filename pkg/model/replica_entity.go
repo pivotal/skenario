@@ -129,7 +129,7 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 	return "Replica"
 }
 
-func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string) ReplicaEntity {
+func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string, failedSink *simulator.SinkStock) ReplicaEntity {
 	replicaNum++
 
 	re := &replicaEntity{
@@ -142,8 +142,7 @@ func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, en
 	}
 
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
-	re.requestsFailed = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsFailed [%d]", re.number)), "Request")
-	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, re.requestsFailed, &re.totalCPUCapacityMillisPerSecond, &re.occupiedCPUCapacityMillisPerSecond)
+	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, failedSink, &re.totalCPUCapacityMillisPerSecond, &re.occupiedCPUCapacityMillisPerSecond)
 
 	re.endpointAddress = corev1.EndpointAddress{
 		IP:       address,

@@ -98,8 +98,9 @@ func testReplicasTerminating(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				totalCPUCapacityMillisPerSecond := 100.0
 				occupiedCPUCapacityMillisPerSecond := 0.0
+				failedSink := simulator.NewSinkStock("RequestsFailed", "Request")
 				processingStock = NewRequestsProcessingStock(envFake, 111, simulator.NewSinkStock("RequestsCompleted", "Request"),
-					simulator.NewSinkStock("RequestsFailed", "Request"), &totalCPUCapacityMillisPerSecond, &occupiedCPUCapacityMillisPerSecond)
+					&failedSink, &totalCPUCapacityMillisPerSecond, &occupiedCPUCapacityMillisPerSecond)
 				bufferStock := NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil)
 				err := processingStock.Add(NewRequestEntity(envFake, bufferStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second}))
 				require.NoError(t, err)
