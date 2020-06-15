@@ -53,6 +53,6 @@ func NewTrafficSource(env simulator.Environment, requestsRouting RequestsRouting
 	return &trafficSource{
 		env:             env,
 		requestsRouting: requestsRouting,
-		requestConfig:    requestConfig,
+		requestConfig:   requestConfig,
 	}
 }

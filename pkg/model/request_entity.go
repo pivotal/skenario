@@ -50,10 +50,10 @@ func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingSto
 	reqNumber++
 	utilizationForRequest := 0.0
 	return &requestEntity{
-		env:           env,
-		number:        reqNumber,
-		routingStock:  routingStock,
-		requestConfig: requestConfig,
+		env:                                  env,
+		number:                               reqNumber,
+		routingStock:                         routingStock,
+		requestConfig:                        requestConfig,
 		utilizationForRequestMillisPerSecond: &utilizationForRequest,
 	}
 }
