@@ -21,11 +21,11 @@ import (
 	"skenario/pkg/simulator"
 )
 
-type RequestsBufferedStock interface {
+type RequestsRoutingStock interface {
 	simulator.ThroughStock
 }
 
-type requestsBufferedStock struct {
+type requestsRoutingStock struct {
 	env            simulator.Environment
 	delegate       simulator.ThroughStock
 	replicas       ReplicasActiveStock
@@ -33,28 +33,27 @@ type requestsBufferedStock struct {
 	countRequests  int
 }
 
-func (rbs *requestsBufferedStock) Name() simulator.StockName {
+func (rbs *requestsRoutingStock) Name() simulator.StockName {
 	return rbs.delegate.Name()
 }
 
-func (rbs *requestsBufferedStock) KindStocked() simulator.EntityKind {
+func (rbs *requestsRoutingStock) KindStocked() simulator.EntityKind {
 	return rbs.delegate.KindStocked()
 }
 
-func (rbs *requestsBufferedStock) Count() uint64 {
+func (rbs *requestsRoutingStock) Count() uint64 {
 	return rbs.delegate.Count()
 }
 
-func (rbs *requestsBufferedStock) EntitiesInStock() []*simulator.Entity {
+func (rbs *requestsRoutingStock) EntitiesInStock() []*simulator.Entity {
 	return rbs.delegate.EntitiesInStock()
 }
 
-func (rbs *requestsBufferedStock) Remove() simulator.Entity {
+func (rbs *requestsRoutingStock) Remove() simulator.Entity {
 	return rbs.delegate.Remove()
 }
 
-func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
-	request := entity.(RequestEntity)
+func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 	addResult := rbs.delegate.Add(entity)
 
 	rbs.countRequests++
@@ -71,32 +70,21 @@ func (rbs *requestsBufferedStock) Add(entity simulator.Entity) error {
 			replica.RequestsProcessing(),
 		))
 	} else {
-		backoff, outOfAttempts := request.NextBackoff()
-
-		if outOfAttempts {
-			rbs.env.AddToSchedule(simulator.NewMovement(
-				"exhausted_attempts",
-				rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
-				rbs,
-				rbs.requestsFailed,
-			))
-		} else {
-			rbs.env.AddToSchedule(simulator.NewMovement(
-				"buffer_backoff",
-				rbs.env.CurrentMovementTime().Add(backoff).Add(1*time.Nanosecond),
-				rbs,
-				rbs,
-			))
-		}
+		rbs.env.AddToSchedule(simulator.NewMovement(
+			"request_failed",
+			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
+			rbs,
+			rbs.requestsFailed,
+		))
 	}
 
 	return addResult
 }
 
-func NewRequestsBufferedStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsBufferedStock {
-	return &requestsBufferedStock{
+func NewRequestsRoutingStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsRoutingStock {
+	return &requestsRoutingStock{
 		env:            env,
-		delegate:       simulator.NewThroughStock("RequestsBuffered", "Request"),
+		delegate:       simulator.NewThroughStock("RequestsRouting", "Request"),
 		replicas:       replicas,
 		requestsFailed: requestsFailed,
 		countRequests:  0,

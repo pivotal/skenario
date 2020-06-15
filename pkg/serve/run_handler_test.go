@@ -48,7 +48,7 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 					RunFor:           20 * time.Second,
 					TrafficPattern:   "golang_rand_uniform",
 					UniformConfig: trafficpatterns.UniformConfig{
-						NumberOfRequests: 10,
+						NumberOfRequests: 30,
 						StartAt:          time.Unix(0, 0),
 						RunFor:           20 * time.Second,
 					},

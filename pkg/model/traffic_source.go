@@ -24,8 +24,8 @@ type TrafficSource interface {
 }
 
 type trafficSource struct {
-	env              simulator.Environment
-	requestsBuffered RequestsBufferedStock
+	env             simulator.Environment
+	requestsRouting RequestsRoutingStock
 }
 
 func (ts *trafficSource) Name() simulator.StockName {
@@ -45,12 +45,12 @@ func (ts *trafficSource) EntitiesInStock() []*simulator.Entity {
 }
 
 func (ts *trafficSource) Remove() simulator.Entity {
-	return NewRequestEntity(ts.env, ts.requestsBuffered)
+	return NewRequestEntity(ts.env, ts.requestsRouting)
 }
 
-func NewTrafficSource(env simulator.Environment, buffer RequestsBufferedStock) TrafficSource {
+func NewTrafficSource(env simulator.Environment, requestsRouting RequestsRoutingStock) TrafficSource {
 	return &trafficSource{
-		env:              env,
-		requestsBuffered: buffer,
+		env:             env,
+		requestsRouting: requestsRouting,
 	}
 }

@@ -127,7 +127,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("updating statistics", func() {
 				var rawCluster *clusterModel
-				onceForBuffer := 1
+				onceForRoutingStock := 1
 				onceForReplica := 1
 
 				it.Before(func() {
@@ -142,7 +142,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("delegates statistics updating to ClusterModel", func() {
-					assert.Len(t, autoscalerFake.recorded, onceForBuffer+onceForReplica)
+					assert.Len(t, autoscalerFake.recorded, onceForRoutingStock+onceForReplica)
 				})
 			})
 

@@ -109,7 +109,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	describe("RecordToAutoscaler()", func() {
 		var autoscalerFake *fakeAutoscaler
 		var rawSubject *clusterModel
-		var bufferRecorded autoscaler.Stat
+		var routingStockRecorded autoscaler.Stat
 		var theTime = time.Now()
 		var replicaFake *FakeReplica
 		envFake = new(FakeEnvironment)
@@ -126,8 +126,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				scaleTimes: make([]time.Time, 0),
 			}
 
-			request := NewRequestEntity(envFake, rawSubject.requestsInBuffer)
-			rawSubject.requestsInBuffer.Add(request)
+			request := NewRequestEntity(envFake, rawSubject.requestsInRouting)
+			rawSubject.requestsInRouting.Add(request)
 
 			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", 100)
 			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", 100)
@@ -138,30 +138,30 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			rawSubject.replicasActive.Add(secondReplica)
 
 			subject.RecordToAutoscaler(autoscalerFake, &theTime)
-			bufferRecorded = autoscalerFake.recorded[0]
+			routingStockRecorded = autoscalerFake.recorded[0]
 		})
 
-		// TODO immediately record arrivals at buffer
+		// TODO immediately record arrivals at routingStock
 
-		it("records once for the buffer and once each replica in ReplicasActive", func() {
+		it("records once for the routingStock and once each replica in ReplicasActive", func() {
 			assert.Len(t, autoscalerFake.recorded, recordOnce+recordThrice)
 		})
 
-		describe("the record for the Buffer", func() {
+		describe("the record for the routingStock", func() {
 			it("sets time to the movement OccursAt", func() {
-				assert.Equal(t, &theTime, bufferRecorded.Time)
+				assert.Equal(t, &theTime, routingStockRecorded.Time)
 			})
 
-			it("sets the PodName to 'Buffer'", func() {
-				assert.Equal(t, "Buffer", bufferRecorded.PodName)
+			it("sets the PodName to 'RoutingStock'", func() {
+				assert.Equal(t, "RoutingStock", routingStockRecorded.PodName)
 			})
 
-			it("sets AverageConcurrentRequests to the number of Requests in the Buffer", func() {
-				assert.Equal(t, 1.0, bufferRecorded.AverageConcurrentRequests)
+			it("sets AverageConcurrentRequests to the number of Requests in the routingStock", func() {
+				assert.Equal(t, 1.0, routingStockRecorded.AverageConcurrentRequests)
 			})
 
 			it("sets RequestCount to the net change in the number of Requests since last invocation", func() {
-				assert.Equal(t, int32(1), bufferRecorded.RequestCount)
+				assert.Equal(t, int32(1), routingStockRecorded.RequestCount)
 			})
 		})
 
@@ -172,9 +172,9 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("BufferStock()", func() {
-		it("returns the configured buffer stock", func() {
-			assert.Equal(t, rawSubject.requestsInBuffer, subject.BufferStock())
+	describe("requestsInRouting", func() {
+		it("returns the configured routing stock", func() {
+			assert.Equal(t, rawSubject.requestsInRouting, subject.RoutingStock())
 		})
 	})
 }

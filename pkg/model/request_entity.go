@@ -17,15 +17,10 @@ package model
 
 import (
 	"fmt"
-	"time"
-
 	"skenario/pkg/simulator"
 )
 
-const backoffMultiplier float64 = 1.3
-
 type Request interface {
-	NextBackoff() (backoff time.Duration, outOfAttempts bool)
 }
 
 type RequestEntity interface {
@@ -34,11 +29,9 @@ type RequestEntity interface {
 }
 
 type requestEntity struct {
-	env         simulator.Environment
-	number      int
-	bufferStock RequestsBufferedStock
-	nextBackoff time.Duration
-	attempts    int
+	env          simulator.Environment
+	number       int
+	routingStock RequestsRoutingStock
 }
 
 var reqNumber int
@@ -51,25 +44,11 @@ func (re *requestEntity) Kind() simulator.EntityKind {
 	return "Request"
 }
 
-func (re *requestEntity) NextBackoff() (backoff time.Duration, outOfAttempts bool) {
-	if re.attempts < 18 {
-		re.attempts++
-	} else {
-		return re.nextBackoff, true
-	}
-
-	thisBackoff := re.nextBackoff
-	re.nextBackoff = time.Duration(int64(float64(re.nextBackoff) * backoffMultiplier))
-
-	return thisBackoff, outOfAttempts
-}
-
-func NewRequestEntity(env simulator.Environment, buffer RequestsBufferedStock) RequestEntity {
+func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingStock) RequestEntity {
 	reqNumber++
 	return &requestEntity{
-		env:         env,
-		number:      reqNumber,
-		bufferStock: buffer,
-		nextBackoff: 100 * time.Millisecond,
+		env:          env,
+		number:       reqNumber,
+		routingStock: routingStock,
 	}
 }

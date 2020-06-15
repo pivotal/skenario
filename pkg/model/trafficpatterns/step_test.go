@@ -36,19 +36,19 @@ func testStep(t *testing.T, describe spec.G, it spec.S) {
 	var config StepConfig
 	var envFake *model.FakeEnvironment
 	var trafficSource model.TrafficSource
-	var bufferStock model.RequestsBufferedStock
+	var routingStock model.RequestsRoutingStock
 
 	it.Before(func() {
 		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(20 * time.Second)
-		bufferStock = model.NewRequestsBufferedStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
-		trafficSource = model.NewTrafficSource(envFake, bufferStock)
+		routingStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		trafficSource = model.NewTrafficSource(envFake, routingStock)
 
 		config = StepConfig{
 			RPS:       10,
 			StepAfter: 10 * time.Second,
 		}
-		subject = NewStep(envFake,  trafficSource, bufferStock, config)
+		subject = NewStep(envFake, trafficSource, routingStock, config)
 	})
 
 	describe("Name()", func() {
