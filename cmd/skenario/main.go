@@ -39,7 +39,32 @@ import (
 
 	"skenario/pkg/model"
 
-	"skenario/pkg/serve"
+	"skenario/pkg/simulator"
+)
+
+var (
+	startAt           = time.Unix(0, 0)
+	startRunning      = time.Now()
+	au                = aurora.NewAurora(true)
+	simDuration       = flag.Duration("duration", 1*time.Minute, "Duration of time to simulate.")
+	tickInterval      = flag.Duration("tickInterval", 2*time.Second, "Tick interval duration of the Autoscaler")
+	stableWindow      = flag.Duration("stableWindow", 60*time.Second, "Duration of stable window of the Autoscaler")
+	panicWindow       = flag.Duration("panicWindow", 6*time.Second, "Duration of panic window of the Autoscaler")
+	scaleToZeroGrace  = flag.Duration("scaleToZeroGrace", 30*time.Second, "Duration of the scale-to-zero grace period of the Autoscaler")
+	targetConcurrency = flag.Float64("targetConcurrency", 1.0, "Target concurrency of Replicas")
+	maxScaleUpRate    = flag.Float64("maxScaleUpRate", 10.0, "Maximum rate the autoscaler can raise its desired")
+	launchDelay       = flag.Duration("replicaLaunchDelay", time.Second, "Time it takes a Replica to move from launching to active")
+	terminateDelay    = flag.Duration("replicaTerminateDelay", time.Second, "Time it takes a Replica to move from launching or active to terminated")
+	numberOfRequests  = flag.Uint("numberOfRequests", 10, "Number of randomly-arriving requests to generate. Ignored by the ramp pattern")
+	showTrace         = flag.Bool("showTrace", true, "Show simulation trace")
+	storeRun          = flag.Bool("storeRun", true, "Store simulation run results in skenario.db")
+	trafficPattern    = flag.String("trafficPattern", "uniform", "Options are 'uniform', 'ramp', 'step' and 'sinusoidal'")
+	rampDelta         = flag.Int("rampDelta", 1, "RPS acceleration/deceleration rate")
+	rampMaxRPS        = flag.Int("rampMaxRPS", 50, "Max RPS of the ramp traffic pattern. Ignored by uniform pattern")
+	stepRPS           = flag.Int("stepRPS", 50, "RPS of the step traffic pattern")
+	stepAfter         = flag.Duration("stepAfter", 10*time.Second, "When using the step traffic pattern, wait this long until the step occurs")
+	sineAmplitude     = flag.Int("sineAmplitude", 50, "Maximum RPS of the sinusoidal traffic pattern")
+	sinePeriod        = flag.Duration("sinePeriod", 60*time.Second, "Time between sinusoidal RPS peaks")
 )
 
 func main() {
@@ -48,28 +73,28 @@ func main() {
 
 	cluster := model.NewCluster(r.Env(), r.ClusterConfig(), r.ReplicasConfig())
 	model.NewAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
-	trafficSource := model.NewTrafficSource(r.Env(), cluster.BufferStock())
+	trafficSource := model.NewTrafficSource(r.Env(), cluster.RoutingStock(), model.RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 
 	var traffic trafficpatterns.Pattern
 	switch *trafficPattern {
 	case "uniform":
-		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.UniformConfig{
+		traffic = trafficpatterns.NewUniformRandom(r.Env(), trafficSource, cluster.RoutingStock(), trafficpatterns.UniformConfig{
 			NumberOfRequests: int(*numberOfRequests),
 			StartAt:          startAt,
 			RunFor:           *simDuration,
 		})
 	case "ramp":
-		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.RampConfig{
+		traffic = trafficpatterns.NewRamp(r.Env(), trafficSource, cluster.RoutingStock(), trafficpatterns.RampConfig{
 			DeltaV: *rampDelta,
 			MaxRPS: *rampMaxRPS,
 		})
 	case "step":
-		traffic = trafficpatterns.NewStep(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.StepConfig{
+		traffic = trafficpatterns.NewStep(r.Env(), trafficSource, cluster.RoutingStock(), trafficpatterns.StepConfig{
 			RPS:       *stepRPS,
 			StepAfter: *stepAfter,
 		})
 	case "sinusoidal":
-		traffic = trafficpatterns.NewSinusoidal(r.Env(), trafficSource, cluster.BufferStock(), trafficpatterns.SinusoidalConfig{
+		traffic = trafficpatterns.NewSinusoidal(r.Env(), trafficSource, cluster.RoutingStock(), trafficpatterns.SinusoidalConfig{
 			Amplitude: *sineAmplitude,
 			Period:    *sinePeriod,
 		})
@@ -92,7 +117,7 @@ func main() {
 
 		store := data.NewRunStore(conn)
 
-		scenarioRunId, err := store.Store(completed, ignored, r.ClusterConfig(), r.AutoscalerConfig(), "skenario_cli", traffic.Name(), *simDuration)
+		scenarioRunId, err := store.Store(completed, ignored, r.ClusterConfig(), r.AutoscalerConfig(), "skenario_cli", traffic.Name(), *simDuration, r.Env().CPUUtilizations())
 		if err != nil {
 			fmt.Printf("there was an error saving data: %s", err.Error())
 		}

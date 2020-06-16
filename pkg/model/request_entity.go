@@ -18,6 +18,7 @@ package model
 import (
 	"fmt"
 	"skenario/pkg/simulator"
+	"time"
 )
 
 type Request interface {
@@ -35,9 +36,6 @@ type requestEntity struct {
 	routingStock                         RequestsRoutingStock
 	utilizationForRequestMillisPerSecond *float64
 
-	cpuSecondsRequired time.Duration
-	cpuSecondsConsumed time.Duration
-
 	startTime *time.Time
 }
 
@@ -51,10 +49,6 @@ func (re *requestEntity) Kind() simulator.EntityKind {
 	return "Request"
 }
 
-func (re *requestEntity) cpuSecondsRemaining() time.Duration {
-	return re.cpuSecondsRequired - re.cpuSecondsConsumed
-}
-
 func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingStock, requestConfig RequestConfig) RequestEntity {
 	reqNumber++
 	utilizationForRequest := 0.0
@@ -64,7 +58,5 @@ func NewRequestEntity(env simulator.Environment, routingStock RequestsRoutingSto
 		routingStock:                         routingStock,
 		requestConfig:                        requestConfig,
 		utilizationForRequestMillisPerSecond: &utilizationForRequest,
-
-		cpuSecondsRequired: 100 * time.Millisecond,
 	}
 }

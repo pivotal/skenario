@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	OccursInPast     = "ScheduledToOccurInPast"
-	OccursAfterHalt  = "ScheduledToOccurAfterHalt"
-	FromStockIsEmpty = "FromStockEmptyAtMovementTime"
+	OccursInPast                            = "ScheduledToOccurInPast"
+	OccursAfterHalt                         = "ScheduledToOccurAfterHalt"
+	OccursSimultaneouslyWithAnotherMovement = "ScheduleCollidesWithAnotherMovement"
+	FromStockIsEmpty                        = "FromStockEmptyAtMovementTime"
 )
 
 type Environment interface {

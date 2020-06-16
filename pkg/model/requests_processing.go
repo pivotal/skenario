@@ -17,6 +17,8 @@ package model
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -68,20 +70,16 @@ func (c *cpuUsage) usage(now time.Time) float64 {
 
 type requestsProcessingStock struct {
 	env                                simulator.Environment
-	delegate                           simulator.ThroughStock
 	replicaNumber                      int
 	requestsComplete                   simulator.SinkStock
 	requestsFailed                     *simulator.SinkStock
-	requestsExhausted                  simulator.ThroughStock
 	numRequestsSinceLast               int32
 	totalCPUCapacityMillisPerSecond    *float64
 	occupiedCPUCapacityMillisPerSecond *float64
 
 	// Internal process accounting.
-	processesActive     simulator.ThroughStock
-	processesOnCpu      simulator.ThroughStock
-	processesTerminated simulator.ThroughStock
-	cpuUsage            *cpuUsage
+	processesActive simulator.ThroughStock
+	cpuUsage        *cpuUsage
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -94,25 +92,17 @@ func (rps *requestsProcessingStock) KindStocked() simulator.EntityKind {
 }
 
 func (rps *requestsProcessingStock) Count() uint64 {
-	return rps.processesActive.Count() + rps.processesOnCpu.Count()
+	return rps.processesActive.Count()
 }
 
 func (rps *requestsProcessingStock) EntitiesInStock() []*simulator.Entity {
-	entities := make([]*simulator.Entity, rps.processesActive.Count()+rps.processesOnCpu.Count())
-	entities = append(entities, rps.processesActive.EntitiesInStock()...)
-	entities = append(entities, rps.processesOnCpu.EntitiesInStock()...)
-	return entities
+	return rps.processesActive.EntitiesInStock()
 }
 
 func (rps *requestsProcessingStock) Remove() simulator.Entity {
-	request := rps.delegate.Remove().(*requestEntity)
+	request := rps.processesActive.Remove().(*requestEntity)
 	*rps.occupiedCPUCapacityMillisPerSecond -= *request.utilizationForRequestMillisPerSecond
 	return request
-
-	//if rps.processesTerminated.Count() > 0 {
-	//	return rps.processesTerminated.Remove()
-	//}
-	//return nil
 }
 
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
@@ -121,11 +111,15 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	// TODO: this isn't correct anymore because it's used for interrupts.
 	//rps.numRequestsSinceLast++
 
-	request, ok := *entity.(*requestEntity)
+	req, ok := entity.(*requestEntity)
 	if !ok {
 		return fmt.Errorf("requests processing stock only supports request entities. got %T", entity)
 	}
-
+	request := *req
+	now := rps.env.CurrentMovementTime()
+	if request.startTime == nil {
+		request.startTime = &now
+	}
 	isRequestSuccessful := true
 
 	rps.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)
@@ -145,54 +139,18 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 			*rps.requestsFailed,
 		))
 	}
+	interruptAt := now.Add(min(totalTime, request.requestConfig.Timeout))
+	rps.cpuUsage.active(now, interruptAt)
 
-	return rps.delegate.Add(entity)
+	return rps.processesActive.Add(entity)
 
-	//now := rps.env.CurrentMovementTime()
-	//if req.startTime == nil {
-	//	req.startTime = &now
-	//}
-	//
-	//// Enqueue or complete the request.
-	//if req.cpuSecondsRemaining() > 0 {
-	//	err := rps.processesActive.Add(entity)
-	//	if err != nil {
-	//		return err
-	//	}
-	//} else {
-	//	err := rps.processesTerminated.Add(entity)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	rps.env.AddToSchedule(simulator.NewMovement(
-	//		"complete_request",
-	//		now.Add(time.Nanosecond),
-	//		rps,
-	//		rps.requestsComplete,
-	//	))
-	//	// latency := now.Sub(*req.startTime)
-	//	// log.Printf("latecy: %v\n", latency)
-	//}
-	//
-	//// Fill the CPU and schedule an interrupt.
-	//if rps.processesOnCpu.Count() == 0 && rps.processesActive.Count() > 0 {
-	//	req := rps.processesActive.Remove().(*requestEntity)
-	//	interruptAfter := req.cpuSecondsRemaining()
-	//	if interruptAfter > 200*time.Millisecond {
-	//		interruptAfter = 200 * time.Millisecond
-	//	}
-	//	interruptAt := now.Add(interruptAfter)
-	//	req.cpuSecondsConsumed += interruptAfter
-	//	rps.env.AddToSchedule(simulator.NewMovement(
-	//		"interrupt_process",
-	//		interruptAt,
-	//		rps.processesOnCpu,
-	//		rps,
-	//	))
-	//	rps.cpuUsage.active(now, interruptAt)
-	//	return rps.processesOnCpu.Add(entity)
-	//}
-	//return nil
+}
+
+func min(t1 time.Duration, t2 time.Duration) time.Duration {
+	if t1 < t2 {
+		return t1
+	}
+	return t2
 }
 
 func (rps *requestsProcessingStock) calculateCPUUtilizationForRequest(request requestEntity, totalTime *time.Duration, isRequestSuccessful *bool) {
@@ -240,16 +198,12 @@ func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, re
 	return &requestsProcessingStock{
 		env:                                env,
 		processesActive:                    simulator.NewThroughStock("RequestsProcessing", "Request"),
-		processesOnCpu:                     simulator.NewThroughStock("RequestsProcessing", "Request"),
-		processesTerminated:                simulator.NewThroughStock("RequestsProcessing", "Request"),
-		delegate:                           simulator.NewThroughStock("RequestsProcessing", "Request"),
 		replicaNumber:                      replicaNumber,
 		requestsComplete:                   requestComplete,
 		requestsFailed:                     requestFailed,
-		requestsExhausted:                  simulator.NewThroughStock("RequestsProcessing", "Request"),
 		occupiedCPUCapacityMillisPerSecond: occupiedCPUCapacityMillisPerSecond,
 		totalCPUCapacityMillisPerSecond:    totalCPUCapacityMillisPerSecond,
-		cpuUsage:              NewCpuUsage(15 * time.Second),
+		cpuUsage:                           NewCpuUsage(15 * time.Second),
 	}
 }
 

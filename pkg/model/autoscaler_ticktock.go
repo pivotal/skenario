@@ -118,7 +118,7 @@ func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 	}
 }
 
-func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, plugin skplug.Plugin, cluster ClusterModel, partition string) AutoscalerTicktockStock {
+func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulator.Entity, cluster ClusterModel) AutoscalerTicktockStock {
 	return &autoscalerTicktockStock{
 		env:              env,
 		cluster:          cluster,

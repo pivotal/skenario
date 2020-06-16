@@ -20,6 +20,7 @@ func init() {
 	//log.SetOutput(ioutil.Discard)
 
 	// We're a host. Start by launching the plugin process.
+	os.Setenv("SKENARIO_PLUGIN", "../sk-plugin-k8s/sk-plugin")
 	client = plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: skplug.Handshake,
 		Plugins:         skplug.PluginMap,
