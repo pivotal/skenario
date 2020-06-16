@@ -29,45 +29,6 @@ type RequestsProcessingStock interface {
 	RequestCount() int32
 }
 
-type cpuUsage struct {
-	window           time.Duration
-	activeTimeSlices [][2]time.Time
-}
-
-func NewCpuUsage(window time.Duration) *cpuUsage {
-	return &cpuUsage{
-		window:           window,
-		activeTimeSlices: make([][2]time.Time, 0),
-	}
-}
-
-func (c *cpuUsage) active(from, to time.Time) {
-	c.activeTimeSlices = append(c.activeTimeSlices, [2]time.Time{from, to})
-}
-
-func (c *cpuUsage) trim(now time.Time) {
-	trimmed := make([][2]time.Time, 0)
-	for _, t := range c.activeTimeSlices {
-		if t[1].Before(now.Add(-c.window)) {
-			continue
-		}
-		if t[0].Before(now.Add(-c.window)) {
-			t[0] = now.Add(-c.window)
-		}
-		trimmed = append(trimmed, t)
-	}
-	c.activeTimeSlices = trimmed
-}
-
-func (c *cpuUsage) usage(now time.Time) float64 {
-	c.trim(now)
-	var activeNanos int64
-	for _, a := range c.activeTimeSlices {
-		activeNanos += a[1].Sub(a[0]).Nanoseconds()
-	}
-	return float64(activeNanos) / float64(c.window.Nanoseconds())
-}
-
 type requestsProcessingStock struct {
 	env                                simulator.Environment
 	replicaNumber                      int
@@ -79,7 +40,6 @@ type requestsProcessingStock struct {
 
 	// Internal process accounting.
 	processesActive simulator.ThroughStock
-	cpuUsage        *cpuUsage
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -139,18 +99,9 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 			*rps.requestsFailed,
 		))
 	}
-	interruptAt := now.Add(min(totalTime, request.requestConfig.Timeout))
-	rps.cpuUsage.active(now, interruptAt)
 
 	return rps.processesActive.Add(entity)
 
-}
-
-func min(t1 time.Duration, t2 time.Duration) time.Duration {
-	if t1 < t2 {
-		return t1
-	}
-	return t2
 }
 
 func (rps *requestsProcessingStock) calculateCPUUtilizationForRequest(request requestEntity, totalTime *time.Duration, isRequestSuccessful *bool) {
@@ -203,7 +154,6 @@ func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, re
 		requestsFailed:                     requestFailed,
 		occupiedCPUCapacityMillisPerSecond: occupiedCPUCapacityMillisPerSecond,
 		totalCPUCapacityMillisPerSecond:    totalCPUCapacityMillisPerSecond,
-		cpuUsage:                           NewCpuUsage(15 * time.Second),
 	}
 }
 
