@@ -101,7 +101,7 @@ func testReplicasTerminating(t *testing.T, describe spec.G, it spec.S) {
 				failedSink := simulator.NewSinkStock("RequestsFailed", "Request")
 				processingStock = NewRequestsProcessingStock(envFake, 111, simulator.NewSinkStock("RequestsCompleted", "Request"),
 					&failedSink, &totalCPUCapacityMillisPerSecond, &occupiedCPUCapacityMillisPerSecond)
-				bufferStock := NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil)
+				bufferStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
 				err := processingStock.Add(NewRequestEntity(envFake, bufferStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second}))
 				require.NoError(t, err)
 				replicaFake.ProcessingStock = processingStock

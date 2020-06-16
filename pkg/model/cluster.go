@@ -157,7 +157,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 
 	rs := cm.replicaSource.(*replicaSource)
 	for i := 0; i < int(config.InitialNumberOfReplicas); i++ {
-		replicasActive.Add(NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), rs.maxReplicaRPS))
+		replicasActive.Add(NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), &rs.failedSink))
 	}
 
 	return cm

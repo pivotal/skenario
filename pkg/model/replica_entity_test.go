@@ -181,10 +181,10 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				rawSubject = subject.(*replicaEntity)
 
-				request1 = NewRequestEntity(envFake, NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil),
+				request1 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
 					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request1)
-				request2 = NewRequestEntity(envFake, NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil),
+				request2 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
 					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request2)
 

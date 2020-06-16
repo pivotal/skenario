@@ -18,6 +18,7 @@ package model
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"

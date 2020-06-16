@@ -73,7 +73,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 		var request simulator.Entity
 
 		it.Before(func() {
-			bufferStock := NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil)
+			bufferStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
 			request = NewRequestEntity(envFake, bufferStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second})
 			subject.Add(request)
 		})
@@ -92,9 +92,9 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 	describe("RequestCount()", func() {
 		it.Before(func() {
 
-			subject.Add(NewRequestEntity(envFake, NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil),
+			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
 				RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
-			subject.Add(NewRequestEntity(envFake, NewRequestsBufferedStock(envFake, NewReplicasActiveStock(), nil),
+			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
 				RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
 		})
 
