@@ -6,7 +6,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.10.2 // indirect
 	github.com/bvinc/go-sqlite-lite v0.6.1
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
-	github.com/go-chi/chi v4.0.3+incompatible
+	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/go-containerregistry v0.0.0-20190222233527-d3e6a441f49f // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
@@ -26,11 +26,9 @@ require (
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.14.0
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/sys v0.0.0-20190426135247-a129542de9ae // indirect
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20190202010724-74b699b93c15
 	k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb
 	k8s.io/client-go v10.0.0+incompatible
