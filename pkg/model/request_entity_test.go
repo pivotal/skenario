@@ -18,6 +18,7 @@ package model
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -39,7 +40,7 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 	it.Before(func() {
 		routingStock = NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
 		envFake = new(FakeEnvironment)
-		subject = NewRequestEntity(envFake, routingStock)
+		subject = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 		rawSubject = subject.(*requestEntity)
 	})
 
@@ -65,7 +66,7 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 		})
 
 		it("gives sequential Name()s", func() {
-			subject2 := NewRequestEntity(envFake, routingStock)
+			subject2 := NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 			assert.Equal(t, simulator.EntityName(fmt.Sprintf("request-%d", number+1)), subject2.Name())
 		})
 

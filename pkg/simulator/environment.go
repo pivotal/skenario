@@ -22,10 +22,9 @@ import (
 )
 
 const (
-	OccursInPast                            = "ScheduledToOccurInPast"
-	OccursAfterHalt                         = "ScheduledToOccurAfterHalt"
-	OccursSimultaneouslyWithAnotherMovement = "ScheduleCollidesWithAnotherMovement"
-	FromStockIsEmpty                        = "FromStockEmptyAtMovementTime"
+	OccursInPast     = "ScheduledToOccurInPast"
+	OccursAfterHalt  = "ScheduledToOccurAfterHalt"
+	FromStockIsEmpty = "FromStockEmptyAtMovementTime"
 )
 
 type Environment interface {
@@ -34,6 +33,8 @@ type Environment interface {
 	CurrentMovementTime() time.Time
 	HaltTime() time.Time
 	Context() context.Context
+	CPUUtilizations() []*CPUUtilization
+	AppendCPUUtilization(cpuUtilization *CPUUtilization)
 }
 
 type CompletedMovement struct {
@@ -47,9 +48,13 @@ type IgnoredMovement struct {
 	Moved    Entity
 }
 
-type environment struct {
-	ctx context.Context
+type CPUUtilization struct {
+	CPUUtilization float64
+	CalculatedAt   time.Time
+}
 
+type environment struct {
+	ctx     context.Context
 	current time.Time
 	startAt time.Time
 	haltAt  time.Time
@@ -61,6 +66,7 @@ type environment struct {
 	futureMovements MovementPriorityQueue
 	completed       []CompletedMovement
 	ignored         []IgnoredMovement
+	cpuUtilizations []*CPUUtilization
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -127,6 +133,14 @@ func (env *environment) Context() context.Context {
 	return env.ctx
 }
 
+func (env *environment) CPUUtilizations() []*CPUUtilization {
+	return env.cpuUtilizations
+}
+
+func (env *environment) AppendCPUUtilization(cpuUtilization *CPUUtilization) {
+	env.cpuUtilizations = append(env.cpuUtilizations, cpuUtilization)
+}
+
 func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration) Environment {
 	pqueue := NewMovementPriorityQueue()
 	return newEnvironment(ctx, startAt, runFor, pqueue)
@@ -149,6 +163,7 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 		futureMovements: pqueue,
 		completed:       make([]CompletedMovement, 0),
 		ignored:         make([]IgnoredMovement, 0),
+		cpuUtilizations: make([]*CPUUtilization, 0),
 	}
 
 	env = setupScenarioMovements(env, startAt, env.haltAt.Add(-1*time.Nanosecond), env.beforeScenario, env.runningScenario, env.haltedScenario)

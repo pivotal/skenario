@@ -34,21 +34,26 @@ type RunStore interface {
 		origin string,
 		trafficPattern string,
 		ranFor time.Duration,
+		cpuUtilizations []*simulator.CPUUtilization,
 	) (scenarioRunId int64, err error)
 }
 
 type storer struct {
-	conn           *sqlite3.Conn
-	clusterConf    model.ClusterConfig
-	kpaConf        model.KnativeAutoscalerConfig
-	completed      []simulator.CompletedMovement
-	ignored        []simulator.IgnoredMovement
-	origin         string
-	trafficPattern string
-	ranFor         time.Duration
+	conn            *sqlite3.Conn
+	clusterConf     model.ClusterConfig
+	kpaConf         model.KnativeAutoscalerConfig
+	completed       []simulator.CompletedMovement
+	ignored         []simulator.IgnoredMovement
+	origin          string
+	trafficPattern  string
+	ranFor          time.Duration
+	cpuUtilizations []*simulator.CPUUtilization
 }
 
-func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement, clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ranFor time.Duration) (scenarioRunId int64, err error) {
+func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement,
+	clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ranFor time.Duration,
+	cpuUtilizations []*simulator.CPUUtilization) (scenarioRunId int64, err error) {
+
 	s.completed = completed
 	s.ignored = ignored
 	s.clusterConf = clusterConf
@@ -56,6 +61,7 @@ func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simula
 	s.origin = origin
 	s.trafficPattern = trafficPattern
 	s.ranFor = ranFor
+	s.cpuUtilizations = cpuUtilizations
 
 	scenarioRunId, err = s.scenarioRun()
 	if err != nil {
@@ -226,6 +232,28 @@ func (s *storer) scenarioData(scenarioRunId int64) error {
 			string(to.Name()),
 			string(to.KindStocked()),
 			mv.Reason,
+			scenarioRunId,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	cpuUtilizationStmt, err := s.conn.Prepare(`insert into cpu_utilizations(
+		cpu_utilization
+	  , calculated_at
+	  , scenario_run_id
+  ) values (
+		 ?
+	   , ?
+	   , ?)
+	`)
+
+	for _, mv := range s.cpuUtilizations {
+
+		err = cpuUtilizationStmt.Exec(
+			mv.CPUUtilization,
+			mv.CalculatedAt.UnixNano(),
 			scenarioRunId,
 		)
 		if err != nil {

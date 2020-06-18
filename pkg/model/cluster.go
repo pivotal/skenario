@@ -43,6 +43,7 @@ type ClusterModel interface {
 	CurrentActive() uint64
 	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
 	RoutingStock() RequestsRoutingStock
+	ActiveStock() simulator.ThroughStock
 }
 
 type EndpointInformerSource interface {
@@ -106,6 +107,10 @@ func (cm *clusterModel) RoutingStock() RequestsRoutingStock {
 	return cm.requestsInRouting
 }
 
+func (cm *clusterModel) ActiveStock() simulator.ThroughStock {
+	return cm.replicasActive
+}
+
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
@@ -152,7 +157,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 
 	rs := cm.replicaSource.(*replicaSource)
 	for i := 0; i < int(config.InitialNumberOfReplicas); i++ {
-		replicasActive.Add(NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), rs.maxReplicaRPS))
+		replicasActive.Add(NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), &rs.failedSink))
 	}
 
 	return cm

@@ -96,8 +96,13 @@ func testReplicasTerminating(t *testing.T, describe spec.G, it spec.S) {
 
 		describe.Focus("when the replica has requests processing", func() {
 			it.Before(func() {
-				processingStock = NewRequestsProcessingStock(envFake, 111, simulator.NewSinkStock("RequestsCompleted", "Request"), 100)
-				err := processingStock.Add(simulator.NewEntity("request-1", "Request"))
+				totalCPUCapacityMillisPerSecond := 100.0
+				occupiedCPUCapacityMillisPerSecond := 0.0
+				failedSink := simulator.NewSinkStock("RequestsFailed", "Request")
+				processingStock = NewRequestsProcessingStock(envFake, 111, simulator.NewSinkStock("RequestsCompleted", "Request"),
+					&failedSink, &totalCPUCapacityMillisPerSecond, &occupiedCPUCapacityMillisPerSecond)
+				bufferStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+				err := processingStock.Add(NewRequestEntity(envFake, bufferStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second}))
 				require.NoError(t, err)
 				replicaFake.ProcessingStock = processingStock
 				err = subject.Add(replicaFake)

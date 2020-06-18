@@ -39,6 +39,7 @@ type replicaSource struct {
 	endpointsInformer corev1informers.EndpointsInformer
 	nextIPValue       uint32
 	maxReplicaRPS     int64
+	failedSink        simulator.SinkStock
 }
 
 func (rs *replicaSource) Name() simulator.StockName {
@@ -58,7 +59,7 @@ func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rs *replicaSource) Remove() simulator.Entity {
-	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), rs.maxReplicaRPS)
+	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), &rs.failedSink)
 }
 
 func (rs *replicaSource) Next() string {
@@ -76,6 +77,7 @@ func NewReplicaSource(env simulator.Environment, client kubernetes.Interface, in
 		kubernetesClient:  client,
 		endpointsInformer: informer,
 		nextIPValue:       1,
-		maxReplicaRPS: maxReplicaRPS,
+		maxReplicaRPS:     maxReplicaRPS,
+		failedSink:        simulator.NewSinkStock("RequestsFailed", "Request"),
 	}
 }

@@ -137,7 +137,31 @@
             </div>
 
             <hr>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="requestTimeoutSec">Request timeout (in seconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="requestTimeoutSec" value="10.0" min="1" step="1"/>
+                </div>
+            </div>
 
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="requestCPUTimeMillis">Request CPU time (in milliseconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="requestCPUTimeMillis" value="200.0" min="1" step="1"/>
+                </div>
+            </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="requestIOTimeMillis">Request IO time (in milliseconds)</label>
+                </div>
+                <div class="control">
+                    <input type="number" style="width: 5em" id="requestIOTimeMillis" value="200.0" min="1" step="1"/>
+                </div>
+            </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
                     <label for="select-traffic-pattern" class="label">Traffic Pattern</label>
@@ -398,6 +422,33 @@
                             title: "Response Time (ms)"
                         }
                     }
+                },
+                {
+                    height: 500,
+                    width: chartWidth,
+                    data: {name: "cpu_utilizations"},
+                    transform: [
+                        {calculate: "datum.cpu_utilization", as: "cpu_utilization"},
+                        {calculate: "datum.calculated_at / 1000000000", as: "calculated_at_sec"}
+                    ],
+                    mark: {
+                        type: "line",
+                        interpolate: "linear"
+                    },
+                    encoding: {
+                        x: {
+                            field: "calculated_at_sec",
+                            type: "quantitative",
+                            scale: {domain: scaleDomain},
+                            title: NO_TITLE
+                        },
+                        y: {
+                            field: "cpu_utilization",
+                            type: "quantitative",
+                            title: "CPU Utilization"
+                        }
+                    },
+
                 }
             ]
         };
@@ -420,6 +471,9 @@
         let replicaMaxRPS = parseInt(document.querySelector("input[id='replicaMaxRPS']").value);
         let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
         let runInMemory = document.querySelector("input[id='runInMemory']").checked;
+        let requestTimeoutSec = parseInt(document.querySelector("input[id='requestTimeoutSec']").value);
+        let requestCPUTimeMillis = parseInt(document.querySelector("input[id='requestCPUTimeMillis']").value);
+        let requestIOTimeMillis = parseInt(document.querySelector("input[id='requestIOTimeMillis']").value);
 
         let second = 1000000000;
         let skenarioRunRequest = {
@@ -436,6 +490,9 @@
             replica_max_rps: replicaMaxRPS,
             max_scale_up_rate: maxScaleUpRate,
 
+            request_timeout_nanos: requestTimeoutSec * second,
+            request_cpu_time_millis: requestCPUTimeMillis,
+            request_io_time_millis: requestIOTimeMillis,
             traffic_pattern: trafficPattern,
         };
 
@@ -493,7 +550,8 @@
                 let datasets = {
                     tally_lines: responseJson["tally_lines"],
                     response_times: responseJson["response_times"],
-                    requests_per_second: responseJson["requests_per_second"]
+                    requests_per_second: responseJson["requests_per_second"],
+                    cpu_utilizations: responseJson["cpu_utilizations"],
                 };
 
                 let ranForSec = responseJson["ran_for"] / second;

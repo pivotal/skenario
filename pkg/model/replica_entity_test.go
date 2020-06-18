@@ -18,6 +18,7 @@ package model
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
@@ -63,8 +64,8 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
 		envFake = new(FakeEnvironment)
-
-		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4", 100)
+		failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4", &failedSink)
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*replicaEntity)
@@ -104,7 +105,8 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 	describe("Entity interface", func() {
 		it("Name() creates sequential names", func() {
 			beforeName := subject.Name()
-			subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "9.8.7.6", 100)
+			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+			subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "9.8.7.6", &failedSink)
 			afterName := subject.Name()
 			assert.NotEqual(t, beforeName, afterName)
 		})
@@ -179,9 +181,11 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				rawSubject = subject.(*replicaEntity)
 
-				request1 = simulator.NewEntity("request-1", simulator.EntityKind("Request"))
+				request1 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request1)
-				request2 = simulator.NewEntity("request-2", simulator.EntityKind("Request"))
+				request2 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request2)
 
 				stat = subject.Stat()

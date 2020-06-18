@@ -104,6 +104,9 @@ func setParams(t *testing.T, page *agouti.Page) {
 		"scaleToZeroGracePeriod": "30",
 		"targetConcurrency":      "1",
 		"maxScaleUpRate":         "100",
+		"requestTimeoutSec":      "100",
+		"requestCPUTimeMillis":   "200",
+		"requestIOTimeMillis":    "200",
 
 		"rampConfigMaxRPS": "10",
 		"rampConfigDeltaV": "1",

@@ -132,7 +132,8 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
-					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", 100)
+					failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", &failedSink)
 					err := rawCluster.replicasActive.Add(newReplica)
 					assert.NoError(t, err)
 
@@ -183,6 +184,32 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						assert.Equal(t, simulator.StockName("ReplicasDesired"), envFake.Movements[4].From().Name())
 						assert.Equal(t, simulator.StockName("DesiredSink"), envFake.Movements[4].To().Name())
 					})
+				})
+
+				describe("there is an updated cpu utilization value in environment", func() {
+					cpuUtilization := 0.0
+
+					it.Before(func() {
+						countActiveReplicas := 0.0
+						totalCPUUtilization := 0.0 // total cpuUtilization for all active replicas in percentage
+
+						for _, en := range cluster.ActiveStock().EntitiesInStock() {
+							replica := (*en).(*replicaEntity)
+							totalCPUUtilization += replica.occupiedCPUCapacityMillisPerSecond * 100 / replica.totalCPUCapacityMillisPerSecond
+							countActiveReplicas++
+						}
+						if countActiveReplicas > 0 {
+							cpuUtilization = float64(totalCPUUtilization / countActiveReplicas)
+
+						}
+					})
+
+					it("check correctness of calculated CPU utilization ", func() {
+						if cpuUtilization > 0 {
+							assert.Equal(t, cpuUtilization, envFake.TheCPUUtilizations[len(envFake.TheCPUUtilizations)-1].CPUUtilization)
+						}
+					})
+
 				})
 
 			})

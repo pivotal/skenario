@@ -20,6 +20,7 @@ import (
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 
 	"skenario/pkg/simulator"
 )
@@ -78,9 +79,9 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 
 				subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
 
-				subject.Add(NewRequestEntity(envFake, subject))
-				subject.Add(NewRequestEntity(envFake, subject))
-				subject.Add(NewRequestEntity(envFake, subject))
+				subject.Add(NewRequestEntity(envFake, subject, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
+				subject.Add(NewRequestEntity(envFake, subject, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
+				subject.Add(NewRequestEntity(envFake, subject, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
 			})
 
 			it("assigns the Requests to Replicas using round robin", func() {
@@ -97,7 +98,7 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 			describe("there is at least one Replica available to process the request", func() {
 				it.Before(func() {
 					envFake = new(FakeEnvironment)
-					request = NewRequestEntity(envFake, subject)
+					request = NewRequestEntity(envFake, subject, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 
 					replicaStock = NewReplicasActiveStock()
 					replicaFake = new(FakeReplica)

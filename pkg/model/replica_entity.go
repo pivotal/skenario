@@ -40,14 +40,17 @@ type ReplicaEntity interface {
 }
 
 type replicaEntity struct {
-	env                  simulator.Environment
-	number               int
-	kubernetesClient     kubernetes.Interface
-	endpointsInformer    informers.EndpointsInformer
-	endpointAddress      corev1.EndpointAddress
-	requestsProcessing   RequestsProcessingStock
-	requestsComplete     simulator.SinkStock
-	numRequestsSinceStat int32
+	env                                simulator.Environment
+	number                             int
+	kubernetesClient                   kubernetes.Interface
+	endpointsInformer                  informers.EndpointsInformer
+	endpointAddress                    corev1.EndpointAddress
+	requestsProcessing                 RequestsProcessingStock
+	requestsComplete                   simulator.SinkStock
+	requestsFailed                     simulator.SinkStock
+	numRequestsSinceStat               int32
+	totalCPUCapacityMillisPerSecond    float64
+	occupiedCPUCapacityMillisPerSecond float64
 }
 
 var replicaNum int
@@ -126,19 +129,20 @@ func (re *replicaEntity) Kind() simulator.EntityKind {
 	return "Replica"
 }
 
-func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string, replicaMaxRPSCapacity int64) ReplicaEntity {
+func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string, failedSink *simulator.SinkStock) ReplicaEntity {
 	replicaNum++
 
 	re := &replicaEntity{
-		env:               env,
-		number:            replicaNum,
-		kubernetesClient:  client,
-		endpointsInformer: endpointsInformer,
+		env:                                env,
+		number:                             replicaNum,
+		kubernetesClient:                   client,
+		endpointsInformer:                  endpointsInformer,
+		totalCPUCapacityMillisPerSecond:    100,
+		occupiedCPUCapacityMillisPerSecond: 0,
 	}
 
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
-	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, replicaMaxRPSCapacity)
-
+	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, failedSink, &re.totalCPUCapacityMillisPerSecond, &re.occupiedCPUCapacityMillisPerSecond)
 
 	re.endpointAddress = corev1.EndpointAddress{
 		IP:       address,

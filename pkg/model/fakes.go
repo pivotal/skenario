@@ -24,9 +24,10 @@ import (
 )
 
 type FakeEnvironment struct {
-	Movements   []simulator.Movement
-	TheTime     time.Time
-	TheHaltTime time.Time
+	Movements          []simulator.Movement
+	TheTime            time.Time
+	TheHaltTime        time.Time
+	TheCPUUtilizations []*simulator.CPUUtilization
 }
 
 func (fe *FakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
@@ -48,6 +49,14 @@ func (fe *FakeEnvironment) HaltTime() time.Time {
 
 func (fe *FakeEnvironment) Context() context.Context {
 	return context.Background()
+}
+
+func (fe *FakeEnvironment) CPUUtilizations() []*simulator.CPUUtilization {
+	return fe.TheCPUUtilizations
+}
+
+func (fe *FakeEnvironment) AppendCPUUtilization(cpu *simulator.CPUUtilization) {
+	fe.TheCPUUtilizations = append(fe.TheCPUUtilizations, cpu)
 }
 
 type FakeReplica struct {
@@ -77,8 +86,12 @@ func (fr *FakeReplica) Deactivate() {
 
 func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.RequestsProcessingCalled = true
+	currentUtilization := 0.0
+	totalCPUCapacity := 100.0
+	failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
 	if fr.ProcessingStock == nil {
-		return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-sink", "Request"), 100)
+		return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-requestsComplete", "Request"),
+			&failedSink, &totalCPUCapacity, &currentUtilization)
 	} else {
 		return fr.ProcessingStock
 	}

@@ -95,7 +95,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			completed, ignored, err = env.Run()
 			assert.NoError(t, err)
 
-			scenarioRunId, err = subject.Store(completed, ignored, clusterConf, kpaConf, "test_origin", "test_pattern", 10*time.Minute)
+			scenarioRunId, err = subject.Store(completed, ignored, clusterConf, kpaConf, "test_origin", "test_pattern", 10*time.Minute, env.CPUUtilizations())
 			assert.NoError(t, err)
 		})
 
@@ -269,7 +269,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("inserts the occurrence time", func() {
-				assert.Equal(t, env.HaltTime().Add(10 * time.Second).UnixNano(), int64(occursAt))
+				assert.Equal(t, env.HaltTime().Add(10*time.Second).UnixNano(), int64(occursAt))
 			})
 
 			it("inserts the movement kind", func() {
