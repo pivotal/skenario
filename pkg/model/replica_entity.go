@@ -110,13 +110,12 @@ func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 func (re *replicaEntity) Stats() []*proto.Stat {
 	atTime := re.env.CurrentMovementTime()
 	stats := make([]*proto.Stat, 0)
-	//TODO delete this metric or fix a bug in plugin
-	//stats = append(stats, &proto.Stat{
-	//	Time:    atTime.UnixNano(),
-	//	PodName: string(re.Name()),
-	//	Type:    proto.MetricType_CONCURRENT_REQUESTS_MILLIS,
-	//	Value:   int32(re.requestsProcessing.Count() * 1000),
-	//})
+	stats = append(stats, &proto.Stat{
+		Time:    atTime.UnixNano(),
+		PodName: string(re.Name()),
+		Type:    proto.MetricType_CONCURRENT_REQUESTS_MILLIS,
+		Value:   int32(re.requestsProcessing.Count() * 1000),
+	})
 
 	cpuUsage := re.occupiedCPUCapacityMillisPerSecond * 100 / re.totalCPUCapacityMillisPerSecond
 
