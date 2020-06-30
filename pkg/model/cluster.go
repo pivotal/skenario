@@ -18,7 +18,7 @@ package model
 import (
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -41,7 +41,7 @@ type ClusterModel interface {
 	Desired() ReplicasDesiredStock
 	CurrentLaunching() uint64
 	CurrentActive() uint64
-	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
+	RecordToAutoscaler(atTime *time.Time)
 	RoutingStock() RequestsRoutingStock
 	ActiveStock() simulator.ThroughStock
 }
@@ -81,21 +81,25 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
-	// first report for the RoutingStock
-	scaler.Record(cm.env.Context(), autoscaler.Stat{
-		Time:                      atTime,
-		PodName:                   "RoutingStock",
-		AverageConcurrentRequests: float64(cm.requestsInRouting.Count()),
-		RequestCount:              int32(cm.requestsInRouting.Count()),
+func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
+	// first report for the buffer
+	stats := make([]*proto.Stat, 0)
+	stats = append(stats, &proto.Stat{
+		Time:    atTime.UnixNano(),
+		PodName: "Buffer",
+		Type:    proto.MetricType_CONCURRENT_REQUESTS_MILLIS,
+		Value:   int32(cm.requestsInRouting.Count() * 1000),
 	})
+	// TODO: report request count
 
 	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
 		r := (*e).(ReplicaEntity)
-		stat := r.Stat()
-
-		scaler.Record(cm.env.Context(), stat)
+		stats = append(stats, r.Stats()...)
+	}
+	err := cm.env.Plugin().Stat(stats)
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -128,7 +132,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
 	endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
-	replicasActive := NewReplicasActiveStock()
+	replicasActive := NewReplicasActiveStock(env)
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	routingStock := NewRequestsRoutingStock(env, replicasActive, requestsFailed)
 	replicasTerminated := simulator.NewSinkStock("ReplicasTerminated", simulator.EntityKind("Replica"))
@@ -154,11 +158,6 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	}
 
 	cm.replicasDesired = NewReplicasDesiredStock(env, desiredConf, cm.replicaSource, cm.replicasLaunching, cm.replicasActive, cm.replicasTerminating)
-
-	rs := cm.replicaSource.(*replicaSource)
-	for i := 0; i < int(config.InitialNumberOfReplicas); i++ {
-		replicasActive.Add(NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), &rs.failedSink))
-	}
 
 	return cm
 }

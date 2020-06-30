@@ -18,10 +18,13 @@ package serve
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 
 	"skenario/pkg/data"
 	"skenario/pkg/model"
@@ -90,6 +93,8 @@ type SkenarioRunRequest struct {
 	SinusoidalConfig trafficpatterns.SinusoidalConfig `json:"sinusoidal_config,omitempty"`
 }
 
+var environmentSequence int32 = 0
+
 func RunHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -116,7 +121,8 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
-	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
+
+	model.NewAutoscaler(env, startAt, cluster, kpaConf)
 	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock(), requestConfig)
 
 	var traffic trafficpatterns.Pattern
@@ -171,6 +177,12 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	err = env.Plugin().Event(startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Deleted autoscaler.")
 }
 
 func cpuUtilizations(dbFileName string, scenarioRunId int64) []CPUUtilizationMetric {
