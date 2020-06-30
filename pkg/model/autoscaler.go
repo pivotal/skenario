@@ -16,13 +16,15 @@
 package model
 
 import (
+	"log"
 	"time"
 
-	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
 
 	"skenario/pkg/simulator"
 
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"github.com/knative/serving/pkg/autoscaler"
 )
 
@@ -53,17 +55,38 @@ func (kas *knativeAutoscaler) Env() simulator.Environment {
 	return kas.env
 }
 
-func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
-	logger := logging.FromContext(env.Context())
+type stubCluster struct{}
 
-	epiSource := cluster.(EndpointInformerSource)
-	kpa := newKpa(logger, epiSource, config)
+// TODO: actually list running pods.
+func (c *stubCluster) ListPods() ([]*skplug.Pod, error) {
+	return nil, nil
+}
+
+func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
+	err := env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
+		// TODO: select type and plugin based on the scenario.
+		Type: "hpa.v2beta2.autoscaling.k8s.io",
+		Yaml: hpaYaml,
+	})
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Created autoscaler.")
+
+	// TODO: create initial replicas config.
+	// Create the first pod since HPA can't scale from zero.
+	cm := cluster.(*clusterModel)
+	err = cm.replicasActive.Add(cm.replicaSource.Remove())
+	if err != nil {
+		panic(err)
+	}
+
 	kas := &knativeAutoscaler{
 		env:      env,
-		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, kpa, cluster),
+		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, cluster),
 	}
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
@@ -77,6 +100,28 @@ func NewKnativeAutoscaler(env simulator.Environment, startAt time.Time, cluster 
 
 	return kas
 }
+
+const hpaYaml = `
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa
+  namespace: default
+spec:
+  maxReplicas: 10
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 50
+        type: Utilization
+    type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: deployment
+`
 
 func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig KnativeAutoscalerConfig) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{
