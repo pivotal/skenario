@@ -42,7 +42,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 	var startAt time.Time
 	var runFor time.Duration
 	var clusterConf model.ClusterConfig
-	var kpaConf model.KnativeAutoscalerConfig
+	var kpaConf model.AutoscalerConfig
 
 	it.Before(func() {
 		startAt = time.Unix(0, 123456789)
@@ -54,7 +54,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			TerminateDelay:   22 * time.Second,
 			NumberOfRequests: 33,
 		}
-		kpaConf = model.KnativeAutoscalerConfig{
+		kpaConf = model.AutoscalerConfig{
 			TickInterval:           11 * time.Second,
 			StableWindow:           22 * time.Second,
 			PanicWindow:            33 * time.Second,

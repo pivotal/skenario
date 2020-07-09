@@ -32,6 +32,7 @@ type Replica interface {
 	Deactivate()
 	RequestsProcessing() RequestsProcessingStock
 	Stats() []*proto.Stat
+	GetCPUCapacity() float64
 }
 
 type ReplicaEntity interface {
@@ -117,13 +118,12 @@ func (re *replicaEntity) Stats() []*proto.Stat {
 		Type:    proto.MetricType_CONCURRENT_REQUESTS_MILLIS,
 		Value:   int32(re.requestsProcessing.Count() * 1000),
 	})
-
+	cpuUsage := int32(re.occupiedCPUCapacityMillisPerSecond)
 	stats = append(stats, &proto.Stat{
 		Time:    atTime.UnixNano(),
 		PodName: string(re.Name()),
 		Type:    proto.MetricType_CPU_MILLIS,
-		// TODO: calculate cpu usage based on request time in cpu stock, put instead of 0
-		Value: int32(0),
+		Value:   cpuUsage,
 	})
 
 	re.numRequestsSinceStat = 0
@@ -138,6 +138,10 @@ func (re *replicaEntity) Name() simulator.EntityName {
 
 func (re *replicaEntity) Kind() simulator.EntityKind {
 	return "Replica"
+}
+
+func (re *replicaEntity) GetCPUCapacity() float64 {
+	return re.totalCPUCapacityMillisPerSecond
 }
 
 func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string, failedSink *simulator.SinkStock) ReplicaEntity {

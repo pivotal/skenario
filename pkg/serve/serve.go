@@ -33,7 +33,7 @@ type SkenarioServer struct {
 }
 
 func (ss *SkenarioServer) Serve() {
-
+	plugin.Init()
 	router := chi.NewRouter()
 	router.Use(middleware.NoCache)
 	router.Use(middleware.DefaultCompress)

@@ -36,8 +36,9 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), simulator.NewSinkStock("RequestsFailed", "Request"))
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
+
+		routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), simulator.NewSinkStock("RequestsFailed", "Request"))
 
 		subject = NewTrafficSource(envFake, routingStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 		assert.NotNil(t, subject)

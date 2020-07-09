@@ -17,10 +17,10 @@ package model
 
 import (
 	"fmt"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"testing"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +63,7 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
 		endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
 
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 		failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
 		subject = NewReplicaEntity(envFake, fakeClient, endpointsInformer, "1.2.3.4", &failedSink)
 		assert.NotNil(t, subject)
@@ -173,43 +173,34 @@ func testReplicaEntity(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("Stat()", func() {
-		describe("Creating an autoscaler.Stat struct", func() {
+	describe("Stats()", func() {
+		describe("Creating an autoscaler.Stats struct", func() {
 			var request1, request2 simulator.Entity
-			var stat autoscaler.Stat
+			var stats []*proto.Stat
 
 			it.Before(func() {
 				rawSubject = subject.(*replicaEntity)
 
-				request1 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+				request1 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil),
 					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request1)
-				request2 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+				request2 = NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil),
 					RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 				rawSubject.requestsProcessing.Add(request2)
 
-				stat = subject.Stat()
+				stats = subject.Stats()
 			})
 
 			it("sets Time to the value provided", func() {
-				assert.Equal(t, envFake.TheTime, *stat.Time)
+				assert.Equal(t, envFake.TheTime.UnixNano(), stats[0].Time)
 			})
 
 			it("sets PodName to the replica's name", func() {
-				assert.Equal(t, string(subject.Name()), stat.PodName)
+				assert.Equal(t, string(subject.Name()), stats[0].PodName)
 			})
 
-			it("sets AverageConcurrentRequests based on RequestsProcessing.Count()", func() {
-				assert.Equal(t, float64(rawSubject.requestsProcessing.Count()), stat.AverageConcurrentRequests)
-			})
-
-			it("sets RequestCount based on the number of movements to RequestsProcessing", func() {
-				assert.Equal(t, int32(2), stat.RequestCount)
-			})
-
-			it("resets the RequestCount counter after each call", func() {
-				stat = subject.Stat()
-				assert.Equal(t, int32(0), stat.RequestCount)
+			it("sets Value based on RequestsProcessing.Count() * 1000", func() {
+				assert.Equal(t, int32(rawSubject.requestsProcessing.Count()*1000), stats[0].Value)
 			})
 		})
 	})

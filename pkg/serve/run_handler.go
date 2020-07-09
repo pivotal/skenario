@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"skenario/pkg/simulator"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
@@ -29,7 +30,6 @@ import (
 	"skenario/pkg/data"
 	"skenario/pkg/model"
 	"skenario/pkg/model/trafficpatterns"
-	"skenario/pkg/simulator"
 )
 
 var startAt = time.Unix(0, 0)
@@ -145,11 +145,11 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dbFileName string
-	//if runReq.InMemoryDatabase {
-	dbFileName = "file::memory:?cache=shared"
-	//} else {
-	//	dbFileName = "skenario.db"
-	//}
+	if runReq.InMemoryDatabase {
+		dbFileName = "file::memory:?cache=shared"
+	} else {
+		dbFileName = "skenario.db"
+	}
 
 	conn, err := sqlite3.Open(dbFileName)
 	if err != nil {
@@ -355,8 +355,8 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 	}
 }
 
-func buildKpaConfig(srr *SkenarioRunRequest) model.KnativeAutoscalerConfig {
-	return model.KnativeAutoscalerConfig{
+func buildKpaConfig(srr *SkenarioRunRequest) model.AutoscalerConfig {
+	return model.AutoscalerConfig{
 		TickInterval:           srr.TickInterval,
 		StableWindow:           srr.StableWindow,
 		PanicWindow:            srr.PanicWindow,

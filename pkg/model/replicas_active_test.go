@@ -32,9 +32,10 @@ func TestReplicasActive(t *testing.T) {
 func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 	var subject ReplicasActiveStock
 	var rawSubject *replicasActiveStock
-
+	var envFake *FakeEnvironment
 	it.Before(func() {
-		subject = NewReplicasActiveStock()
+		envFake = NewFakeEnvironment()
+		subject = NewReplicasActiveStock(envFake)
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*replicasActiveStock)
