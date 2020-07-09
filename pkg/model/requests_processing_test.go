@@ -16,6 +16,7 @@
 package model
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 	"time"
@@ -68,23 +69,66 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, simulator.StockName("RequestsProcessing [99]"), subject.Name())
 		})
 	})
-
 	describe("Add()", func() {
-		var request simulator.Entity
+		var request RequestEntity
 
-		it.Before(func() {
-			bufferStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
-			request = NewRequestEntity(envFake, bufferStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second})
-			subject.Add(request)
+		describe("there is no free cpu resource", func() {
+			it.Before(func() {
+				*rawSubject.occupiedCPUCapacityMillisPerSecond = *rawSubject.totalCPUCapacityMillisPerSecond
+				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+				request = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second})
+				subject.Add(request)
+			})
+			describe("scheduling processing", func() {
+				it("schedules a movement from RequestsProcessing to RequestsFailed", func() {
+					assert.Equal(t, simulator.StockName("RequestsFailed"), envFake.Movements[0].To().Name())
+				})
+			})
+
+			it("there is 1 entity in processingStock", func() {
+				assert.Equal(t, uint64(1), subject.Count())
+			})
+		})
+		describe("request fails as request total time exceeds request timeout", func() {
+			it.Before(func() {
+				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+				request = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 20000, IOTimeMillis: 200, Timeout: 3 * time.Second})
+				subject.Add(request)
+			})
+
+			it("cpu resource is allocated", func() {
+				assert.NotEqual(t, rawSubject.occupiedCPUCapacityMillisPerSecond, 0)
+			})
+			it("schedules a movement from RequestsProcessing to RequestsFailed", func() {
+				assert.Equal(t, simulator.StockName("RequestsFailed"), envFake.Movements[0].To().Name())
+			})
+
+			describe("when request timeout is over", func() {
+				it("time for movement from RequestsProcessing to RequestsFailed = current time + timeout ", func() {
+					assert.Equal(t, envFake.TheTime.Add(request.(*requestEntity).requestConfig.Timeout), envFake.Movements[0].OccursAt())
+				})
+			})
 		})
 
-		it("increments the number of requests since last Stat()", func() {
-			assert.Equal(t, int32(1), rawSubject.numRequestsSinceLast)
-		})
+		describe("request completes as request total time doesn't exceed request timeout", func() {
+			it.Before(func() {
+				//there is free cpu resource
+				*rawSubject.occupiedCPUCapacityMillisPerSecond = 0.0
+				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+				request = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second})
+				subject.Add(request)
+			})
 
-		describe("scheduling processing", func() {
+			it("90.909 cpu resource is allocated", func() {
+				assert.Less(t, math.Abs(*rawSubject.occupiedCPUCapacityMillisPerSecond-90.909), 0.001)
+			})
+
 			it("schedules a movement from RequestsProcessing to RequestsComplete", func() {
 				assert.Equal(t, simulator.StockName("RequestsComplete"), envFake.Movements[0].To().Name())
+			})
+			it("allocated cpu resource for a request is freed", func() {
+				rawSubject.Remove()
+				assert.Less(t, math.Abs(*rawSubject.occupiedCPUCapacityMillisPerSecond-0.0), 0.001)
 			})
 		})
 	})
@@ -161,6 +205,59 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 					assert.Equal(t, time.Duration(1068426723), calculateTime(99, time.Second, rng))
 				})
 			})
+		})
+	})
+
+	describe("computation of cpu utilization", func() {
+		describe("when totalCPUCapacityMillisPerSecond = 100.0 occupiedCPUCapacityMillisPerSecond = 60.0", func() {
+
+			it.Before(func() {
+				*rawSubject.totalCPUCapacityMillisPerSecond = 100.0
+				*rawSubject.occupiedCPUCapacityMillisPerSecond = 60.0
+			})
+			describe("request: CPUTimeMillis = 200, IOTimeMillis = 200, Timeout = 3 sec", func() {
+				var request requestEntity
+				var isRequestSuccessful bool
+				var totalTime time.Duration
+				it.Before(func() {
+					routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+					request = *NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second}).(*requestEntity)
+					rawSubject.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)
+				})
+				it("request total time ~ 5.6s (5.2s + delay time)", func() {
+					assert.Less(t, math.Abs(float64(totalTime)/float64(time.Second)-5.6), 0.4)
+				})
+				it("request is not successful, because request timeout 3s, but total time is more", func() {
+					assert.False(t, isRequestSuccessful)
+				})
+
+			})
+
+		})
+
+		describe("when totalCPUCapacityMillisPerSecond = 100.0 occupiedCPUCapacityMillisPerSecond = 0.0", func() {
+			it.Before(func() {
+				*rawSubject.totalCPUCapacityMillisPerSecond = 100.0
+				*rawSubject.occupiedCPUCapacityMillisPerSecond = 0.0
+			})
+			describe("request: CPUTimeMillis = 200, IOTimeMillis = 200, Timeout = 3 sec", func() {
+				var request requestEntity
+				var isRequestSuccessful bool
+				var totalTime time.Duration
+				it.Before(func() {
+					routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+					request = *NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second}).(*requestEntity)
+					rawSubject.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)
+				})
+				it("request total time ~ 2.25s (2.2s + delay time)", func() {
+					assert.Less(t, math.Abs(float64(totalTime)/float64(time.Second)-2.25), 0.05)
+				})
+				it("request is successful, because request timeout 3s, but total time is less ", func() {
+					assert.True(t, isRequestSuccessful)
+				})
+
+			})
+
 		})
 	})
 }

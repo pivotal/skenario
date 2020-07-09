@@ -16,6 +16,7 @@
 package model
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -185,33 +186,39 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						assert.Equal(t, simulator.StockName("DesiredSink"), envFake.Movements[4].To().Name())
 					})
 				})
+			})
+			it("cpu utilization list is empty in environment", func() {
+				assert.Equal(t, 0, len(envFake.TheCPUUtilizations))
+			})
 
-				describe("there is an updated cpu utilization value in environment", func() {
-					cpuUtilization := 0.0
+			describe("update cpu utilization list", func() {
+				it.Before(func() {
+					rawCluster := cluster.(*clusterModel)
+					failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+					newReplica1 := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "11.11.11.11", &failedSink)
+					newReplica1.(*replicaEntity).occupiedCPUCapacityMillisPerSecond = 50
+					newReplica1.(*replicaEntity).totalCPUCapacityMillisPerSecond = 100
+					err := rawCluster.replicasActive.Add(newReplica1)
+					assert.NoError(t, err)
 
-					it.Before(func() {
-						countActiveReplicas := 0.0
-						totalCPUUtilization := 0.0 // total cpuUtilization for all active replicas in percentage
+					newReplica2 := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", &failedSink)
+					newReplica2.(*replicaEntity).occupiedCPUCapacityMillisPerSecond = 0
+					newReplica2.(*replicaEntity).totalCPUCapacityMillisPerSecond = 100
+					err = rawCluster.replicasActive.Add(newReplica2)
+					assert.NoError(t, err)
 
-						for _, en := range cluster.ActiveStock().EntitiesInStock() {
-							replica := (*en).(*replicaEntity)
-							totalCPUUtilization += replica.occupiedCPUCapacityMillisPerSecond * 100 / replica.totalCPUCapacityMillisPerSecond
-							countActiveReplicas++
-						}
-						if countActiveReplicas > 0 {
-							cpuUtilization = float64(totalCPUUtilization / countActiveReplicas)
-
-						}
-					})
-
-					it("check correctness of calculated CPU utilization ", func() {
-						if cpuUtilization > 0 {
-							assert.Equal(t, cpuUtilization, envFake.TheCPUUtilizations[len(envFake.TheCPUUtilizations)-1].CPUUtilization)
-						}
-					})
+					ent := subject.Remove()
+					err = subject.Add(ent)
+					assert.NoError(t, err)
 
 				})
-
+				it("cpu utilization list is not empty in environment", func() {
+					assert.NotEqual(t, 0, len(envFake.TheCPUUtilizations))
+				})
+				it("calculated average cpu utilization value is 25%", func() {
+					index := len(envFake.TheCPUUtilizations) - 1
+					assert.Less(t, math.Abs(envFake.TheCPUUtilizations[index].CPUUtilization-25.0), 1e-5)
+				})
 			})
 
 			describe.Pend("the autoscaler failed to make a recommendation", func() {
