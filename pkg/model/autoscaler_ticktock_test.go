@@ -16,11 +16,11 @@
 package model
 
 import (
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"math"
 	"testing"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -36,40 +36,29 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 	var subject AutoscalerTicktockStock
 	var rawSubject *autoscalerTicktockStock
 	var envFake *FakeEnvironment
-	var autoscalerFake *fakeAutoscaler
 	var replicasConfig ReplicasConfig
 	var cluster ClusterModel
 
 	it.Before(func() {
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 		envFake.TheTime = time.Unix(0, 0)
-		autoscalerFake = &fakeAutoscaler{
-			recorded:   make([]autoscaler.Stat, 0),
-			scaleTimes: make([]time.Time, 0),
-		}
 
 		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
 		cluster = NewCluster(envFake, ClusterConfig{}, replicasConfig)
-		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "KnativeAutoscaler"), autoscalerFake, cluster)
+		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "HPAAutoscaler"), cluster)
 		rawSubject = subject.(*autoscalerTicktockStock)
 	})
 
 	describe("NewAutoscalerTicktockStock()", func() {
 		it("sets the entity", func() {
 			assert.Equal(t, simulator.EntityName("Autoscaler"), rawSubject.autoscalerEntity.Name())
-			assert.Equal(t, simulator.EntityKind("KnativeAutoscaler"), rawSubject.autoscalerEntity.Kind())
-		})
-	})
-
-	describe("Name()", func() {
-		it("is called 'KnativeAutoscaler Stock'", func() {
-			assert.Equal(t, subject.Name(), simulator.StockName("Autoscaler Ticktock"))
+			assert.Equal(t, simulator.EntityKind("HPAAutoscaler"), rawSubject.autoscalerEntity.Kind())
 		})
 	})
 
 	describe("KindStocked()", func() {
-		it("accepts Knative Autoscalers", func() {
-			assert.Equal(t, subject.KindStocked(), simulator.EntityKind("KnativeAutoscaler"))
+		it("accepts HPA Autoscalers", func() {
+			assert.Equal(t, subject.KindStocked(), simulator.EntityKind("HPAAutoscaler"))
 		})
 	})
 
@@ -93,7 +82,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("Remove()", func() {
-		it("gives back the one KnativeAutoscaler", func() {
+		it("gives back the one HPAAutoscaler", func() {
 			assert.Equal(t, subject.Remove(), subject.Remove())
 		})
 	})
@@ -103,7 +92,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			var differentEntity simulator.Entity
 
 			it.Before(func() {
-				differentEntity = simulator.NewEntity("Different!", "KnativeAutoscaler")
+				differentEntity = simulator.NewEntity("Different!", "HPAAutoscaler")
 			})
 
 			it("returns error if the Added entity does not equal the existing entity", func() {
@@ -113,7 +102,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			})
 		})
 
-		describe("driving the Knative autoscaler", func() {
+		describe("driving the HPA autoscaler", func() {
 			describe("controlling time", func() {
 				it.Before(func() {
 					ent := subject.Remove()
@@ -122,14 +111,12 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("triggers the autoscaler calculation with the current time", func() {
-					assert.Equal(t, time.Unix(0, 0), autoscalerFake.scaleTimes[0])
+					assert.Equal(t, time.Unix(0, 0).UnixNano(), envFake.Plugin().(*FakePluginPartition).scaleTimes[0])
 				})
 			})
 
 			describe("updating statistics", func() {
 				var rawCluster *clusterModel
-				onceForRoutingStock := 1
-				onceForReplica := 1
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
@@ -144,14 +131,18 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("delegates statistics updating to ClusterModel", func() {
-					assert.Len(t, autoscalerFake.recorded, onceForRoutingStock+onceForReplica)
+					stats := envFake.ThePlugin.(*FakePluginPartition).stats
+					assert.Len(t, stats, 3)
+					assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+					assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+					assert.Equal(t, stats[2].Type, proto.MetricType_CPU_MILLIS)
 				})
 			})
 
 			describe("the autoscaler was able to make a recommendation", func() {
 				describe("to scale up", func() {
 					it.Before(func() {
-						autoscalerFake.scaleTo = 8
+						envFake.ThePlugin.(*FakePluginPartition).scaleTo = 8
 						err := cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
 						assert.NoError(t, err)
 
@@ -174,7 +165,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						err = cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
 						assert.NoError(t, err)
 
-						autoscalerFake.scaleTo = 1
+						envFake.ThePlugin.(*FakePluginPartition).scaleTo = 1
 						ent := subject.Remove()
 						err = subject.Add(ent)
 						assert.NoError(t, err)
@@ -218,16 +209,6 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				it("calculated average cpu utilization value is 25%", func() {
 					index := len(envFake.TheCPUUtilizations) - 1
 					assert.Less(t, math.Abs(envFake.TheCPUUtilizations[index].CPUUtilization-25.0), 1e-5)
-				})
-			})
-
-			describe.Pend("the autoscaler failed to make a recommendation", func() {
-				it.Before(func() {
-					autoscalerFake.cantDecide = true
-				})
-
-				it("notes that there was a problem", func() {
-
 				})
 			})
 		})

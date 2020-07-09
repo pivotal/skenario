@@ -18,6 +18,7 @@ package model
 import (
 	"fmt"
 	"skenario/pkg/simulator"
+	"time"
 )
 
 type Request interface {
@@ -34,6 +35,7 @@ type requestEntity struct {
 	requestConfig                        RequestConfig
 	routingStock                         RequestsRoutingStock
 	utilizationForRequestMillisPerSecond *float64
+	startTime                            *time.Time
 }
 
 var reqNumber int

@@ -38,8 +38,8 @@ func testRequestEntity(t *testing.T, describe spec.G, it spec.S) {
 	var routingStock RequestsRoutingStock
 
 	it.Before(func() {
-		routingStock = NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
-		envFake = new(FakeEnvironment)
+		routingStock = NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil)
+		envFake = NewFakeEnvironment()
 		subject = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 		rawSubject = subject.(*requestEntity)
 	})

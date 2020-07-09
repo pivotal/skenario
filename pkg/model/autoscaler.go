@@ -33,7 +33,7 @@ const (
 	testName      = "revisionService"
 )
 
-type KnativeAutoscalerConfig struct {
+type AutoscalerConfig struct {
 	TickInterval           time.Duration
 	StableWindow           time.Duration
 	PanicWindow            time.Duration
@@ -62,7 +62,7 @@ func (c *stubCluster) ListPods() ([]*skplug.Pod, error) {
 	return nil, nil
 }
 
-func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config KnativeAutoscalerConfig) KnativeAutoscalerModel {
+func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config AutoscalerConfig) KnativeAutoscalerModel {
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
@@ -123,7 +123,7 @@ spec:
     name: deployment
 `
 
-func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig KnativeAutoscalerConfig) *autoscaler.Autoscaler {
+func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig AutoscalerConfig) *autoscaler.Autoscaler {
 	config := &autoscaler.Config{
 		TickInterval:                      kconfig.TickInterval,
 		MaxScaleUpRate:                    kconfig.MaxScaleUpRate,

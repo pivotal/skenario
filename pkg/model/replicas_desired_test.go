@@ -46,7 +46,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		replicasTerminated = simulator.NewThroughStock("ReplicasTerminated", "Replica")
 		replicaSource = NewReplicaSource(envFake, nil, nil, 100)
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 		envFake.Movements = make([]simulator.Movement, 0)
 		replicasTerminating = NewReplicasTerminatingStock(envFake, config, replicasTerminated)
 

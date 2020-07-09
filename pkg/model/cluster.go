@@ -82,11 +82,11 @@ func (cm *clusterModel) CurrentActive() uint64 {
 }
 
 func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
-	// first report for the buffer
+	// first report for the RoutingStock
 	stats := make([]*proto.Stat, 0)
 	stats = append(stats, &proto.Stat{
 		Time:    atTime.UnixNano(),
-		PodName: "Buffer",
+		PodName: "RoutingStock",
 		Type:    proto.MetricType_CONCURRENT_REQUESTS_MILLIS,
 		Value:   int32(cm.requestsInRouting.Count() * 1000),
 	})

@@ -42,7 +42,7 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 	var endpointsInformer corev1informers.EndpointsInformer
 
 	it.Before(func() {
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 		fakeClient = fake.NewSimpleClientset()
 		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 		endpointsInformer = informerFactory.Core().V1().Endpoints()

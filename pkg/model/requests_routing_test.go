@@ -43,8 +43,8 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("NewRoutingStock()", func() {
 		it.Before(func() {
-			envFake = new(FakeEnvironment)
-			replicaStock = NewReplicasActiveStock()
+			envFake = NewFakeEnvironment()
+			replicaStock = NewReplicasActiveStock(envFake)
 			subject = NewRequestsRoutingStock(envFake, replicaStock, nil)
 			rawSubject = subject.(*requestsRoutingStock)
 		})
@@ -61,9 +61,9 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("there are multiple replicas available to serve multiple requests", func() {
 			it.Before(func() {
-				envFake = new(FakeEnvironment)
+				envFake = NewFakeEnvironment()
 
-				replicaStock = NewReplicasActiveStock()
+				replicaStock = NewReplicasActiveStock(envFake)
 
 				replicaFake = new(FakeReplica)
 				replicaFake.FakeReplicaNum = 11
@@ -97,10 +97,10 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 		describe("there are no other requests yet", func() {
 			describe("there is at least one Replica available to process the request", func() {
 				it.Before(func() {
-					envFake = new(FakeEnvironment)
+					envFake = NewFakeEnvironment()
 					request = NewRequestEntity(envFake, subject, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 
-					replicaStock = NewReplicasActiveStock()
+					replicaStock = NewReplicasActiveStock(envFake)
 					replicaFake = new(FakeReplica)
 					replicaStock.Add(replicaFake)
 

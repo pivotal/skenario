@@ -66,7 +66,17 @@ func (rps *requestsProcessingStock) Remove() simulator.Entity {
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	var totalTime time.Duration
 	rps.numRequestsSinceLast++
-	request := *entity.(*requestEntity)
+
+	req, ok := entity.(*requestEntity)
+	if !ok {
+		return fmt.Errorf("requests processing stock only supports request entities. got %T", entity)
+	}
+	request := *req
+	now := rps.env.CurrentMovementTime()
+	if request.startTime == nil {
+		request.startTime = &now
+	}
+
 	isRequestSuccessful := true
 
 	rps.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)

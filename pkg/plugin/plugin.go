@@ -15,7 +15,7 @@ import (
 var pluginServer skplug.Plugin
 var client *plugin.Client
 
-func init() {
+func Init() {
 	// We don't want to see the plugin logs.
 	//log.SetOutput(ioutil.Discard)
 
@@ -51,26 +51,32 @@ func Shutdown() {
 	client.Kill()
 }
 
-type PluginPartition struct {
+type PluginPartition interface {
+	Event(time int64, typ proto.EventType, object skplug.Object) error
+	Stat(stat []*proto.Stat) error
+	Scale(time int64) (rec int32, err error)
+}
+
+type pluginPartition struct {
 	partition string
 }
 
 var partitionSequence int32 = 0
 
-func NewPluginPartition() *PluginPartition {
-	return &PluginPartition{
+func NewPluginPartition() PluginPartition {
+	return &pluginPartition{
 		partition: strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
 	}
 }
 
-func (p *PluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
+func (p *pluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
 	return pluginServer.Event(p.partition, time, typ, object)
 }
 
-func (p *PluginPartition) Stat(stat []*proto.Stat) error {
+func (p *pluginPartition) Stat(stat []*proto.Stat) error {
 	return pluginServer.Stat(p.partition, stat)
 }
 
-func (p *PluginPartition) Scale(time int64) (rec int32, err error) {
+func (p *pluginPartition) Scale(time int64) (rec int32, err error) {
 	return pluginServer.Scale(p.partition, time)
 }

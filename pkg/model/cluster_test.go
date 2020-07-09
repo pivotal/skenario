@@ -16,11 +16,11 @@
 package model
 
 import (
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"skenario/pkg/simulator"
 	"testing"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +56,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("NewCluster()", func() {
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, subject.Env())
@@ -76,7 +76,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("CurrentLaunching()", func() {
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -93,7 +93,7 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("CurrentActive()", func() {
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -110,23 +110,18 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("RecordToAutoscaler()", func() {
-		var autoscalerFake *fakeAutoscaler
 		var rawSubject *clusterModel
-		var routingStockRecorded autoscaler.Stat
+		var routingStockRecorded proto.Stat
 		var theTime = time.Now()
 		var replicaFake *FakeReplica
-		envFake = new(FakeEnvironment)
-		recordOnce := 1
-		recordThrice := 3
+		envFake = NewFakeEnvironment()
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
 
-			replicaFake = new(FakeReplica)
-
-			autoscalerFake = &fakeAutoscaler{
-				recorded:   make([]autoscaler.Stat, 0),
-				scaleTimes: make([]time.Time, 0),
+			replicaFake = &FakeReplica{
+				totalCPUCapacityMillisPerSecond:    100.0,
+				occupiedCPUCapacityMillisPerSecond: 0.0,
 			}
 
 			request := NewRequestEntity(envFake, rawSubject.requestsInRouting, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
@@ -140,36 +135,39 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 
-			subject.RecordToAutoscaler(autoscalerFake, &theTime)
-			routingStockRecorded = autoscalerFake.recorded[0]
+			subject.RecordToAutoscaler(&theTime)
+			routingStockRecorded = *envFake.ThePlugin.(*FakePluginPartition).stats[0]
 		})
 
 		// TODO immediately record arrivals at routingStock
 
-		it("records once for the routingStock and once each replica in ReplicasActive", func() {
-			assert.Len(t, autoscalerFake.recorded, recordOnce+recordThrice)
+		it("records once for the routingStock and twice for each replica in ReplicasActive, we have 2 replicas", func() {
+			stats := envFake.ThePlugin.(*FakePluginPartition).stats
+			assert.Len(t, envFake.ThePlugin.(*FakePluginPartition).stats, 5)
+			assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+			assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+			assert.Equal(t, stats[2].Type, proto.MetricType_CPU_MILLIS)
+			assert.Equal(t, stats[3].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+			assert.Equal(t, stats[4].Type, proto.MetricType_CPU_MILLIS)
+
 		})
 
 		describe("the record for the routingStock", func() {
 			it("sets time to the movement OccursAt", func() {
-				assert.Equal(t, &theTime, routingStockRecorded.Time)
+				assert.Equal(t, theTime.UnixNano(), routingStockRecorded.Time)
 			})
 
 			it("sets the PodName to 'RoutingStock'", func() {
 				assert.Equal(t, "RoutingStock", routingStockRecorded.PodName)
 			})
 
-			it("sets AverageConcurrentRequests to the number of Requests in the routingStock", func() {
-				assert.Equal(t, 1.0, routingStockRecorded.AverageConcurrentRequests)
-			})
-
-			it("sets RequestCount to the net change in the number of Requests since last invocation", func() {
-				assert.Equal(t, int32(1), routingStockRecorded.RequestCount)
+			it("sets Value to the number of Requests in the routingStock*1000", func() {
+				assert.Equal(t, int32(1000), routingStockRecorded.Value)
 			})
 		})
 
 		describe("records for replicas", func() {
-			it("delegates Stat creation to the Replica", func() {
+			it("delegates Stats creation to the Replica", func() {
 				assert.True(t, replicaFake.StatCalled)
 			})
 		})
@@ -186,7 +184,7 @@ func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
 	var config ClusterConfig
 	var subject EndpointInformerSource
 	var cluster ClusterModel
-	var envFake = new(FakeEnvironment)
+	var envFake = NewFakeEnvironment()
 	var replicasConfig ReplicasConfig
 
 	it.Before(func() {

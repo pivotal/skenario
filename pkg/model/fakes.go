@@ -17,9 +17,9 @@ package model
 
 import (
 	"context"
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"time"
-
-	"github.com/knative/serving/pkg/autoscaler"
 
 	"skenario/pkg/plugin"
 	"skenario/pkg/simulator"
@@ -30,10 +30,11 @@ type FakeEnvironment struct {
 	TheTime            time.Time
 	TheHaltTime        time.Time
 	TheCPUUtilizations []*simulator.CPUUtilization
+	ThePlugin          plugin.PluginPartition
 }
 
-func (fe *FakeEnvironment) Plugin() *plugin.PluginPartition {
-	return nil
+func (fe *FakeEnvironment) Plugin() plugin.PluginPartition {
+	return fe.ThePlugin
 }
 
 func (fe *FakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
@@ -65,13 +66,21 @@ func (fe *FakeEnvironment) AppendCPUUtilization(cpu *simulator.CPUUtilization) {
 	fe.TheCPUUtilizations = append(fe.TheCPUUtilizations, cpu)
 }
 
+func NewFakeEnvironment() *FakeEnvironment {
+	return &FakeEnvironment{
+		ThePlugin: NewFakePluginPartition(),
+	}
+}
+
 type FakeReplica struct {
-	ActivateCalled           bool
-	DeactivateCalled         bool
-	RequestsProcessingCalled bool
-	StatCalled               bool
-	FakeReplicaNum           int
-	ProcessingStock          RequestsProcessingStock
+	ActivateCalled                     bool
+	DeactivateCalled                   bool
+	RequestsProcessingCalled           bool
+	StatCalled                         bool
+	FakeReplicaNum                     int
+	ProcessingStock                    RequestsProcessingStock
+	totalCPUCapacityMillisPerSecond    float64
+	occupiedCPUCapacityMillisPerSecond float64
 }
 
 func (*FakeReplica) Name() simulator.EntityName {
@@ -92,18 +101,47 @@ func (fr *FakeReplica) Deactivate() {
 
 func (fr *FakeReplica) RequestsProcessing() RequestsProcessingStock {
 	fr.RequestsProcessingCalled = true
-	currentUtilization := 0.0
-	totalCPUCapacity := 100.0
 	failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
 	if fr.ProcessingStock == nil {
-		return NewRequestsProcessingStock(new(FakeEnvironment), fr.FakeReplicaNum, simulator.NewSinkStock("fake-requestsComplete", "Request"),
-			&failedSink, &totalCPUCapacity, &currentUtilization)
+		return NewRequestsProcessingStock(NewFakeEnvironment(), fr.FakeReplicaNum, simulator.NewSinkStock("fake-requestsComplete", "Request"),
+			&failedSink, &fr.totalCPUCapacityMillisPerSecond, &fr.occupiedCPUCapacityMillisPerSecond)
 	} else {
 		return fr.ProcessingStock
 	}
 }
 
-func (fr *FakeReplica) Stat() autoscaler.Stat {
+func (fr *FakeReplica) Stats() []*proto.Stat {
 	fr.StatCalled = true
-	return autoscaler.Stat{}
+	return make([]*proto.Stat, 0)
+}
+
+func (fr *FakeReplica) GetCPUCapacity() float64 {
+	return fr.totalCPUCapacityMillisPerSecond
+}
+
+type FakePluginPartition struct {
+	scaleTimes []int64
+	stats      []*proto.Stat
+	scaleTo    int32
+}
+
+func (fp *FakePluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
+	return nil
+}
+
+func (fp *FakePluginPartition) Stat(stat []*proto.Stat) error {
+	fp.stats = append(fp.stats, stat...)
+	return nil
+}
+
+func (fp *FakePluginPartition) Scale(time int64) (rec int32, err error) {
+	fp.scaleTimes = append(fp.scaleTimes, time)
+	return fp.scaleTo, nil
+}
+
+func NewFakePluginPartition() *FakePluginPartition {
+	return &FakePluginPartition{
+		scaleTimes: make([]int64, 0),
+		stats:      make([]*proto.Stat, 0),
+	}
 }

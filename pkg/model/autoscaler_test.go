@@ -16,15 +16,14 @@
 package model
 
 import (
-	"context"
+	"github.com/knative/serving/pkg/autoscaler"
+	"go.uber.org/zap"
 	"testing"
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/informers/core/v1"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
@@ -33,31 +32,7 @@ import (
 )
 
 func TestAutoscaler(t *testing.T) {
-	spec.Run(t, "KnativeAutoscaler model", testAutoscaler, spec.Report(report.Terminal{}))
-}
-
-type fakeAutoscaler struct {
-	recorded   []autoscaler.Stat
-	scaleTimes []time.Time
-	cantDecide bool
-	scaleTo    int32
-}
-
-func (fa *fakeAutoscaler) Record(ctx context.Context, stat autoscaler.Stat) {
-	fa.recorded = append(fa.recorded, stat)
-}
-
-func (fa *fakeAutoscaler) Scale(ctx context.Context, time time.Time) (int32, bool) {
-	if fa.cantDecide {
-		return 0, false
-	}
-
-	fa.scaleTimes = append(fa.scaleTimes, time)
-	return fa.scaleTo, true
-}
-
-func (fa *fakeAutoscaler) Update(autoscaler.DeciderSpec) error {
-	panic("implement me")
+	spec.Run(t, "HPA Autoscaler model", testAutoscaler, spec.Report(report.Terminal{}))
 }
 
 type fakeEndpointsInformerSource struct {
@@ -88,13 +63,14 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 			Movements:   make([]simulator.Movement, 0),
 			TheTime:     startAt,
 			TheHaltTime: startAt.Add(1 * time.Hour),
+			ThePlugin:   NewFakePluginPartition(),
 		}
 		cluster = NewCluster(envFake, config, replicasConfig)
 	})
 
-	describe("NewKnativeAutoscaler()", func() {
+	describe("NewAutoscaler()", func() {
 		it.Before(func() {
-			subject = NewKnativeAutoscaler(envFake, startAt, cluster, KnativeAutoscalerConfig{TickInterval: 60 * time.Second})
+			subject = NewAutoscaler(envFake, startAt, cluster, AutoscalerConfig{TickInterval: 60 * time.Second})
 			rawSubject = subject.(*knativeAutoscaler)
 		})
 
@@ -144,7 +120,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 
 				lg, err := zap.NewDevelopment()
 				assert.NoError(t, err)
-				as = newKpa(lg.Sugar(), epiFake, KnativeAutoscalerConfig{
+				as = newKpa(lg.Sugar(), epiFake, AutoscalerConfig{
 					TickInterval:           11 * time.Second,
 					StableWindow:           22 * time.Second,
 					PanicWindow:            33 * time.Second,

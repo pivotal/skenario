@@ -30,7 +30,7 @@ const (
 )
 
 type Environment interface {
-	Plugin() *plugin.PluginPartition
+	Plugin() plugin.PluginPartition
 	AddToSchedule(movement Movement) (added bool)
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
@@ -58,7 +58,7 @@ type CPUUtilization struct {
 
 type environment struct {
 	ctx    context.Context
-	plugin *plugin.PluginPartition
+	plugin plugin.PluginPartition
 
 	current time.Time
 	startAt time.Time
@@ -74,7 +74,7 @@ type environment struct {
 	cpuUtilizations []*CPUUtilization
 }
 
-func (env *environment) Plugin() *plugin.PluginPartition {
+func (env *environment) Plugin() plugin.PluginPartition {
 	return env.plugin
 }
 

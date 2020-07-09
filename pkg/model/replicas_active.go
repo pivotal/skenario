@@ -77,7 +77,7 @@ func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
 		// TODO: enumerate states in proto.
 		State:          "active",
 		LastTransition: now,
-		CpuRequest:     1000,
+		CpuRequest:     int32(replica.GetCPUCapacity()),
 	})
 	if err != nil {
 		panic(err)

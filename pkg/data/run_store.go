@@ -30,7 +30,7 @@ type RunStore interface {
 		completed []simulator.CompletedMovement,
 		ignored []simulator.IgnoredMovement,
 		clusterConf model.ClusterConfig,
-		kpaConf model.KnativeAutoscalerConfig,
+		asConf model.AutoscalerConfig,
 		origin string,
 		trafficPattern string,
 		ranFor time.Duration,
@@ -41,7 +41,7 @@ type RunStore interface {
 type storer struct {
 	conn            *sqlite3.Conn
 	clusterConf     model.ClusterConfig
-	kpaConf         model.KnativeAutoscalerConfig
+	kpaConf         model.AutoscalerConfig
 	completed       []simulator.CompletedMovement
 	ignored         []simulator.IgnoredMovement
 	origin          string
@@ -51,7 +51,7 @@ type storer struct {
 }
 
 func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement,
-	clusterConf model.ClusterConfig, kpaConf model.KnativeAutoscalerConfig, origin string, trafficPattern string, ranFor time.Duration,
+	clusterConf model.ClusterConfig, kpaConf model.AutoscalerConfig, origin string, trafficPattern string, ranFor time.Duration,
 	cpuUtilizations []*simulator.CPUUtilization) (scenarioRunId int64, err error) {
 
 	s.completed = completed

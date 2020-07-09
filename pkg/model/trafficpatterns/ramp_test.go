@@ -41,7 +41,7 @@ func testRamp(t *testing.T, describe spec.G, it spec.S) {
 	it.Before(func() {
 		envFake = new(model.FakeEnvironment)
 		envFake.TheHaltTime = envFake.TheTime.Add(15 * time.Second)
-		routingStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(), simulator.NewSinkStock("Failed", "Request"))
+		routingStock = model.NewRequestsRoutingStock(envFake, model.NewReplicasActiveStock(envFake), simulator.NewSinkStock("Failed", "Request"))
 		trafficSource = model.NewTrafficSource(envFake, routingStock, model.RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 
 		config = RampConfig{
