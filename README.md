@@ -1,7 +1,7 @@
 # Skenario
 
-Skenario is a simulator toolkit for Knative, originally created to assist
-with Autoscaler development. 
+Skenario is a simulator toolkit for HPA. It was originally created to assist
+with Knative Autoscaler development. Then Skenario was made HPA oriented. 
 
 See [the Concepts document](docs/concepts.md) for a discussion of how Skenario is designed.
 
@@ -27,7 +27,7 @@ Then go to [https://localhost:3000](https://localhost:3000) to see the user inte
 Adjust parameters using the form and click "Execute simulation" to submit the parameters to the server process.
 When the simulation is complete, a graph of the results will be displayed.
 
-The server stores simulation results in `skenario.db`. To suppress this behaviour, add
-`?inmemory=true` to the URL.
+The server stores simulation results in `skenario.db`. To suppress this behaviour, make Run in memory field 
+checked in the user interface.
 
 When you are finished, `Ctrl-C` to kill the running server.

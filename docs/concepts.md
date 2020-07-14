@@ -1,14 +1,14 @@
 # Skenario Concepts
 
 This document introduces the core concepts and logic of Skenario, a simulator for
-Knative.
+HPA.
 
 Skenario is a simulator that borrows ideas from two distinct schools of modeling:
 Discrete Event Simulation (DES) and Systems Dynamics (SD).
 
 ## The purpose of simulation
 
-The motivation for Skenario is to present the Knative Pod Autoscaler with synthetic
+The motivation for Skenario is to present the Horizontal Pod Autoscaler with synthetic
 inputs that lead to realistic reactions, so that its behaviour can be understood under
 various scenarios.
 
@@ -223,7 +223,7 @@ of each simulated Entity became a large, hairy switch statement.
 
 The second problem was that FSMs and events could not easily represent that Replicas
 are created and destroyed during the life of the simulation. The assignment of Requests
-to Replicas is critical to provoking a realistic response from the Knative Pod Autoscaler.
+to Replicas is critical to provoking a realistic response from the Horizontal Pod Autoscaler.
 It is not enough to have an FSM representing "processing" as a state, it has to
 represent "processing on replica-4" as a state. But the existence and reachability
 of this state is contingent on the existence or non-existence of Replicas. This
@@ -248,8 +248,8 @@ Movement is to occur. When aggregated by time, Movements approximate a Flow.
 Models are "the rest" of the code. Typically these own Stocks, wire dependencies and
 potentially maintain other state.
 
-In Skenario the Models provided are the KnativeAutoscaler and the Cluster. These
-establish the various initial Stocks (eg. RequestsBuffered, ReplicasLaunching) that are
+In Skenario the Models provided are the Autoscaler and the Cluster. These
+establish the various initial Stocks (eg. RequestsRouting, ReplicasLaunching) that are
 used during the life of the simulation.
 
 Generally speaking, logic should be kept out of Models. Everything that can be expressed
@@ -327,19 +327,19 @@ they were ignored.
 
 ### Example: Autoscaler Ticktock
 
-In its natural environment, the Knative Pod Autoscaler (KPA) is triggered on a
-`TickInterval`, defaulting to 2 seconds. Upon each `TickInterval` it updates its
+In its natural environment, the Horizontal Pod Autoscaler (HPA) is triggered on a
+`TickInterval`, defaulting to 15 seconds. Upon each `TickInterval` it updates its
 statistics and recalculates its desired number of replicas.
 
 The `AutoscalerTicktockStock` is used to manage this regular behaviour. At creation
 time, Movements from the `AutoscalerTicktockStock` back into itself are scheduled,
 so that `AutoscalerTicktockStock` is both of the `From()` and `To()` stocks in the
-Movements. On each `Add()` the stock will drive the actual KPA, prompting it to update
+Movements. On each `Add()` the stock will drive the actual HPA, prompting it to update
 its statistics and calculate a new desired value.
 
 ### Example: Replicas
 
-Replicas are the unit that the KPA is scaling up and down. The responsiveness of the
+Replicas are the unit that the HPA is scaling up and down. The responsiveness of the
 overall system depends in no small part on how quickly Replicas can become active and
 able to process incoming traffic. The Movements graph for Replicas is:
 
@@ -364,56 +364,45 @@ ignore the details while rebuilding the core simulator framework. A lot of impro
 to simulation accuracy will probably come from breaking that Stock into finer detail. 
 
 Replicas are represented with the `ReplicaEntity`, a specialisation of Entity. The
-specialisation holds logic necessary to create and delete `Endpoints` in the Kubernetes
-API that the KPA consults to determine the current number of Replicas running.
+specialisation holds logic necessary to activate and deactivate a replica in the Kubernetes.
 
 ### Example: Requests
 
-Indirectly, Requests are the signal that the Knative Pod Autoscaler is trying to respond
+Indirectly, Requests are the signal that the Horizontal Pod Autoscaler is trying to respond
 to. In a traditional simulation these are called "arrivals". Unlike traditional
 simulation, the configuration of the simulated system varies throughout the simulation
-as the KPA changes its desired Replica count.
+as the HPA changes its desired Replica count.
 
 The Movements graph for Requests is:
  
 ```
-               +---------------------+
-               |                     |
-               V                     |
-TrafficSource -+-> RequestsBuffered -+-> RequestsProcessing --> RequestsComplete
-                                     |
-                                     +-> RequestsFailed
+
+TrafficSource -+-> RequestsRouting  -+-> RequestsProcessing -+-> RequestsComplete
+                                                             |       
+                                                             +-> RequestsFailed
 ```
 
 The diagram shows five possible Movements:
 
-* `arrive_at_buffer`, from TrafficSource to RequestsBuffered. These are scheduled
+* `arrive_at_routing`, from TrafficSource to RequestsRouting. These are scheduled
   during the creation of the simulation
-* `send_to_replica`, from RequestsBuffered to RequestsProcessing
+* `send_to_replica`, from RequestsRouting to RequestsProcessing
 * `complete_request`, from RequestsProcessing to RequestsComplete
-* `buffer_backoff`, from RequestsBuffered back into itself to simulate Activator behaviour
-* `exhausted_attempts`, from RequestsBuffered to RequestsFailed, representing a timeout
+* `request_failed`, from RequestsProcessing to RequestsFailed
 
-The happy path (`arrive_at_buffer`, `send_to_replica`, `complete_request`) is linear.
+The happy path (`arrive_at_routing`, `send_to_replica`, `complete_request`) is linear.
 However, this is true only in aggregate: the exact path for each Request can vary. While
-all Requests will come from the TrafficSource and all of them will spend at least one
-Movement in RequestsBuffered, the precise RequestsProcessing / RequestsComplete stocks
+all Requests will come from the TrafficSource and all of them will spend one
+Movement in RequestsRouting, the precise RequestsProcessing / RequestsComplete stocks
 are not known when the original Request arrival is scheduled. There are multiple
 RequestsProcessing stocks, each belonging to a Replica.
 
 There are two alternative paths.
 
-Initially, if a Request arrives but cannot find an active Replica, the RequestsBuffer
-emulates Activator logic by scheduling Movements back into itself with exponential
-backoffs. On each such Movement it checks to see if any Replicas are in the
-ReplicasActive stock. If it finds any, it will pick one with a round-robin scheme and
+Initially, if a Request arrives, it's sent to RequestRouting. From RequestRouting we schedule a Movement to 
+ReplicasActive stock. On each such Movement it picks a replica with a round-robin scheme and
 schedule a Movement of the Request to its RequestsProcessing. The RequestsProcessing
-stock will itself schedule a Movement into RequestsComplete.
-
-If the Request does not find any active Replicas, it is repeatedly rescheduled for the
-`buffer_backoff` Movement. After 18 such Movements -- 18 attempts is the hardcoded figure
-in the Activator -- the RequestsBuffer stock will instead schedule a Movement into
-RequestsFailed, representing timeouts.
+stock will itself schedule a Movement into RequestsComplete or RequestsFailed, representing timeouts.
 
 This is probably the second major influence on Autoscaler behaviour. By
 [Little's Law](http://web.mit.edu/~sgraves/www/papers/Little%27s%20Law-Published.pdf),
