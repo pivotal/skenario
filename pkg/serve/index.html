@@ -86,55 +86,6 @@
                     <input type="number" style="width: 5em" id="tickInterval" value="2" min="1" step="1"/>
                 </div>
             </div>
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                    <label class="label" for="stableWindow">Stable Window (seconds)</label>
-                </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="stableWindow" value="60" min="1" step="1"/>
-                </div>
-            </div>
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                    <label class="label" for="panicWindow">Panic Window (seconds)</label>
-                </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="panicWindow" value="6" min="1" step="1"/>
-                </div>
-            </div>
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                    <label class="label" for="scaleToZeroGracePeriod">Scale to Zero Grace Period (seconds)</label>
-                </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="scaleToZeroGracePeriod" value="30" min="1" step="1"/>
-                </div>
-            </div>
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                    <label class="label" for="targetConcurrency">Target Concurrency</label>
-                </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="targetConcurrency" value="100" min="1" step="1"/>
-                </div>
-            </div>
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                    <label class="label" for="replicaMaxRPS">Replica Max RPS Capacity</label>
-                </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="replicaMaxRPS" value="101" min="1" step="1"/>
-                </div>
-            </div>
-
-            <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                    <label class="label" for="maxScaleUpRate">Max Scale Up Rate</label>
-                </div>
-                <div class="control">
-                    <input type="number" style="width: 5em" id="maxScaleUpRate" value="100.0" min="1" step="1"/>
-                </div>
-            </div>
 
             <hr>
             <div class="field is-horizontal">
@@ -464,12 +415,6 @@
         let launchDelay = parseInt(document.querySelector("input[id='launchDelay']").value);
         let terminateDelay = parseInt(document.querySelector("input[id='terminateDelay']").value);
         let tickInterval = parseInt(document.querySelector("input[id='tickInterval']").value);
-        let stableWindow = parseInt(document.querySelector("input[id='stableWindow']").value);
-        let panicWindow = parseInt(document.querySelector("input[id='panicWindow']").value);
-        let scaleToZeroGracePeriod = parseInt(document.querySelector("input[id='scaleToZeroGracePeriod']").value);
-        let targetConcurrency = parseFloat(document.querySelector("input[id='targetConcurrency']").value);
-        let replicaMaxRPS = parseInt(document.querySelector("input[id='replicaMaxRPS']").value);
-        let maxScaleUpRate = parseFloat(document.querySelector("input[id='maxScaleUpRate']").value);
         let runInMemory = document.querySelector("input[id='runInMemory']").checked;
         let requestTimeoutSec = parseInt(document.querySelector("input[id='requestTimeoutSec']").value);
         let requestCPUTimeMillis = parseInt(document.querySelector("input[id='requestCPUTimeMillis']").value);
@@ -483,12 +428,6 @@
             launch_delay: launchDelay * second,
             terminate_delay: terminateDelay * second,
             tick_interval: tickInterval * second,
-            stable_window: stableWindow * second,
-            panic_window: panicWindow * second,
-            scale_to_zero_grace_period: scaleToZeroGracePeriod * second,
-            target_concurrency: targetConcurrency,
-            replica_max_rps: replicaMaxRPS,
-            max_scale_up_rate: maxScaleUpRate,
 
             request_timeout_nanos: requestTimeoutSec * second,
             request_cpu_time_millis: requestCPUTimeMillis,
