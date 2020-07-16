@@ -19,13 +19,6 @@ import (
 	"time"
 
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers"
-	corev1informers "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
-
 	"skenario/pkg/simulator"
 )
 
@@ -46,10 +39,6 @@ type ClusterModel interface {
 	ActiveStock() simulator.ThroughStock
 }
 
-type EndpointInformerSource interface {
-	EPInformer() corev1informers.EndpointsInformer
-}
-
 type clusterModel struct {
 	env                 simulator.Environment
 	config              ClusterConfig
@@ -62,8 +51,6 @@ type clusterModel struct {
 	replicasTerminated  simulator.SinkStock
 	requestsInRouting   simulator.ThroughStock
 	requestsFailed      simulator.SinkStock
-	kubernetesClient    kubernetes.Interface
-	endpointsInformer   corev1informers.EndpointsInformer
 }
 
 func (cm *clusterModel) Env() simulator.Environment {
@@ -103,10 +90,6 @@ func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
 	}
 }
 
-func (cm *clusterModel) EPInformer() corev1informers.EndpointsInformer {
-	return cm.endpointsInformer
-}
-
 func (cm *clusterModel) RoutingStock() RequestsRoutingStock {
 	return cm.requestsInRouting
 }
@@ -116,22 +99,6 @@ func (cm *clusterModel) ActiveStock() simulator.ThroughStock {
 }
 
 func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
-	fakeClient := k8sfakes.NewSimpleClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-	endpointsInformer := informerFactory.Core().V1().Endpoints()
-
-	newEndpoints := &corev1.Endpoints{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "Skenario Revision",
-		},
-		Subsets: []corev1.EndpointSubset{{
-			Addresses: []corev1.EndpointAddress{},
-		}},
-	}
-
-	fakeClient.CoreV1().Endpoints("skenario").Create(newEndpoints)
-	endpointsInformer.Informer().GetIndexer().Add(newEndpoints)
-
 	replicasActive := NewReplicasActiveStock(env)
 	requestsFailed := simulator.NewSinkStock("RequestsFailed", "Request")
 	routingStock := NewRequestsRoutingStock(env, replicasActive, requestsFailed)
@@ -141,15 +108,13 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 		env:                 env,
 		config:              config,
 		replicasConfig:      replicasConfig,
-		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
+		replicaSource:       NewReplicaSource(env, replicasConfig.MaxRPS),
 		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
 		replicasTerminating: NewReplicasTerminatingStock(env, replicasConfig, replicasTerminated),
 		replicasTerminated:  replicasTerminated,
 		requestsInRouting:   routingStock,
 		requestsFailed:      requestsFailed,
-		kubernetesClient:    fakeClient,
-		endpointsInformer:   endpointsInformer,
 	}
 
 	desiredConf := ReplicasConfig{

@@ -16,30 +16,17 @@
 package model
 
 import (
-	"encoding/binary"
-	"net"
-
-	corev1informers "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-
 	"skenario/pkg/simulator"
 )
-
-type IPV4Sequence interface {
-	Next() string
-}
 
 type ReplicaSource interface {
 	simulator.SourceStock
 }
 
 type replicaSource struct {
-	env               simulator.Environment
-	kubernetesClient  kubernetes.Interface
-	endpointsInformer corev1informers.EndpointsInformer
-	nextIPValue       uint32
-	maxReplicaRPS     int64
-	failedSink        simulator.SinkStock
+	env           simulator.Environment
+	maxReplicaRPS int64
+	failedSink    simulator.SinkStock
 }
 
 func (rs *replicaSource) Name() simulator.StockName {
@@ -59,25 +46,13 @@ func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rs *replicaSource) Remove() simulator.Entity {
-	return NewReplicaEntity(rs.env, rs.kubernetesClient, rs.endpointsInformer, rs.Next(), &rs.failedSink)
+	return NewReplicaEntity(rs.env, &rs.failedSink)
 }
 
-func (rs *replicaSource) Next() string {
-	ip := make(net.IP, 4)
-	binary.BigEndian.PutUint32(ip, rs.nextIPValue)
-
-	rs.nextIPValue++
-
-	return ip.String()
-}
-
-func NewReplicaSource(env simulator.Environment, client kubernetes.Interface, informer corev1informers.EndpointsInformer, maxReplicaRPS int64) ReplicaSource {
+func NewReplicaSource(env simulator.Environment, maxReplicaRPS int64) ReplicaSource {
 	return &replicaSource{
-		env:               env,
-		kubernetesClient:  client,
-		endpointsInformer: informer,
-		nextIPValue:       1,
-		maxReplicaRPS:     maxReplicaRPS,
-		failedSink:        simulator.NewSinkStock("RequestsFailed", "Request"),
+		env:           env,
+		maxReplicaRPS: maxReplicaRPS,
+		failedSink:    simulator.NewSinkStock("RequestsFailed", "Request"),
 	}
 }

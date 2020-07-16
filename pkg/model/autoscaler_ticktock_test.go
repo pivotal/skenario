@@ -121,7 +121,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
 					failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
-					newReplica := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", &failedSink)
+					newReplica := NewReplicaEntity(envFake, &failedSink)
 					err := rawCluster.replicasActive.Add(newReplica)
 					assert.NoError(t, err)
 
@@ -186,13 +186,13 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				it.Before(func() {
 					rawCluster := cluster.(*clusterModel)
 					failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
-					newReplica1 := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "11.11.11.11", &failedSink)
+					newReplica1 := NewReplicaEntity(envFake, &failedSink)
 					newReplica1.(*replicaEntity).occupiedCPUCapacityMillisPerSecond = 50
 					newReplica1.(*replicaEntity).totalCPUCapacityMillisPerSecond = 100
 					err := rawCluster.replicasActive.Add(newReplica1)
 					assert.NoError(t, err)
 
-					newReplica2 := NewReplicaEntity(envFake, rawCluster.kubernetesClient, rawCluster.endpointsInformer, "22.22.22.22", &failedSink)
+					newReplica2 := NewReplicaEntity(envFake, &failedSink)
 					newReplica2.(*replicaEntity).occupiedCPUCapacityMillisPerSecond = 0
 					newReplica2.(*replicaEntity).totalCPUCapacityMillisPerSecond = 100
 					err = rawCluster.replicasActive.Add(newReplica2)

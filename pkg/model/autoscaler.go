@@ -19,40 +19,27 @@ import (
 	"log"
 	"time"
 
-	"go.uber.org/zap"
-
 	"skenario/pkg/simulator"
 
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
-	"github.com/knative/serving/pkg/autoscaler"
-)
-
-const (
-	testNamespace = "simulator-namespace"
-	testName      = "revisionService"
 )
 
 type AutoscalerConfig struct {
-	TickInterval           time.Duration
-	StableWindow           time.Duration
-	PanicWindow            time.Duration
-	ScaleToZeroGracePeriod time.Duration
-	TargetConcurrency      float64
-	MaxScaleUpRate         float64
+	TickInterval time.Duration
 }
 
-type KnativeAutoscalerModel interface {
+type AutoscalerModel interface {
 	Model
 }
 
-type knativeAutoscaler struct {
+type autoscaler struct {
 	env      simulator.Environment
 	tickTock AutoscalerTicktockStock
 }
 
-func (kas *knativeAutoscaler) Env() simulator.Environment {
-	return kas.env
+func (a *autoscaler) Env() simulator.Environment {
+	return a.env
 }
 
 type stubCluster struct{}
@@ -62,7 +49,7 @@ func (c *stubCluster) ListPods() ([]*skplug.Pod, error) {
 	return nil, nil
 }
 
-func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config AutoscalerConfig) KnativeAutoscalerModel {
+func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config AutoscalerConfig) AutoscalerModel {
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
@@ -84,21 +71,21 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 		panic(err)
 	}
 
-	kas := &knativeAutoscaler{
+	as := &autoscaler{
 		env:      env,
 		tickTock: NewAutoscalerTicktockStock(env, autoscalerEntity, cluster),
 	}
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
-		kas.env.AddToSchedule(simulator.NewMovement(
+		as.env.AddToSchedule(simulator.NewMovement(
 			"autoscaler_tick",
 			theTime,
-			kas.tickTock,
-			kas.tickTock,
+			as.tickTock,
+			as.tickTock,
 		))
 	}
 
-	return kas
+	return as
 }
 
 const hpaYaml = `
@@ -122,35 +109,3 @@ spec:
     kind: Deployment
     name: deployment
 `
-
-func newKpa(logger *zap.SugaredLogger, endpointsInformerSource EndpointInformerSource, kconfig AutoscalerConfig) *autoscaler.Autoscaler {
-	config := &autoscaler.Config{
-		TickInterval:                      kconfig.TickInterval,
-		MaxScaleUpRate:                    kconfig.MaxScaleUpRate,
-		StableWindow:                      kconfig.StableWindow,
-		PanicWindow:                       kconfig.PanicWindow,
-		ScaleToZeroGracePeriod:            kconfig.ScaleToZeroGracePeriod,
-		ContainerConcurrencyTargetDefault: kconfig.TargetConcurrency,
-	}
-
-	dynConfig := autoscaler.NewDynamicConfig(config, logger)
-
-	statsReporter, err := autoscaler.NewStatsReporter(testNamespace, testName, "config-1", "revision-1")
-	if err != nil {
-		logger.Fatalf("could not create stats reporter: %s", err.Error())
-	}
-
-	as, err := autoscaler.New(
-		dynConfig,
-		testNamespace,
-		testName,
-		endpointsInformerSource.EPInformer(),
-		kconfig.TargetConcurrency,
-		statsReporter,
-	)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	return as
-}

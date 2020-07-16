@@ -41,7 +41,7 @@ type RunStore interface {
 type storer struct {
 	conn            *sqlite3.Conn
 	clusterConf     model.ClusterConfig
-	kpaConf         model.AutoscalerConfig
+	asConf          model.AutoscalerConfig
 	completed       []simulator.CompletedMovement
 	ignored         []simulator.IgnoredMovement
 	origin          string
@@ -51,13 +51,13 @@ type storer struct {
 }
 
 func (s *storer) Store(completed []simulator.CompletedMovement, ignored []simulator.IgnoredMovement,
-	clusterConf model.ClusterConfig, kpaConf model.AutoscalerConfig, origin string, trafficPattern string, ranFor time.Duration,
+	clusterConf model.ClusterConfig, asConf model.AutoscalerConfig, origin string, trafficPattern string, ranFor time.Duration,
 	cpuUtilizations []*simulator.CPUUtilization) (scenarioRunId int64, err error) {
 
 	s.completed = completed
 	s.ignored = ignored
 	s.clusterConf = clusterConf
-	s.kpaConf = kpaConf
+	s.asConf = asConf
 	s.origin = origin
 	s.trafficPattern = trafficPattern
 	s.ranFor = ranFor
@@ -87,13 +87,8 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 									 , cluster_launch_delay
 									 , cluster_terminate_delay
 									 , cluster_number_of_requests
-									 , autoscaler_tick_interval
-									 , autoscaler_stable_window
-									 , autoscaler_panic_window
-									 , autoscaler_scale_to_zero_grace_period
-									 , autoscaler_target_concurrency
-									 , autoscaler_max_scale_up_rate)
-									values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
+									 , autoscaler_tick_interval)
+									values (?, ?, ?, ?, ?, ?, ?, ?);`)
 	if err != nil {
 		return -1, err
 	}
@@ -106,12 +101,7 @@ func (s *storer) scenarioRun() (scenarioRunId int64, err error) {
 		s.clusterConf.LaunchDelay.Nanoseconds(),
 		s.clusterConf.TerminateDelay.Nanoseconds(),
 		int(s.clusterConf.NumberOfRequests),
-		s.kpaConf.TickInterval.Nanoseconds(),
-		s.kpaConf.StableWindow.Nanoseconds(),
-		s.kpaConf.PanicWindow.Nanoseconds(),
-		s.kpaConf.ScaleToZeroGracePeriod.Nanoseconds(),
-		s.kpaConf.TargetConcurrency,
-		s.kpaConf.MaxScaleUpRate,
+		s.asConf.TickInterval.Nanoseconds(),
 	)
 	if err != nil {
 		return -1, err

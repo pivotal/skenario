@@ -44,7 +44,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		replicasLaunching = simulator.NewThroughStock("ReplicasLaunching", "Replica")
 		replicasActive = simulator.NewThroughStock("ReplicasActive", "Replica")
 		replicasTerminated = simulator.NewThroughStock("ReplicasTerminated", "Replica")
-		replicaSource = NewReplicaSource(envFake, nil, nil, 100)
+		replicaSource = NewReplicaSource(envFake, 100)
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
 		envFake = NewFakeEnvironment()
 		envFake.Movements = make([]simulator.Movement, 0)
@@ -126,7 +126,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		describe("there are active replicas but no launching replicas", func() {
 			it.Before(func() {
 				failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
-				newReplica := NewReplicaEntity(envFake, nil, nil, "1.2.1.2", &failedSink)
+				newReplica := NewReplicaEntity(envFake, &failedSink)
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 
@@ -143,7 +143,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 		describe.Pend("there is a mix of active and launching replicas", func() {
 			it.Before(func() {
 				failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
-				newReplica := NewReplicaEntity(envFake, nil, nil, "3.4.3.4", &failedSink)
+				newReplica := NewReplicaEntity(envFake, &failedSink)
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))

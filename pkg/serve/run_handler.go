@@ -73,15 +73,9 @@ type SkenarioRunRequest struct {
 
 	InitialNumberOfReplicas uint `json:"initial_number_of_replicas"`
 
-	LaunchDelay            time.Duration `json:"launch_delay"`
-	TerminateDelay         time.Duration `json:"terminate_delay"`
-	TickInterval           time.Duration `json:"tick_interval"`
-	StableWindow           time.Duration `json:"stable_window"`
-	PanicWindow            time.Duration `json:"panic_window"`
-	ScaleToZeroGracePeriod time.Duration `json:"scale_to_zero_grace_period"`
-	TargetConcurrency      float64       `json:"target_concurrency"`
-	ReplicaMaxRPS          int64         `json:"replica_max_rps"`
-	MaxScaleUpRate         float64       `json:"max_scale_up_rate"`
+	LaunchDelay    time.Duration `json:"launch_delay"`
+	TerminateDelay time.Duration `json:"terminate_delay"`
+	TickInterval   time.Duration `json:"tick_interval"`
 
 	RequestTimeout       time.Duration `json:"request_timeout_nanos"`
 	RequestCPUTimeMillis int           `json:"request_cpu_time_millis"`
@@ -107,11 +101,10 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
 
 	clusterConf := buildClusterConfig(runReq)
-	kpaConf := buildKpaConfig(runReq)
+	asConf := buildAutoscalerConfig(runReq)
 	replicasConfig := model.ReplicasConfig{
 		LaunchDelay:    runReq.LaunchDelay,
 		TerminateDelay: runReq.TerminateDelay,
-		MaxRPS:         runReq.ReplicaMaxRPS,
 	}
 
 	requestConfig := model.RequestConfig{
@@ -122,7 +115,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
 
-	model.NewAutoscaler(env, startAt, cluster, kpaConf)
+	model.NewAutoscaler(env, startAt, cluster, asConf)
 	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock(), requestConfig)
 
 	var traffic trafficpatterns.Pattern
@@ -158,7 +151,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	store := data.NewRunStore(conn)
-	scenarioRunId, err := store.Store(completed, ignored, clusterConf, kpaConf, "skenario_web", traffic.Name(), runReq.RunFor, env.CPUUtilizations())
+	scenarioRunId, err := store.Store(completed, ignored, clusterConf, asConf, "skenario_web", traffic.Name(), runReq.RunFor, env.CPUUtilizations())
 	if err != nil {
 		fmt.Printf("there was an error saving data: %s", err.Error())
 	}
@@ -355,13 +348,8 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 	}
 }
 
-func buildKpaConfig(srr *SkenarioRunRequest) model.AutoscalerConfig {
+func buildAutoscalerConfig(srr *SkenarioRunRequest) model.AutoscalerConfig {
 	return model.AutoscalerConfig{
-		TickInterval:           srr.TickInterval,
-		StableWindow:           srr.StableWindow,
-		PanicWindow:            srr.PanicWindow,
-		ScaleToZeroGracePeriod: srr.ScaleToZeroGracePeriod,
-		TargetConcurrency:      srr.TargetConcurrency,
-		MaxScaleUpRate:         srr.MaxScaleUpRate,
+		TickInterval: srr.TickInterval,
 	}
 }

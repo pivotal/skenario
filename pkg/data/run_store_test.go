@@ -55,12 +55,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 			NumberOfRequests: 33,
 		}
 		kpaConf = model.AutoscalerConfig{
-			TickInterval:           11 * time.Second,
-			StableWindow:           22 * time.Second,
-			PanicWindow:            33 * time.Second,
-			ScaleToZeroGracePeriod: 44 * time.Second,
-			TargetConcurrency:      5.5,
-			MaxScaleUpRate:         77,
+			TickInterval: 11 * time.Second,
 		}
 	})
 
@@ -136,8 +131,7 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("scenario parameters", func() {
 			var launchDelay, termDelay, numRequests int
-			var tickInterval, stableWindow, panicWindow, scaleToZeroGrace int
-			var concurrency, maxScaleUp float64
+			var tickInterval int
 
 			it.Before(func() {
 				singleQuery(t, conn, `
@@ -145,14 +139,8 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 						 , cluster_terminate_delay
 						 , cluster_number_of_requests
 						 , autoscaler_tick_interval
-						 , autoscaler_stable_window
-						 , autoscaler_panic_window
-						 , autoscaler_scale_to_zero_grace_period
-						 , autoscaler_target_concurrency
-						 , autoscaler_max_scale_up_rate
 					from scenario_runs `,
-					&launchDelay, &termDelay, &numRequests, &tickInterval, &stableWindow, &panicWindow, &scaleToZeroGrace,
-					&concurrency, &maxScaleUp,
+					&launchDelay, &termDelay, &numRequests, &tickInterval,
 				)
 			})
 
@@ -164,11 +152,6 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			it("sets autoscaler configuration", func() {
 				assert.Equal(t, 11000000000, tickInterval)
-				assert.Equal(t, 22000000000, stableWindow)
-				assert.Equal(t, 33000000000, panicWindow)
-				assert.Equal(t, 44000000000, scaleToZeroGrace)
-				assert.Equal(t, 5.5, concurrency)
-				assert.Equal(t, 77.0, maxScaleUp)
 			})
 		})
 
