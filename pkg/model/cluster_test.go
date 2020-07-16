@@ -24,14 +24,10 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers/core/v1"
 )
 
 func TestCluster(t *testing.T) {
 	spec.Run(t, "Cluster model", testCluster, spec.Report(report.Terminal{}))
-	spec.Run(t, "EPInformer interface", testEPInformer, spec.Report(report.Terminal{}))
 }
 
 func testCluster(t *testing.T, describe spec.G, it spec.S) {
@@ -39,7 +35,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 	var subject ClusterModel
 	var rawSubject *clusterModel
 	var envFake *FakeEnvironment
-	var endpoints *corev1.Endpoints
 	var err error
 	var replicasConfig ReplicasConfig
 
@@ -51,7 +46,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		assert.NotNil(t, subject)
 
 		rawSubject = subject.(*clusterModel)
-		endpoints, err = rawSubject.kubernetesClient.CoreV1().Endpoints("skenario").Get("Skenario Revision", metav1.GetOptions{})
 		assert.NoError(t, err)
 	})
 
@@ -60,12 +54,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		it("sets an environment", func() {
 			assert.Equal(t, envFake, subject.Env())
-		})
-
-		it("creates an 'empty' Endpoints entry for 'Skenario Revision'", func() {
-			assert.Equal(t, "Skenario Revision", endpoints.Name)
-			assert.Len(t, endpoints.Subsets, 1)
-			assert.Len(t, endpoints.Subsets[0].Addresses, 0)
 		})
 	})
 
@@ -81,8 +69,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
 			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", &failedSink)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", &failedSink)
+			firstReplica := NewReplicaEntity(envFake, &failedSink)
+			secondReplica := NewReplicaEntity(envFake, &failedSink)
 			rawSubject.replicasLaunching.Add(firstReplica)
 			rawSubject.replicasLaunching.Add(secondReplica)
 		})
@@ -98,8 +86,8 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
 			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", &failedSink)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", &failedSink)
+			firstReplica := NewReplicaEntity(envFake, &failedSink)
+			secondReplica := NewReplicaEntity(envFake, &failedSink)
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
 		})
@@ -113,24 +101,16 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		var rawSubject *clusterModel
 		var routingStockRecorded proto.Stat
 		var theTime = time.Now()
-		var replicaFake *FakeReplica
 		envFake = NewFakeEnvironment()
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
 
-			replicaFake = &FakeReplica{
-				totalCPUCapacityMillisPerSecond:    100.0,
-				occupiedCPUCapacityMillisPerSecond: 0.0,
-			}
-
 			request := NewRequestEntity(envFake, rawSubject.requestsInRouting, RequestConfig{CPUTimeMillis: 500, IOTimeMillis: 500, Timeout: 1 * time.Second})
 			rawSubject.requestsInRouting.Add(request)
 			failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
-			firstReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "11.11.11.11", &failedSink)
-			secondReplica := NewReplicaEntity(envFake, rawSubject.kubernetesClient, rawSubject.endpointsInformer, "22.22.22.22", &failedSink)
-
-			rawSubject.replicasActive.Add(replicaFake)
+			firstReplica := NewReplicaEntity(envFake, &failedSink)
+			secondReplica := NewReplicaEntity(envFake, &failedSink)
 
 			rawSubject.replicasActive.Add(firstReplica)
 			rawSubject.replicasActive.Add(secondReplica)
@@ -165,41 +145,11 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, int32(1000), routingStockRecorded.Value)
 			})
 		})
-
-		describe("records for replicas", func() {
-			it("delegates Stats creation to the Replica", func() {
-				assert.True(t, replicaFake.StatCalled)
-			})
-		})
 	})
 
 	describe("requestsInRouting", func() {
 		it("returns the configured routing stock", func() {
 			assert.Equal(t, rawSubject.requestsInRouting, subject.RoutingStock())
-		})
-	})
-}
-
-func testEPInformer(t *testing.T, describe spec.G, it spec.S) {
-	var config ClusterConfig
-	var subject EndpointInformerSource
-	var cluster ClusterModel
-	var envFake = NewFakeEnvironment()
-	var replicasConfig ReplicasConfig
-
-	it.Before(func() {
-		config = ClusterConfig{}
-		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
-		cluster = NewCluster(envFake, config, replicasConfig)
-		assert.NotNil(t, cluster)
-		subject = cluster.(EndpointInformerSource)
-		assert.NotNil(t, subject)
-	})
-
-	describe("EPInformer()", func() {
-		// TODO: this test just feels like it's testing the compiler
-		it("returns an EndpointsInformer", func() {
-			assert.Implements(t, (*v1.EndpointsInformer)(nil), subject.EPInformer())
 		})
 	})
 }

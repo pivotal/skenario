@@ -21,33 +21,22 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/informers"
-	corev1informers "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
-
 	"skenario/pkg/simulator"
 )
 
 func TestReplicasSource(t *testing.T) {
 	spec.Run(t, "Replicas Launching source", testReplicasSource, spec.Report(report.Terminal{}))
-	spec.Run(t, "IPV4Sequence interface", testIPV4Sequence, spec.Report(report.Terminal{}))
 }
 
 func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 	var subject ReplicaSource
 	var rawSubject *replicaSource
 	var envFake *FakeEnvironment
-	var fakeClient kubernetes.Interface
-	var endpointsInformer corev1informers.EndpointsInformer
 
 	it.Before(func() {
 		envFake = NewFakeEnvironment()
-		fakeClient = fake.NewSimpleClientset()
-		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-		endpointsInformer = informerFactory.Core().V1().Endpoints()
 
-		subject = NewReplicaSource(envFake, fakeClient, endpointsInformer, 100)
+		subject = NewReplicaSource(envFake, 100)
 		rawSubject = subject.(*replicaSource)
 	})
 
@@ -56,13 +45,6 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, envFake, rawSubject.env)
 		})
 
-		it("sets a kubernetes client", func() {
-			assert.Equal(t, fakeClient, rawSubject.kubernetesClient)
-		})
-
-		it("sets an endpoints informer", func() {
-			assert.Equal(t, endpointsInformer, rawSubject.endpointsInformer)
-		})
 	})
 
 	describe("Name()", func() {
@@ -104,41 +86,4 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 			assert.Equal(t, simulator.EntityKind("Replica"), entity1.Kind())
 		})
 	})
-}
-
-func testIPV4Sequence(t *testing.T, describe spec.G, it spec.S) {
-	var rs ReplicaSource
-	var subject IPV4Sequence
-	var rawSubject *replicaSource
-	var envFake *FakeEnvironment
-	var fakeClient kubernetes.Interface
-	var endpointsInformer corev1informers.EndpointsInformer
-
-	it.Before(func() {
-		fakeClient = fake.NewSimpleClientset()
-		informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-		endpointsInformer = informerFactory.Core().V1().Endpoints()
-
-		rs = NewReplicaSource(envFake, fakeClient, endpointsInformer, 100)
-		subject = rs.(IPV4Sequence)
-		rawSubject = rs.(*replicaSource)
-	})
-
-	describe("NextIP()", func() {
-		var ipGiven string
-		it.Before(func() {
-			// twice to show we didn't succeed purely on init values
-			ipGiven = subject.Next()
-			ipGiven = subject.Next()
-		})
-
-		it("creates an IPv4 address string", func() {
-			assert.Equal(t, "0.0.0.2", ipGiven)
-		})
-
-		it("increments the next IP to give out", func() {
-			assert.Equal(t, uint32(3), rawSubject.nextIPValue)
-		})
-	})
-
 }

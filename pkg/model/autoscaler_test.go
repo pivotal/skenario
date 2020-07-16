@@ -16,18 +16,12 @@
 package model
 
 import (
-	"github.com/knative/serving/pkg/autoscaler"
-	"go.uber.org/zap"
 	"testing"
 	"time"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/informers/core/v1"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
-
 	"skenario/pkg/simulator"
 )
 
@@ -35,21 +29,9 @@ func TestAutoscaler(t *testing.T) {
 	spec.Run(t, "HPA Autoscaler model", testAutoscaler, spec.Report(report.Terminal{}))
 }
 
-type fakeEndpointsInformerSource struct {
-	epInformerCalled bool
-}
-
-func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
-	feis.epInformerCalled = true
-
-	fakeClient := k8sfakes.NewSimpleClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-	return informerFactory.Core().V1().Endpoints()
-}
-
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
-	var subject KnativeAutoscalerModel
-	var rawSubject *knativeAutoscaler
+	var subject AutoscalerModel
+	var rawSubject *autoscaler
 	var envFake *FakeEnvironment
 	var cluster ClusterModel
 	var config ClusterConfig
@@ -71,7 +53,7 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 	describe("NewAutoscaler()", func() {
 		it.Before(func() {
 			subject = NewAutoscaler(envFake, startAt, cluster, AutoscalerConfig{TickInterval: 60 * time.Second})
-			rawSubject = subject.(*knativeAutoscaler)
+			rawSubject = subject.(*autoscaler)
 		})
 
 		describe("scheduling calculations and waits", func() {
@@ -108,59 +90,6 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		it("sets a ticktock stock", func() {
 			assert.NotNil(t, rawSubject.tickTock)
 			assert.Equal(t, simulator.StockName("Autoscaler Ticktock"), rawSubject.tickTock.Name())
-		})
-
-		describe("newKpa() helper", func() {
-			var as *autoscaler.Autoscaler
-			var conf *autoscaler.Config
-			var epiFake *fakeEndpointsInformerSource
-
-			it.Before(func() {
-				epiFake = new(fakeEndpointsInformerSource)
-
-				lg, err := zap.NewDevelopment()
-				assert.NoError(t, err)
-				as = newKpa(lg.Sugar(), epiFake, AutoscalerConfig{
-					TickInterval:           11 * time.Second,
-					StableWindow:           22 * time.Second,
-					PanicWindow:            33 * time.Second,
-					ScaleToZeroGracePeriod: 44 * time.Second,
-					TargetConcurrency:      55.0,
-					MaxScaleUpRate:         77.0,
-				})
-				assert.NotNil(t, as)
-
-				conf = as.Current()
-				assert.NotNil(t, conf)
-			})
-
-			it("sets TickInterval", func() {
-				assert.Equal(t, 11*time.Second, conf.TickInterval)
-			})
-
-			it("sets StableWindow", func() {
-				assert.Equal(t, 22*time.Second, conf.StableWindow)
-			})
-
-			it("sets PanicWindow", func() {
-				assert.Equal(t, 33*time.Second, conf.PanicWindow)
-			})
-
-			it("sets ScaleToZeroGracePeriod", func() {
-				assert.Equal(t, 44*time.Second, conf.ScaleToZeroGracePeriod)
-			})
-
-			it("sets ContainerCurrencyTargetDefault", func() {
-				assert.Equal(t, 55.0, conf.ContainerConcurrencyTargetDefault)
-			})
-
-			it("sets MaxScaleUpRate", func() {
-				assert.Equal(t, 77.0, conf.MaxScaleUpRate)
-			})
-
-			it("gets the endpoints informer from EndpointsInformerSource", func() {
-				assert.True(t, epiFake.epInformerCalled)
-			})
 		})
 	})
 }
