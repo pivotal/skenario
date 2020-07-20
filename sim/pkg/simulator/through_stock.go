@@ -41,9 +41,7 @@ func (s *stock) EntitiesInStock() map[Entity]bool {
 
 func (s *stock) GetEntityByNumber(number int) Entity {
 	counter := 0
-	fmt.Println("new loop")
 	for entity := range s.stock {
-		fmt.Println(entity)
 		if counter == number {
 			return entity
 		}
