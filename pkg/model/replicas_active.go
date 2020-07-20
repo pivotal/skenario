@@ -26,6 +26,7 @@ type ReplicasActiveStock interface {
 type replicasActiveStock struct {
 	env      simulator.Environment
 	delegate simulator.ThroughStock
+	replicas []*ReplicaEntity
 }
 
 func (ras *replicasActiveStock) Name() simulator.StockName {
@@ -40,31 +41,52 @@ func (ras *replicasActiveStock) Count() uint64 {
 	return ras.delegate.Count()
 }
 
-func (ras *replicasActiveStock) EntitiesInStock() []*simulator.Entity {
+func (ras *replicasActiveStock) EntitiesInStock() map[simulator.Entity]bool {
 	return ras.delegate.EntitiesInStock()
 }
 
-func (ras *replicasActiveStock) Remove() simulator.Entity {
-	entity := ras.delegate.Remove()
-	if entity == nil {
+func (ras *replicasActiveStock) GetEntityByNumber(number int) simulator.Entity {
+	return *ras.replicas[number]
+}
+
+func (ras *replicasActiveStock) Remove(entity *simulator.Entity) simulator.Entity {
+	removedEntity := ras.delegate.Remove(entity)
+	if removedEntity == nil {
 		return nil
 	}
 
-	replica := entity.(Replica)
+	replica := removedEntity.(ReplicaEntity)
 	replica.Deactivate()
 
-	return entity
+	//support replicas array updated
+	ras.deleteReplica(&replica)
+	return removedEntity
 }
 
 func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
-	replica := entity.(Replica)
+	replica := entity.(ReplicaEntity)
 	replica.Activate()
+	ras.replicas = append(ras.replicas, &replica)
 	return ras.delegate.Add(entity)
+}
+
+func (ras *replicasActiveStock) deleteReplica(replica *ReplicaEntity) {
+	removed := false
+	for i := 0; i < len(ras.replicas); i++ {
+		if ras.replicas[i] == replica {
+			ras.replicas[i] = ras.replicas[len(ras.replicas)-1]
+			removed = true
+		}
+	}
+	if removed {
+		ras.replicas = ras.replicas[:len(ras.replicas)-1]
+	}
 }
 
 func NewReplicasActiveStock(env simulator.Environment) ReplicasActiveStock {
 	return &replicasActiveStock{
 		env:      env,
 		delegate: simulator.NewThroughStock("ReplicasActive", "Replica"),
+		replicas: make([]*ReplicaEntity, 0),
 	}
 }

@@ -54,7 +54,7 @@ func (mpq *movementPQ) EnqueueMovement(movement Movement) (wasShifted bool, sche
 	}
 
 	if wasShifted {
-		shiftedMovement := NewMovement(movement.Kind(), movement.OccursAt().Add(i), movement.From(), movement.To())
+		shiftedMovement := NewMovement(movement.Kind(), movement.OccursAt().Add(i), movement.From(), movement.To(), movement.WhatToMove())
 		return true, shiftedMovement.OccursAt(), mpq.heap.Add(shiftedMovement)
 	}
 

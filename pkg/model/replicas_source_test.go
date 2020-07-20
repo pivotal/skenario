@@ -67,7 +67,7 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("EntitiesInStock()", func() {
 		it("always empty", func() {
-			assert.Equal(t, []*simulator.Entity{}, subject.EntitiesInStock())
+			assert.Equal(t, map[simulator.Entity]bool{}, subject.EntitiesInStock())
 		})
 	})
 
@@ -75,9 +75,9 @@ func testReplicasSource(t *testing.T, describe spec.G, it spec.S) {
 		var entity1, entity2 simulator.Entity
 
 		it.Before(func() {
-			entity1 = subject.Remove()
+			entity1 = subject.Remove(nil)
 			assert.NotNil(t, entity1)
-			entity2 = subject.Remove()
+			entity2 = subject.Remove(nil)
 			assert.NotNil(t, entity2)
 		})
 

@@ -53,12 +53,15 @@ func (rps *requestsProcessingStock) Count() uint64 {
 	return rps.delegate.Count()
 }
 
-func (rps *requestsProcessingStock) EntitiesInStock() []*simulator.Entity {
+func (rps *requestsProcessingStock) EntitiesInStock() map[simulator.Entity]bool {
 	return rps.delegate.EntitiesInStock()
 }
 
-func (rps *requestsProcessingStock) Remove() simulator.Entity {
-	request := rps.delegate.Remove().(*requestEntity)
+func (rps *requestsProcessingStock) GetEntityByNumber(number int) simulator.Entity {
+	return rps.delegate.GetEntityByNumber(number)
+}
+func (rps *requestsProcessingStock) Remove(entity *simulator.Entity) simulator.Entity {
+	request := rps.delegate.Remove(entity).(*requestEntity)
 	*rps.occupiedCPUCapacityMillisPerSecond -= *request.utilizationForRequestMillisPerSecond
 	return request
 }
@@ -87,6 +90,7 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 			rps.env.CurrentMovementTime().Add(totalTime),
 			rps,
 			rps.requestsComplete,
+			&entity,
 		))
 	} else {
 		rps.env.AddToSchedule(simulator.NewMovement(
@@ -94,6 +98,7 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 			rps.env.CurrentMovementTime().Add(request.requestConfig.Timeout),
 			rps,
 			*rps.requestsFailed,
+			&entity,
 		))
 	}
 

@@ -20,8 +20,7 @@ import "fmt"
 type stock struct {
 	name       StockName
 	stocksKind EntityKind
-
-	stock []*Entity
+	stock      map[Entity]bool
 }
 
 func (s *stock) Name() StockName {
@@ -36,10 +35,22 @@ func (s *stock) Count() uint64 {
 	return uint64(len(s.stock))
 }
 
-func (s *stock) EntitiesInStock() []*Entity {
+func (s *stock) EntitiesInStock() map[Entity]bool {
 	return s.stock
 }
 
+func (s *stock) GetEntityByNumber(number int) Entity {
+	counter := 0
+	fmt.Println("new loop")
+	for entity := range s.stock {
+		fmt.Println(entity)
+		if counter == number {
+			return entity
+		}
+		counter++
+	}
+	return nil
+}
 func (s *stock) Add(entity Entity) error {
 	if entity == nil {
 		return fmt.Errorf("could not add Entity, as it was nil")
@@ -54,16 +65,22 @@ func (s *stock) Add(entity Entity) error {
 			entity.Kind(),
 		)
 	}
-
-	s.stock = append(s.stock, &entity)
+	s.stock[entity] = true
 	return nil
 }
 
-func (s *stock) Remove() Entity {
-	var e *Entity
-	if s.Count() > 0 {
-		e, s.stock = s.stock[0], s.stock[1:]
-		return *e
+func (s *stock) Remove(entity *Entity) Entity {
+	//we don't need to remove a particular entity (entity == nil), then remove any
+	if entity == nil {
+		for en := range s.stock {
+			delete(s.stock, en)
+			return en
+		}
+		return nil
+	}
+	if s.stock[*entity] {
+		delete(s.stock, *entity)
+		return *entity
 	}
 
 	return nil
@@ -73,6 +90,7 @@ func newBaseStock(name StockName, kind EntityKind) *stock {
 	return &stock{
 		name:       name,
 		stocksKind: kind,
+		stock:      make(map[Entity]bool, 0),
 	}
 }
 

@@ -29,6 +29,7 @@ type coreMovement interface {
 	OccursAt() time.Time
 	From() SourceStock
 	To() SinkStock
+	WhatToMove() *Entity
 }
 
 type Movement interface {
@@ -42,6 +43,7 @@ type move struct {
 	to       SinkStock
 	occursAt time.Time
 	notes    []string
+	entity   *Entity
 }
 
 func (mv *move) Kind() MovementKind {
@@ -68,12 +70,17 @@ func (mv *move) AddNote(note string) {
 	mv.notes = append(mv.notes, note)
 }
 
-func NewMovement(kind MovementKind, occursAt time.Time, from SourceStock, to SinkStock) Movement {
+func (mv *move) WhatToMove() *Entity {
+	return mv.entity
+}
+
+func NewMovement(kind MovementKind, occursAt time.Time, from SourceStock, to SinkStock, entity *Entity) Movement {
 	return &move{
 		kind:     kind,
 		occursAt: occursAt,
 		to:       to,
 		from:     from,
 		notes:    make([]string, 0),
+		entity:   entity,
 	}
 }
