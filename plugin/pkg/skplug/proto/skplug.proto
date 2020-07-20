@@ -1,0 +1,64 @@
+syntax = "proto3";
+package proto;
+
+message Empty {}
+
+message Autoscaler {
+  string type = 1;
+  string yaml = 2;
+}
+
+message Pod {
+  string name = 1;
+  string state = 2;
+  int64 last_transition = 3;
+  int32 cpu_request = 4;
+}
+
+enum EventType {
+  CREATE = 0;
+  UPDATE = 1;
+  DELETE = 2;
+}
+
+message EventRequest {
+  string partition = 1;
+  int64 time = 2;
+  EventType type = 3;
+  oneof object_oneof {
+    Autoscaler autoscaler = 4;
+    Pod pod = 5;
+  }
+}
+
+enum MetricType {
+  CPU_MILLIS = 0;
+  CONCURRENT_REQUESTS_MILLIS = 1;
+}
+
+message Stat {
+  int64 time = 1;
+  string pod_name = 2;
+  MetricType type = 3;
+  int32 value = 4;
+}
+
+message StatRequest {
+  string partition = 1;
+  repeated Stat stat = 2;
+}
+
+message ScaleRequest {
+  string partition = 1;
+  int64 time = 2;
+}
+
+message ScaleResponse {
+  int32 rec = 1;
+}
+
+service Plugin {
+  rpc Event(EventRequest) returns (Empty);
+  rpc Stat(StatRequest) returns (Empty);
+  rpc Scale(ScaleRequest) returns (ScaleResponse);
+}
