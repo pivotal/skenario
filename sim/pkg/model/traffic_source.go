@@ -41,11 +41,13 @@ func (ts *trafficSource) Count() uint64 {
 	return 0
 }
 
-func (ts *trafficSource) EntitiesInStock() []*simulator.Entity {
-	return []*simulator.Entity{}
+func (ts *trafficSource) EntitiesInStock() map[simulator.Entity]bool {
+	return map[simulator.Entity]bool{}
 }
-
-func (ts *trafficSource) Remove() simulator.Entity {
+func (ts *trafficSource) GetEntityByNumber(number int) simulator.Entity {
+	return nil
+}
+func (ts *trafficSource) Remove(entity *simulator.Entity) simulator.Entity {
 	return NewRequestEntity(ts.env, ts.requestsRouting, ts.requestConfig)
 }
 

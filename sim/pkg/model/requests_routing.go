@@ -45,12 +45,15 @@ func (rbs *requestsRoutingStock) Count() uint64 {
 	return rbs.delegate.Count()
 }
 
-func (rbs *requestsRoutingStock) EntitiesInStock() []*simulator.Entity {
+func (rbs *requestsRoutingStock) EntitiesInStock() map[simulator.Entity]bool {
 	return rbs.delegate.EntitiesInStock()
 }
+func (rbs *requestsRoutingStock) GetEntityByNumber(number int) simulator.Entity {
+	return rbs.delegate.GetEntityByNumber(number)
+}
 
-func (rbs *requestsRoutingStock) Remove() simulator.Entity {
-	return rbs.delegate.Remove()
+func (rbs *requestsRoutingStock) Remove(entity *simulator.Entity) simulator.Entity {
+	return rbs.delegate.Remove(entity)
 }
 
 func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
@@ -60,14 +63,14 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 
 	countReplicas := rbs.replicas.Count()
 	if countReplicas > 0 {
-		replicas := rbs.replicas.EntitiesInStock()
-		replica := (*replicas[uint64(rbs.countRequests)%countReplicas]).(ReplicaEntity)
+		replica := rbs.replicas.GetEntityByNumber(int(uint64(rbs.countRequests) % countReplicas)).(ReplicaEntity)
 
 		rbs.env.AddToSchedule(simulator.NewMovement(
 			"send_to_replica",
 			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
 			rbs,
 			replica.RequestsProcessing(),
+			&entity,
 		))
 	} else {
 		rbs.env.AddToSchedule(simulator.NewMovement(
@@ -75,6 +78,7 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
 			rbs,
 			rbs.requestsFailed,
+			&entity,
 		))
 	}
 

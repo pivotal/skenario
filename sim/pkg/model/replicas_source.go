@@ -41,11 +41,13 @@ func (rs *replicaSource) Count() uint64 {
 	return 0
 }
 
-func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
-	return []*simulator.Entity{}
+func (rs *replicaSource) EntitiesInStock() map[simulator.Entity]bool {
+	return map[simulator.Entity]bool{}
 }
-
-func (rs *replicaSource) Remove() simulator.Entity {
+func (rs *replicaSource) GetEntityByNumber(number int) simulator.Entity {
+	return nil
+}
+func (rs *replicaSource) Remove(entity *simulator.Entity) simulator.Entity {
 	return NewReplicaEntity(rs.env, &rs.failedSink)
 }
 

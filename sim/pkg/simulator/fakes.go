@@ -40,12 +40,15 @@ func (mss *MockStockType) Count() uint64 {
 	return uint64(0)
 }
 
-func (mss *MockStockType) EntitiesInStock() []*Entity {
-	mss.Called()
-	return []*Entity{}
+func (mss *MockStockType) EntitiesInStock() map[Entity]bool {
+	return map[Entity]bool{}
 }
 
-func (mss *MockStockType) Remove() Entity {
+func (mss *MockStockType) GetEntityByNumber(number int) Entity {
+	return nil
+}
+
+func (mss *MockStockType) Remove(entity *Entity) Entity {
 	mss.Called()
 	return NewEntity("test entity", "mock kind")
 }
@@ -75,11 +78,15 @@ func (es *EchoSourceStockType) Count() uint64 {
 	return 0
 }
 
-func (es *EchoSourceStockType) EntitiesInStock() []*Entity {
-	return []*Entity{}
+func (es *EchoSourceStockType) EntitiesInStock() map[Entity]bool {
+	return map[Entity]bool{}
 }
 
-func (es *EchoSourceStockType) Remove() Entity {
+func (es *EchoSourceStockType) GetEntityByNumber(number int) Entity {
+	return nil
+}
+
+func (es *EchoSourceStockType) Remove(entity *Entity) Entity {
 	name := EntityName(fmt.Sprintf("entity-%d", es.series))
 	es.series++
 	return NewEntity(name, es.kind)

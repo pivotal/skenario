@@ -64,7 +64,7 @@ func testReplicasTerminating(t *testing.T, describe spec.G, it spec.S) {
 			subject.Add(replicaFake)
 			assert.Equal(t, uint64(1), subject.Count())
 
-			subject.Remove()
+			subject.Remove(nil)
 			assert.Equal(t, uint64(0), subject.Count())
 		})
 	})

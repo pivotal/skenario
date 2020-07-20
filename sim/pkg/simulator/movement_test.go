@@ -37,7 +37,7 @@ func testMovement(t *testing.T, describe spec.G, it spec.S) {
 	it.Before(func() {
 		fromStock = NewSourceStock("test from source", "test entity kind")
 		toStock = NewSinkStock("test from source", "test entity kind")
-		movement = NewMovement("test movement kind", theTime, fromStock, toStock)
+		movement = NewMovement("test movement kind", theTime, fromStock, toStock, nil)
 	})
 
 	describe("Kind()", func() {

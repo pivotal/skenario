@@ -46,11 +46,13 @@ func (asts *autoscalerTicktockStock) Count() uint64 {
 	return 1
 }
 
-func (asts *autoscalerTicktockStock) EntitiesInStock() []*simulator.Entity {
-	return []*simulator.Entity{&asts.autoscalerEntity}
+func (asts *autoscalerTicktockStock) EntitiesInStock() map[simulator.Entity]bool {
+	return map[simulator.Entity]bool{asts.autoscalerEntity: true}
 }
-
-func (asts *autoscalerTicktockStock) Remove() simulator.Entity {
+func (asts *autoscalerTicktockStock) GetEntityByNumber(number int) simulator.Entity {
+	return asts.autoscalerEntity
+}
+func (asts *autoscalerTicktockStock) Remove(entity *simulator.Entity) simulator.Entity {
 	return asts.autoscalerEntity
 }
 
@@ -71,7 +73,8 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	if delta > 0 {
 		for i := int32(0); i < delta; i++ {
-			err := asts.desiredSource.Add(simulator.NewEntity("Desired", "Desired"))
+			desiredEntity := simulator.NewEntity("Desired", "Desired")
+			err := asts.desiredSource.Add(desiredEntity)
 			if err != nil {
 				return err
 			}
@@ -81,6 +84,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 				currentTime.Add(1*time.Nanosecond),
 				asts.desiredSource,
 				asts.cluster.Desired(),
+				&desiredEntity,
 			))
 		}
 	} else if delta < 0 {
@@ -90,6 +94,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 				currentTime.Add(1*time.Nanosecond),
 				asts.cluster.Desired(),
 				asts.desiredSink,
+				nil,
 			))
 		}
 	} else {
@@ -106,8 +111,8 @@ func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 	countActiveReplicas := 0.0
 	totalCPUUtilization := 0.0 // total cpuUtilization for all active replicas in percentage
 
-	for _, en := range asts.cluster.ActiveStock().EntitiesInStock() {
-		replica := (*en).(*replicaEntity)
+	for en := range asts.cluster.ActiveStock().EntitiesInStock() {
+		replica := en.(*replicaEntity)
 		totalCPUUtilization += replica.occupiedCPUCapacityMillisPerSecond * 100 / replica.totalCPUCapacityMillisPerSecond
 		countActiveReplicas++
 	}

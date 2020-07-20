@@ -61,8 +61,8 @@ func testStock(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("EntitiesInStock()", func() {
-		it("returns an Entity slice for the current contents of the stock", func() {
-			assert.ElementsMatch(t, []*Entity{&entity}, subject.EntitiesInStock())
+		it("returns an Entity map for the current contents of the stock", func() {
+			assert.Equal(t, map[Entity]bool{entity: true}, subject.EntitiesInStock())
 		})
 	})
 }
@@ -92,15 +92,15 @@ func testSourceStock(t *testing.T, describe spec.G, it spec.S) {
 		it("decreases the stock count by 1", func() {
 			before := subject.Count()
 
-			subject.Remove()
+			subject.Remove(nil)
 
 			after := subject.Count()
 			assert.Equal(t, before-1, after)
 		})
 
 		it("removes in FIFO order", func() {
-			assert.Equal(t, entity1, subject.Remove())
-			assert.Equal(t, entity2, subject.Remove())
+			assert.Equal(t, entity1, subject.Remove(nil))
+			assert.Equal(t, entity2, subject.Remove(nil))
 		})
 	})
 }
@@ -167,7 +167,7 @@ func testThroughStock(t *testing.T, describe spec.G, it spec.S) {
 			err := subject.Add(entity)
 			assert.NoError(t, err)
 
-			removed := subject.Remove()
+			removed := subject.Remove(nil)
 			assert.NotNil(t, removed)
 
 			assert.Equal(t, entity, removed)
@@ -176,7 +176,7 @@ func testThroughStock(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("Remove() when the stock is empty", func() {
 		it("returns nil", func() {
-			assert.Nil(t, subject.Remove())
+			assert.Nil(t, subject.Remove(nil))
 		})
 	})
 }

@@ -47,10 +47,14 @@ func (hs *haltingSink) Add(entity Entity) error {
 	return hs.delegate.Add(entity)
 }
 
-func (hs *haltingSink) Remove() Entity {
-	return hs.delegate.Remove()
+func (hs *haltingSink) Remove(entity *Entity) Entity {
+	return hs.delegate.Remove(entity)
 }
 
-func (hs *haltingSink) EntitiesInStock() []*Entity {
+func (hs *haltingSink) EntitiesInStock() map[Entity]bool {
 	return hs.delegate.EntitiesInStock()
+}
+
+func (hs *haltingSink) GetEntityByNumber(number int) Entity {
+	return hs.delegate.GetEntityByNumber(number)
 }

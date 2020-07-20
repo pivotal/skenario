@@ -51,6 +51,7 @@ func (ur *uniformRandom) Generate() {
 			ur.startAt.Add(time.Duration(r)*time.Nanosecond),
 			ur.source,
 			ur.routingStock,
+			nil,
 		))
 	}
 }

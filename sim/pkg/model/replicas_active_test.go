@@ -69,7 +69,7 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 		it.Before(func() {
 			replicaFake = new(FakeReplica)
 			subject.Add(replicaFake)
-			subject.Remove()
+			subject.Remove(nil)
 		})
 
 		it("tells the Replica entity that it is terminating", func() {
@@ -78,7 +78,7 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 
 		it("returns nil if it is empty", func() {
 			assert.Zero(t, subject.Count())
-			assert.Nil(t, subject.Remove())
+			assert.Nil(t, subject.Remove(nil))
 		})
 	})
 }

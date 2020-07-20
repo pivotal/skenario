@@ -73,16 +73,16 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 			subject.Add(simulator.NewEntity("desired-1", "Desired"))
 			assert.Equal(t, uint64(1), subject.Count())
 
-			subject.Remove()
+			subject.Remove(nil)
 			assert.Equal(t, uint64(0), subject.Count())
 		})
 	})
 
 	describe("EntitiesInStock()", func() {
-		it("returns an array of Desired", func() {
+		it("returns a map of Desired", func() {
 			ent := simulator.NewEntity("desired-1", "Desired")
 			subject.Add(ent)
-			assert.Equal(t, []*simulator.Entity{&ent}, subject.EntitiesInStock())
+			assert.Equal(t, map[simulator.Entity]bool{ent: true}, subject.EntitiesInStock())
 		})
 	})
 
@@ -114,7 +114,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
 
-				subject.Remove()
+				subject.Remove(nil)
 			})
 
 			it("schedules movements from ReplicasLaunching to ReplicasTerminating", func() {
@@ -130,7 +130,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 
-				subject.Remove()
+				subject.Remove(nil)
 			})
 
 			it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
@@ -149,8 +149,8 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
 
-				subject.Remove()
-				subject.Remove()
+				subject.Remove(nil)
+				subject.Remove(nil)
 			})
 
 			it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
