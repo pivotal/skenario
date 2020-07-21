@@ -212,7 +212,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 					subject = NewEnvironment(ctx, startTime, runFor)
 					assert.NotNil(t, subject)
 
-					nilStock = NewThroughStock("NilStock", "test movement kind")
+					nilStock = NewHomogenousThroughStock("NilStock", "test movement kind")
 
 					var err error
 

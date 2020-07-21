@@ -81,11 +81,11 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 
 			subject = NewRunStore(conn)
 
-			stock1 = simulator.NewThroughStock("stock 1", "test entity")
-			stock2 = simulator.NewThroughStock("stock 2", "test entity")
-			env.AddToSchedule(simulator.NewMovement("stock 1 -> stock 2", startAt.Add(111*time.Second), stock1, stock2))
-			env.AddToSchedule(simulator.NewMovement("stock 1 -> stock 2", startAt.Add(222*time.Second), stock1, stock2))
-			env.AddToSchedule(simulator.NewMovement("Ignored", env.HaltTime().Add(10*time.Second), simulator.NewSourceStock("Source", "Entity"), simulator.NewSinkStock("Sink", "Entity")))
+			stock1 = simulator.NewHomogenousThroughStock("stock 1", "test entity")
+			stock2 = simulator.NewHomogenousThroughStock("stock 2", "test entity")
+			env.AddToSchedule(simulator.NewMovement("stock 1 -> stock 2", startAt.Add(111*time.Second), stock1, stock2, nil))
+			env.AddToSchedule(simulator.NewMovement("stock 1 -> stock 2", startAt.Add(222*time.Second), stock1, stock2, nil))
+			env.AddToSchedule(simulator.NewMovement("Ignored", env.HaltTime().Add(10*time.Second), simulator.NewSourceStock("Source", "Entity"), simulator.NewSinkStock("Sink", "Entity"), nil))
 
 			completed, ignored, err = env.Run()
 			assert.NoError(t, err)

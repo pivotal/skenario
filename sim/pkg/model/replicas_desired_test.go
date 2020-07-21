@@ -41,9 +41,9 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		replicasLaunching = simulator.NewThroughStock("ReplicasLaunching", "Replica")
-		replicasActive = simulator.NewThroughStock("ReplicasActive", "Replica")
-		replicasTerminated = simulator.NewThroughStock("ReplicasTerminated", "Replica")
+		replicasLaunching = simulator.NewHomogenousThroughStock("ReplicasLaunching", "Replica")
+		replicasActive = simulator.NewHeterogenousThroughStock("ReplicasActive", "Replica")
+		replicasTerminated = simulator.NewHomogenousThroughStock("ReplicasTerminated", "Replica")
 		replicaSource = NewReplicaSource(envFake, 100)
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
 		envFake = NewFakeEnvironment()
@@ -79,10 +79,10 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 	})
 
 	describe("EntitiesInStock()", func() {
-		it("returns a map of Desired", func() {
+		it("returns an array of Desired", func() {
 			ent := simulator.NewEntity("desired-1", "Desired")
 			subject.Add(ent)
-			assert.Equal(t, map[simulator.Entity]bool{ent: true}, subject.EntitiesInStock())
+			assert.Equal(t, []*simulator.Entity{&ent}, subject.EntitiesInStock())
 		})
 	})
 

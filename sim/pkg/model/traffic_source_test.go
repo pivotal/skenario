@@ -76,7 +76,7 @@ func testTrafficSource(t *testing.T, describe spec.G, it spec.S) {
 
 	describe("EntitiesInStock()", func() {
 		it("always empty", func() {
-			assert.Equal(t, map[simulator.Entity]bool{}, subject.EntitiesInStock())
+			assert.Equal(t, []*simulator.Entity{}, subject.EntitiesInStock())
 		})
 	})
 
