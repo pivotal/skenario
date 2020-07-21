@@ -108,13 +108,13 @@ func NewHorizontalPodAutoscaler(env simulator.Environment, startAt time.Time, cl
 		env: env,
 	}
 	for theTime := startAt.Add(15 * time.Second).Add(time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(15 * time.Second) {
-		for autoscaler := range hpa.tickTock.EntitiesInStock() {
+		for _, autoscaler := range hpa.tickTock.EntitiesInStock() {
 			hpa.env.AddToSchedule(simulator.NewMovement(
 				"autoscaler_tick",
 				theTime,
 				hpa.tickTock,
 				hpa.tickTock,
-				&autoscaler,
+				autoscaler,
 			))
 		}
 	}

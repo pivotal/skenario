@@ -21,8 +21,7 @@ type baseStock interface {
 	Name() StockName
 	KindStocked() EntityKind
 	Count() uint64
-	EntitiesInStock() map[Entity]bool
-	GetEntityByNumber(number int) Entity
+	EntitiesInStock() []*Entity
 }
 
 type removable interface {

@@ -78,13 +78,13 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 	}
 
 	for theTime := startAt.Add(config.TickInterval).Add(1 * time.Nanosecond); theTime.Before(env.HaltTime()); theTime = theTime.Add(config.TickInterval) {
-		for autoscaler := range as.tickTock.EntitiesInStock() {
+		for _, autoscaler := range as.tickTock.EntitiesInStock() {
 			as.env.AddToSchedule(simulator.NewMovement(
 				"autoscaler_tick",
 				theTime,
 				as.tickTock,
 				as.tickTock,
-				&autoscaler,
+				autoscaler,
 			))
 		}
 	}

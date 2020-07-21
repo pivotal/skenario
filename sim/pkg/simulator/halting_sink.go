@@ -25,7 +25,7 @@ type haltingSink struct {
 
 func NewHaltingSink(name StockName, stocks EntityKind, futureMovements MovementPriorityQueue) *haltingSink {
 	return &haltingSink{
-		delegate:        NewThroughStock(name, stocks),
+		delegate:        NewHomogenousThroughStock(name, stocks),
 		futureMovements: futureMovements,
 	}
 }
@@ -51,10 +51,6 @@ func (hs *haltingSink) Remove(entity *Entity) Entity {
 	return hs.delegate.Remove(entity)
 }
 
-func (hs *haltingSink) EntitiesInStock() map[Entity]bool {
+func (hs *haltingSink) EntitiesInStock() []*Entity {
 	return hs.delegate.EntitiesInStock()
-}
-
-func (hs *haltingSink) GetEntityByNumber(number int) Entity {
-	return hs.delegate.GetEntityByNumber(number)
 }

@@ -40,12 +40,9 @@ func (mss *MockStockType) Count() uint64 {
 	return uint64(0)
 }
 
-func (mss *MockStockType) EntitiesInStock() map[Entity]bool {
-	return map[Entity]bool{}
-}
-
-func (mss *MockStockType) GetEntityByNumber(number int) Entity {
-	return nil
+func (mss *MockStockType) EntitiesInStock() []*Entity {
+	mss.Called()
+	return []*Entity{}
 }
 
 func (mss *MockStockType) Remove(entity *Entity) Entity {
@@ -78,12 +75,8 @@ func (es *EchoSourceStockType) Count() uint64 {
 	return 0
 }
 
-func (es *EchoSourceStockType) EntitiesInStock() map[Entity]bool {
-	return map[Entity]bool{}
-}
-
-func (es *EchoSourceStockType) GetEntityByNumber(number int) Entity {
-	return nil
+func (es *EchoSourceStockType) EntitiesInStock() []*Entity {
+	return []*Entity{}
 }
 
 func (es *EchoSourceStockType) Remove(entity *Entity) Entity {

@@ -45,11 +45,8 @@ func (rbs *requestsRoutingStock) Count() uint64 {
 	return rbs.delegate.Count()
 }
 
-func (rbs *requestsRoutingStock) EntitiesInStock() map[simulator.Entity]bool {
+func (rbs *requestsRoutingStock) EntitiesInStock() []*simulator.Entity {
 	return rbs.delegate.EntitiesInStock()
-}
-func (rbs *requestsRoutingStock) GetEntityByNumber(number int) simulator.Entity {
-	return rbs.delegate.GetEntityByNumber(number)
 }
 
 func (rbs *requestsRoutingStock) Remove(entity *simulator.Entity) simulator.Entity {
@@ -63,7 +60,8 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 
 	countReplicas := rbs.replicas.Count()
 	if countReplicas > 0 {
-		replica := rbs.replicas.GetEntityByNumber(int(uint64(rbs.countRequests) % countReplicas)).(ReplicaEntity)
+		replicas := rbs.replicas.EntitiesInStock()
+		replica := (*replicas[uint64(rbs.countRequests)%countReplicas]).(ReplicaEntity)
 
 		rbs.env.AddToSchedule(simulator.NewMovement(
 			"send_to_replica",
@@ -88,7 +86,7 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 func NewRequestsRoutingStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsRoutingStock {
 	return &requestsRoutingStock{
 		env:            env,
-		delegate:       simulator.NewThroughStock("RequestsRouting", "Request"),
+		delegate:       simulator.NewHomogenousThroughStock("RequestsRouting", "Request"),
 		replicas:       replicas,
 		requestsFailed: requestsFailed,
 		countRequests:  0,

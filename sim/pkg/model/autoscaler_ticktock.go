@@ -46,12 +46,10 @@ func (asts *autoscalerTicktockStock) Count() uint64 {
 	return 1
 }
 
-func (asts *autoscalerTicktockStock) EntitiesInStock() map[simulator.Entity]bool {
-	return map[simulator.Entity]bool{asts.autoscalerEntity: true}
+func (asts *autoscalerTicktockStock) EntitiesInStock() []*simulator.Entity {
+	return []*simulator.Entity{&asts.autoscalerEntity}
 }
-func (asts *autoscalerTicktockStock) GetEntityByNumber(number int) simulator.Entity {
-	return asts.autoscalerEntity
-}
+
 func (asts *autoscalerTicktockStock) Remove(entity *simulator.Entity) simulator.Entity {
 	return asts.autoscalerEntity
 }
@@ -111,8 +109,8 @@ func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 	countActiveReplicas := 0.0
 	totalCPUUtilization := 0.0 // total cpuUtilization for all active replicas in percentage
 
-	for en := range asts.cluster.ActiveStock().EntitiesInStock() {
-		replica := en.(*replicaEntity)
+	for _, en := range asts.cluster.ActiveStock().EntitiesInStock() {
+		replica := (*en).(*replicaEntity)
 		totalCPUUtilization += replica.occupiedCPUCapacityMillisPerSecond * 100 / replica.totalCPUCapacityMillisPerSecond
 		countActiveReplicas++
 	}
@@ -128,7 +126,7 @@ func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulato
 		env:              env,
 		cluster:          cluster,
 		autoscalerEntity: scalerEntity,
-		desiredSource:    simulator.NewThroughStock("DesiredSource", "Desired"),
-		desiredSink:      simulator.NewThroughStock("DesiredSink", "Desired"),
+		desiredSource:    simulator.NewHomogenousThroughStock("DesiredSource", "Desired"),
+		desiredSink:      simulator.NewHomogenousThroughStock("DesiredSink", "Desired"),
 	}
 }

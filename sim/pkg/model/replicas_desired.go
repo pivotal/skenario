@@ -60,11 +60,8 @@ func (rds *replicasDesiredStock) Count() uint64 {
 	return rds.delegate.Count()
 }
 
-func (rds *replicasDesiredStock) EntitiesInStock() map[simulator.Entity]bool {
+func (rds *replicasDesiredStock) EntitiesInStock() []*simulator.Entity {
 	return rds.delegate.EntitiesInStock()
-}
-func (rds *replicasDesiredStock) GetEntityByNumber(number int) simulator.Entity {
-	return rds.delegate.GetEntityByNumber(number)
 }
 
 func (rds *replicasDesiredStock) Remove(entity *simulator.Entity) simulator.Entity {
@@ -124,7 +121,7 @@ func NewReplicasDesiredStock(env simulator.Environment, config ReplicasConfig, r
 	return &replicasDesiredStock{
 		env:                 env,
 		config:              config,
-		delegate:            simulator.NewThroughStock("ReplicasDesired", "Desired"),
+		delegate:            simulator.NewHomogenousThroughStock("ReplicasDesired", "Desired"),
 		replicaSource:       replicaSource,
 		replicasLaunching:   replicasLaunching,
 		replicasActive:      replicasActive,

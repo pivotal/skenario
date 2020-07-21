@@ -44,12 +44,10 @@ func (rts *replicasTerminatingStock) Count() uint64 {
 	return rts.delegate.Count()
 }
 
-func (rts *replicasTerminatingStock) EntitiesInStock() map[simulator.Entity]bool {
+func (rts *replicasTerminatingStock) EntitiesInStock() []*simulator.Entity {
 	return rts.delegate.EntitiesInStock()
 }
-func (rts *replicasTerminatingStock) GetEntityByNumber(number int) simulator.Entity {
-	return rts.delegate.GetEntityByNumber(number)
-}
+
 func (rts *replicasTerminatingStock) Remove(entity *simulator.Entity) simulator.Entity {
 	return rts.delegate.Remove(entity)
 }
@@ -80,7 +78,7 @@ func NewReplicasTerminatingStock(env simulator.Environment, config ReplicasConfi
 	return &replicasTerminatingStock{
 		env:                env,
 		config:             config,
-		delegate:           simulator.NewThroughStock("ReplicasTerminating", "Replica"),
+		delegate:           simulator.NewHomogenousThroughStock("ReplicasTerminating", "Replica"),
 		replicasTerminated: replicasTerminated,
 	}
 }

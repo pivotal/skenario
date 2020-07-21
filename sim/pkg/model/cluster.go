@@ -80,8 +80,8 @@ func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
 	// TODO: report request count
 
 	// and then report for the replicas
-	for e := range cm.replicasActive.EntitiesInStock() {
-		r := e.(ReplicaEntity)
+	for _, e := range cm.replicasActive.EntitiesInStock() {
+		r := (*e).(ReplicaEntity)
 		stats = append(stats, r.Stats()...)
 	}
 	err := cm.env.Plugin().Stat(stats)
@@ -109,7 +109,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 		config:              config,
 		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, replicasConfig.MaxRPS),
-		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
+		replicasLaunching:   simulator.NewHomogenousThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
 		replicasTerminating: NewReplicasTerminatingStock(env, replicasConfig, replicasTerminated),
 		replicasTerminated:  replicasTerminated,
