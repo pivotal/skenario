@@ -432,7 +432,7 @@ func (m *StatRequest) GetStat() []*Stat {
 	return nil
 }
 
-type ScaleRequest struct {
+type HorizontalSizeRequest struct {
 	Partition            string   `protobuf:"bytes,1,opt,name=partition,proto3" json:"partition,omitempty"`
 	Time                 int64    `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -440,82 +440,178 @@ type ScaleRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ScaleRequest) Reset()         { *m = ScaleRequest{} }
-func (m *ScaleRequest) String() string { return proto.CompactTextString(m) }
-func (*ScaleRequest) ProtoMessage()    {}
-func (*ScaleRequest) Descriptor() ([]byte, []int) {
+func (m *HorizontalSizeRequest) Reset()         { *m = HorizontalSizeRequest{} }
+func (m *HorizontalSizeRequest) String() string { return proto.CompactTextString(m) }
+func (*HorizontalSizeRequest) ProtoMessage()    {}
+func (*HorizontalSizeRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a95933fe5266f40f, []int{6}
 }
 
-func (m *ScaleRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ScaleRequest.Unmarshal(m, b)
+func (m *HorizontalSizeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_HorizontalSizeRequest.Unmarshal(m, b)
 }
-func (m *ScaleRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ScaleRequest.Marshal(b, m, deterministic)
+func (m *HorizontalSizeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_HorizontalSizeRequest.Marshal(b, m, deterministic)
 }
-func (m *ScaleRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ScaleRequest.Merge(m, src)
+func (m *HorizontalSizeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HorizontalSizeRequest.Merge(m, src)
 }
-func (m *ScaleRequest) XXX_Size() int {
-	return xxx_messageInfo_ScaleRequest.Size(m)
+func (m *HorizontalSizeRequest) XXX_Size() int {
+	return xxx_messageInfo_HorizontalSizeRequest.Size(m)
 }
-func (m *ScaleRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ScaleRequest.DiscardUnknown(m)
+func (m *HorizontalSizeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_HorizontalSizeRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ScaleRequest proto.InternalMessageInfo
+var xxx_messageInfo_HorizontalSizeRequest proto.InternalMessageInfo
 
-func (m *ScaleRequest) GetPartition() string {
+func (m *HorizontalSizeRequest) GetPartition() string {
 	if m != nil {
 		return m.Partition
 	}
 	return ""
 }
 
-func (m *ScaleRequest) GetTime() int64 {
+func (m *HorizontalSizeRequest) GetTime() int64 {
 	if m != nil {
 		return m.Time
 	}
 	return 0
 }
 
-type ScaleResponse struct {
+type HorizontalSizeResponse struct {
 	Rec                  int32    `protobuf:"varint,1,opt,name=rec,proto3" json:"rec,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ScaleResponse) Reset()         { *m = ScaleResponse{} }
-func (m *ScaleResponse) String() string { return proto.CompactTextString(m) }
-func (*ScaleResponse) ProtoMessage()    {}
-func (*ScaleResponse) Descriptor() ([]byte, []int) {
+func (m *HorizontalSizeResponse) Reset()         { *m = HorizontalSizeResponse{} }
+func (m *HorizontalSizeResponse) String() string { return proto.CompactTextString(m) }
+func (*HorizontalSizeResponse) ProtoMessage()    {}
+func (*HorizontalSizeResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a95933fe5266f40f, []int{7}
 }
 
-func (m *ScaleResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ScaleResponse.Unmarshal(m, b)
+func (m *HorizontalSizeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_HorizontalSizeResponse.Unmarshal(m, b)
 }
-func (m *ScaleResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ScaleResponse.Marshal(b, m, deterministic)
+func (m *HorizontalSizeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_HorizontalSizeResponse.Marshal(b, m, deterministic)
 }
-func (m *ScaleResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ScaleResponse.Merge(m, src)
+func (m *HorizontalSizeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HorizontalSizeResponse.Merge(m, src)
 }
-func (m *ScaleResponse) XXX_Size() int {
-	return xxx_messageInfo_ScaleResponse.Size(m)
+func (m *HorizontalSizeResponse) XXX_Size() int {
+	return xxx_messageInfo_HorizontalSizeResponse.Size(m)
 }
-func (m *ScaleResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ScaleResponse.DiscardUnknown(m)
+func (m *HorizontalSizeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_HorizontalSizeResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ScaleResponse proto.InternalMessageInfo
+var xxx_messageInfo_HorizontalSizeResponse proto.InternalMessageInfo
 
-func (m *ScaleResponse) GetRec() int32 {
+func (m *HorizontalSizeResponse) GetRec() int32 {
 	if m != nil {
 		return m.Rec
 	}
 	return 0
+}
+
+type VerticalSizeRequest struct {
+	Partition            string   `protobuf:"bytes,1,opt,name=partition,proto3" json:"partition,omitempty"`
+	Time                 int64    `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VerticalSizeRequest) Reset()         { *m = VerticalSizeRequest{} }
+func (m *VerticalSizeRequest) String() string { return proto.CompactTextString(m) }
+func (*VerticalSizeRequest) ProtoMessage()    {}
+func (*VerticalSizeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a95933fe5266f40f, []int{6}
+}
+
+func (m *VerticalSizeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VerticalSizeRequest.Unmarshal(m, b)
+}
+func (m *VerticalSizeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VerticalSizeRequest.Marshal(b, m, deterministic)
+}
+func (m *VerticalSizeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VerticalSizeRequest.Merge(m, src)
+}
+func (m *VerticalSizeRequest) XXX_Size() int {
+	return xxx_messageInfo_VerticalSizeRequest.Size(m)
+}
+func (m *VerticalSizeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VerticalSizeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VerticalSizeRequest proto.InternalMessageInfo
+
+func (m *VerticalSizeRequest) GetPartition() string {
+	if m != nil {
+		return m.Partition
+	}
+	return ""
+}
+
+func (m *VerticalSizeRequest) GetTime() int64 {
+	if m != nil {
+		return m.Time
+	}
+	return 0
+}
+
+type VerticalSizeResponse struct {
+	Rec                  []*RecommendedPodResources `protobuf:"bytes,2,rep,name=rec,proto3" json:"rec,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+type RecommendedPodResources struct {
+	PodName              string   `protobuf:"bytes,2,opt,name=pod_name,json=podName,proto3" json:"pod_name,omitempty"`
+	LowerBound           int32    `protobuf:"varint,4,opt,name=lower_bound,proto3" json:"lower_bound,omitempty"`
+	UpperBound           int32    `protobuf:"varint,4,opt,name=upper_bound,proto3" json:"upper_bound,omitempty"`
+	Target               int32    `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
+	ResourceName         string   `protobuf:"bytes,2,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VerticalSizeResponse) Reset()         { *m = VerticalSizeResponse{} }
+func (m *VerticalSizeResponse) String() string { return proto.CompactTextString(m) }
+func (*VerticalSizeResponse) ProtoMessage()    {}
+func (*VerticalSizeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a95933fe5266f40f, []int{7}
+}
+
+func (m *VerticalSizeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VerticalSizeResponse.Unmarshal(m, b)
+}
+func (m *VerticalSizeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VerticalSizeResponse.Marshal(b, m, deterministic)
+}
+func (m *VerticalSizeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VerticalSizeResponse.Merge(m, src)
+}
+func (m *VerticalSizeResponse) XXX_Size() int {
+	return xxx_messageInfo_VerticalSizeResponse.Size(m)
+}
+func (m *VerticalSizeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_VerticalSizeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VerticalSizeResponse proto.InternalMessageInfo
+
+func (m *VerticalSizeResponse) GetRec() []*RecommendedPodResources {
+	if m != nil {
+		return m.Rec
+	}
+	return []*RecommendedPodResources{}
 }
 
 func init() {
@@ -527,8 +623,10 @@ func init() {
 	proto.RegisterType((*EventRequest)(nil), "proto.EventRequest")
 	proto.RegisterType((*Stat)(nil), "proto.Stat")
 	proto.RegisterType((*StatRequest)(nil), "proto.StatRequest")
-	proto.RegisterType((*ScaleRequest)(nil), "proto.ScaleRequest")
-	proto.RegisterType((*ScaleResponse)(nil), "proto.ScaleResponse")
+	proto.RegisterType((*HorizontalSizeRequest)(nil), "proto.HorizontalSizeRequest")
+	proto.RegisterType((*HorizontalSizeResponse)(nil), "proto.HorizontalSizeResponse")
+	proto.RegisterType((*VerticalSizeRequest)(nil), "proto.VerticalSizeRequest")
+	proto.RegisterType((*VerticalSizeResponse)(nil), "proto.VerticalSizeResponse")
 }
 
 func init() { proto.RegisterFile("skplug.proto", fileDescriptor_a95933fe5266f40f) }
@@ -584,7 +682,8 @@ const _ = grpc.SupportPackageIsVersion4
 type PluginClient interface {
 	Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*Empty, error)
 	Stat(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (*Empty, error)
-	Scale(ctx context.Context, in *ScaleRequest, opts ...grpc.CallOption) (*ScaleResponse, error)
+	HorizontalRecommendation(ctx context.Context, in *HorizontalSizeRequest, opts ...grpc.CallOption) (*HorizontalSizeResponse, error)
+	VerticalRecommendation(ctx context.Context, in *VerticalSizeRequest, opts ...grpc.CallOption) (*VerticalSizeResponse, error)
 }
 
 type pluginClient struct {
@@ -613,9 +712,18 @@ func (c *pluginClient) Stat(ctx context.Context, in *StatRequest, opts ...grpc.C
 	return out, nil
 }
 
-func (c *pluginClient) Scale(ctx context.Context, in *ScaleRequest, opts ...grpc.CallOption) (*ScaleResponse, error) {
-	out := new(ScaleResponse)
-	err := c.cc.Invoke(ctx, "/proto.Plugin/Scale", in, out, opts...)
+func (c *pluginClient) HorizontalRecommendation(ctx context.Context, in *HorizontalSizeRequest, opts ...grpc.CallOption) (*HorizontalSizeResponse, error) {
+	out := new(HorizontalSizeResponse)
+	err := c.cc.Invoke(ctx, "/proto.Plugin/HorizontalRecommendation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginClient) VerticalRecommendation(ctx context.Context, in *VerticalSizeRequest, opts ...grpc.CallOption) (*VerticalSizeResponse, error) {
+	out := new(VerticalSizeResponse)
+	err := c.cc.Invoke(ctx, "/proto.Plugin/VerticalRecommendation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -626,7 +734,8 @@ func (c *pluginClient) Scale(ctx context.Context, in *ScaleRequest, opts ...grpc
 type PluginServer interface {
 	Event(context.Context, *EventRequest) (*Empty, error)
 	Stat(context.Context, *StatRequest) (*Empty, error)
-	Scale(context.Context, *ScaleRequest) (*ScaleResponse, error)
+	HorizontalRecommendation(context.Context, *HorizontalSizeRequest) (*HorizontalSizeResponse, error)
+	VerticalRecommendation(context.Context, *VerticalSizeRequest) (*VerticalSizeResponse, error)
 }
 
 // UnimplementedPluginServer can be embedded to have forward compatible implementations.
@@ -639,8 +748,12 @@ func (*UnimplementedPluginServer) Event(ctx context.Context, req *EventRequest) 
 func (*UnimplementedPluginServer) Stat(ctx context.Context, req *StatRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stat not implemented")
 }
-func (*UnimplementedPluginServer) Scale(ctx context.Context, req *ScaleRequest) (*ScaleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Scale not implemented")
+func (*UnimplementedPluginServer) HorizontalRecommendation(ctx context.Context, req *HorizontalSizeRequest) (*HorizontalSizeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HorizontalRecommendation not implemented")
+}
+
+func (*UnimplementedPluginServer) VerticalRecommendation(ctx context.Context, req *VerticalSizeRequest) (*VerticalSizeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerticalRecommendation not implemented")
 }
 
 func RegisterPluginServer(s *grpc.Server, srv PluginServer) {
@@ -683,20 +796,38 @@ func _Plugin_Stat_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Plugin_Scale_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ScaleRequest)
+func _Plugin_Horizontal_Recommendation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HorizontalSizeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PluginServer).Scale(ctx, in)
+		return srv.(PluginServer).HorizontalRecommendation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.Plugin/Scale",
+		FullMethod: "/proto.Plugin/HorizontalRecommendation",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PluginServer).Scale(ctx, req.(*ScaleRequest))
+		return srv.(PluginServer).HorizontalRecommendation(ctx, req.(*HorizontalSizeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Plugin_Vertical_Recommendation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerticalSizeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServer).VerticalRecommendation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.Plugin/VerticalRecommendation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServer).VerticalRecommendation(ctx, req.(*VerticalSizeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -714,8 +845,12 @@ var _Plugin_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Plugin_Stat_Handler,
 		},
 		{
-			MethodName: "Scale",
-			Handler:    _Plugin_Scale_Handler,
+			MethodName: "HorizontalRecommendation",
+			Handler:    _Plugin_Horizontal_Recommendation_Handler,
+		},
+		{
+			MethodName: "VerticalRecommendation",
+			Handler:    _Plugin_Vertical_Recommendation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

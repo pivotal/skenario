@@ -72,7 +72,7 @@ func (p *pluginServer) Stat(part string, stat []*proto.Stat) error {
 	return a.Stat(stat)
 }
 
-func (p *pluginServer) Scale(part string, time int64) (rec int32, err error) {
+func (p *pluginServer) HorizontalRecommendation(part string, time int64) (rec int32, err error) {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 	a, ok := p.autoscalers[partition(part)]
@@ -80,6 +80,10 @@ func (p *pluginServer) Scale(part string, time int64) (rec int32, err error) {
 		return 0, fmt.Errorf("scale for non-existant autoscaler partition: %v", part)
 	}
 	return a.Scale(time)
+}
+
+func (p *pluginServer) VerticalRecommendation(part string, time int64) (rec []*proto.RecommendedPodResources, err error) {
+	panic("unimplemented")
 }
 
 func (p *pluginServer) createAutoscaler(part partition, a *skplug.Autoscaler) error {
