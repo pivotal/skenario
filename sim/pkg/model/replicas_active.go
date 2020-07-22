@@ -26,7 +26,6 @@ type ReplicasActiveStock interface {
 type replicasActiveStock struct {
 	env      simulator.Environment
 	delegate simulator.ThroughStock
-	replicas []*simulator.Entity
 }
 
 func (ras *replicasActiveStock) Name() simulator.StockName {
@@ -42,7 +41,7 @@ func (ras *replicasActiveStock) Count() uint64 {
 }
 
 func (ras *replicasActiveStock) EntitiesInStock() []*simulator.Entity {
-	return ras.replicas
+	return ras.delegate.EntitiesInStock()
 }
 
 func (ras *replicasActiveStock) Remove(entity *simulator.Entity) simulator.Entity {
@@ -53,36 +52,18 @@ func (ras *replicasActiveStock) Remove(entity *simulator.Entity) simulator.Entit
 
 	replica := removedEntity.(ReplicaEntity)
 	replica.Deactivate()
-
-	//support replicas array updated
-	ras.deleteReplica(entity)
 	return removedEntity
 }
 
 func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
-	replica := entity.(ReplicaEntity)
+	replica := entity.(Replica)
 	replica.Activate()
-	ras.replicas = append(ras.replicas, &entity)
 	return ras.delegate.Add(entity)
-}
-
-func (ras *replicasActiveStock) deleteReplica(replica *simulator.Entity) {
-	removed := false
-	for i := 0; i < len(ras.replicas); i++ {
-		if ras.replicas[i] == replica {
-			ras.replicas[i] = ras.replicas[len(ras.replicas)-1]
-			removed = true
-		}
-	}
-	if removed {
-		ras.replicas = ras.replicas[:len(ras.replicas)-1]
-	}
 }
 
 func NewReplicasActiveStock(env simulator.Environment) ReplicasActiveStock {
 	return &replicasActiveStock{
 		env:      env,
-		delegate: simulator.NewHeterogenousThroughStock("ReplicasActive", "Replica"),
-		replicas: make([]*simulator.Entity, 0),
+		delegate: simulator.NewArrayThroughStock("ReplicasActive", "Replica"),
 	}
 }

@@ -25,7 +25,7 @@ type haltingSink struct {
 
 func NewHaltingSink(name StockName, stocks EntityKind, futureMovements MovementPriorityQueue) *haltingSink {
 	return &haltingSink{
-		delegate:        NewHomogenousThroughStock(name, stocks),
+		delegate:        NewArrayThroughStock(name, stocks),
 		futureMovements: futureMovements,
 	}
 }

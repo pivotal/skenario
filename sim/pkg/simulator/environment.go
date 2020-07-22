@@ -158,8 +158,8 @@ func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 }
 
 func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue) *environment {
-	beforeStock := NewHomogenousThroughStock("BeforeScenario", "Scenario")
-	runningStock := NewHomogenousThroughStock("RunningScenario", "Scenario")
+	beforeStock := NewArrayThroughStock("BeforeScenario", "Scenario")
+	runningStock := NewArrayThroughStock("RunningScenario", "Scenario")
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{

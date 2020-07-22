@@ -126,7 +126,7 @@ func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulato
 		env:              env,
 		cluster:          cluster,
 		autoscalerEntity: scalerEntity,
-		desiredSource:    simulator.NewHomogenousThroughStock("DesiredSource", "Desired"),
-		desiredSink:      simulator.NewHomogenousThroughStock("DesiredSink", "Desired"),
+		desiredSource:    simulator.NewArrayThroughStock("DesiredSource", "Desired"),
+		desiredSink:      simulator.NewArrayThroughStock("DesiredSink", "Desired"),
 	}
 }

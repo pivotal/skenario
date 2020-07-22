@@ -146,7 +146,7 @@ func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, re
 	requestFailed *simulator.SinkStock, totalCPUCapacityMillisPerSecond *float64, occupiedCPUCapacityMillisPerSecond *float64) RequestsProcessingStock {
 	return &requestsProcessingStock{
 		env:                                env,
-		delegate:                           simulator.NewHomogenousThroughStock("RequestsProcessing", "Request"),
+		delegate:                           simulator.NewArrayThroughStock("RequestsProcessing", "Request"),
 		replicaNumber:                      replicaNumber,
 		requestsComplete:                   requestComplete,
 		requestsFailed:                     requestFailed,

@@ -25,21 +25,56 @@ import (
 
 func TestStock(t *testing.T) {
 	suite := spec.New("Stock suite", spec.Report(report.Terminal{}))
-	suite("Stock", testStock)
+	suite("ArrayStock", testArrayStock)
+	suite("MapStock", testMapStock)
 	suite("SourceStock", testSourceStock)
 	suite("SinkStock", testSinkStock)
-	suite("HomogenousThroughStock", testHomogenousThroughStock)
-	suite("HeterogenousThroughStock", testHeterogenousThroughStock)
+	suite("ArrayThroughStock", testArrayThroughStock)
+	suite("MapThroughStock", testMapThroughStock)
 
 	suite.Run(t)
 }
 
-func testStock(t *testing.T, describe spec.G, it spec.S) {
+func testArrayStock(t *testing.T, describe spec.G, it spec.S) {
 	var subject ThroughStock
 	var entity Entity
 
 	it.Before(func() {
-		subject = NewHomogenousThroughStock("test name", "test entity kind")
+		subject = NewArrayThroughStock("test name", "test entity kind")
+		assert.NotNil(t, subject)
+
+		entity = NewEntity("test entity name", "test entity kind")
+		err := subject.Add(entity)
+		assert.NoError(t, err)
+	})
+
+	describe("basic Stock functionality", func() {
+		it("has a stock name", func() {
+			assert.Equal(t, subject.Name(), StockName("test name"))
+		})
+
+		it("has a stock kind", func() {
+			assert.Equal(t, subject.KindStocked(), EntityKind("test entity kind"))
+		})
+
+		it("has a stock count", func() {
+			assert.Equal(t, subject.Count(), uint64(1))
+		})
+	})
+
+	describe("EntitiesInStock()", func() {
+		it("returns an Entity slice for the current contents of the stock", func() {
+			assert.ElementsMatch(t, []*Entity{&entity}, subject.EntitiesInStock())
+		})
+	})
+}
+
+func testMapStock(t *testing.T, describe spec.G, it spec.S) {
+	var subject ThroughStock
+	var entity Entity
+
+	it.Before(func() {
+		subject = NewMapThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subject)
 
 		entity = NewEntity("test entity name", "test entity kind")
@@ -74,7 +109,7 @@ func testSourceStock(t *testing.T, describe spec.G, it spec.S) {
 	var entity1, entity2 Entity
 
 	it.Before(func() {
-		subjectAsThrough = NewHomogenousThroughStock("test name", "test entity kind")
+		subjectAsThrough = NewArrayThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subjectAsThrough)
 
 		subject = subjectAsThrough.(SourceStock)
@@ -152,16 +187,16 @@ func testSinkStock(t *testing.T, describe spec.G, it spec.S) {
 	})
 }
 
-func testHomogenousThroughStock(t *testing.T, describe spec.G, it spec.S) {
+func testArrayThroughStock(t *testing.T, describe spec.G, it spec.S) {
 	var subject ThroughStock
 	var entity Entity
 
 	it.Before(func() {
-		subject = NewHomogenousThroughStock("test name", "test entity kind")
+		subject = NewArrayThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subject)
 	})
 
-	describe("Add() then Remove()", func() {
+	describe("Add() then Remove() any entity", func() {
 		it("gets back the item was added", func() {
 			entity = NewEntity("test entity name", "test entity kind")
 
@@ -175,6 +210,20 @@ func testHomogenousThroughStock(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
+	describe("Add() then Remove() a particular entity", func() {
+		it("gets back the item was added", func() {
+			entity = NewEntity("test entity name", "test entity kind")
+
+			err := subject.Add(entity)
+			assert.NoError(t, err)
+
+			removed := subject.Remove(&entity)
+			assert.NotNil(t, removed)
+
+			assert.Equal(t, entity, removed)
+		})
+	})
+
 	describe("Remove() when the stock is empty", func() {
 		it("returns nil", func() {
 			assert.Nil(t, subject.Remove(nil))
@@ -182,12 +231,12 @@ func testHomogenousThroughStock(t *testing.T, describe spec.G, it spec.S) {
 	})
 }
 
-func testHeterogenousThroughStock(t *testing.T, describe spec.G, it spec.S) {
+func testMapThroughStock(t *testing.T, describe spec.G, it spec.S) {
 	var subject ThroughStock
 	var entity Entity
 
 	it.Before(func() {
-		subject = NewHeterogenousThroughStock("test name", "test entity kind")
+		subject = NewMapThroughStock("test name", "test entity kind")
 		assert.NotNil(t, subject)
 		entity = NewEntity("test entity name", "test entity kind")
 	})
@@ -198,6 +247,17 @@ func testHeterogenousThroughStock(t *testing.T, describe spec.G, it spec.S) {
 			assert.NoError(t, err)
 
 			removed := subject.Remove(&entity)
+			assert.NotNil(t, removed)
+
+			assert.Equal(t, entity, removed)
+		})
+	})
+	describe("Add() then Remove() any entity", func() {
+		it("returns this entity as stock has only one entity", func() {
+			err := subject.Add(entity)
+			assert.NoError(t, err)
+
+			removed := subject.Remove(nil)
 			assert.NotNil(t, removed)
 
 			assert.Equal(t, entity, removed)

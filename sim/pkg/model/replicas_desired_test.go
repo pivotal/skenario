@@ -41,9 +41,9 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		replicasLaunching = simulator.NewHomogenousThroughStock("ReplicasLaunching", "Replica")
-		replicasActive = simulator.NewHeterogenousThroughStock("ReplicasActive", "Replica")
-		replicasTerminated = simulator.NewHomogenousThroughStock("ReplicasTerminated", "Replica")
+		replicasLaunching = simulator.NewArrayThroughStock("ReplicasLaunching", "Replica")
+		replicasActive = simulator.NewArrayThroughStock("ReplicasActive", "Replica")
+		replicasTerminated = simulator.NewArrayThroughStock("ReplicasTerminated", "Replica")
 		replicaSource = NewReplicaSource(envFake, 100)
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
 		envFake = NewFakeEnvironment()

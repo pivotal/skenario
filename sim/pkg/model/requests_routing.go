@@ -86,7 +86,7 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 func NewRequestsRoutingStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsRoutingStock {
 	return &requestsRoutingStock{
 		env:            env,
-		delegate:       simulator.NewHomogenousThroughStock("RequestsRouting", "Request"),
+		delegate:       simulator.NewArrayThroughStock("RequestsRouting", "Request"),
 		replicas:       replicas,
 		requestsFailed: requestsFailed,
 		countRequests:  0,

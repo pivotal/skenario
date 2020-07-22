@@ -121,7 +121,7 @@ func NewReplicasDesiredStock(env simulator.Environment, config ReplicasConfig, r
 	return &replicasDesiredStock{
 		env:                 env,
 		config:              config,
-		delegate:            simulator.NewHomogenousThroughStock("ReplicasDesired", "Desired"),
+		delegate:            simulator.NewArrayThroughStock("ReplicasDesired", "Desired"),
 		replicaSource:       replicaSource,
 		replicasLaunching:   replicasLaunching,
 		replicasActive:      replicasActive,

@@ -78,7 +78,7 @@ func NewReplicasTerminatingStock(env simulator.Environment, config ReplicasConfi
 	return &replicasTerminatingStock{
 		env:                env,
 		config:             config,
-		delegate:           simulator.NewHomogenousThroughStock("ReplicasTerminating", "Replica"),
+		delegate:           simulator.NewArrayThroughStock("ReplicasTerminating", "Replica"),
 		replicasTerminated: replicasTerminated,
 	}
 }
