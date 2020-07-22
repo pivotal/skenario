@@ -78,5 +78,5 @@ func (p *pluginPartition) Stat(stat []*proto.Stat) error {
 }
 
 func (p *pluginPartition) Scale(time int64) (rec int32, err error) {
-	return pluginServer.Scale(p.partition, time)
+	return pluginServer.HorizontalRecommendation(p.partition, time)
 }

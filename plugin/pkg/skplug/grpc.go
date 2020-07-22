@@ -54,13 +54,24 @@ func (m *GRPCClient) Stat(partition string, stats []*proto.Stat) error {
 	return err
 }
 
-func (m *GRPCClient) Scale(partition string, time int64) (rec int32, err error) {
-	resp, err := m.client.Scale(context.Background(), &proto.ScaleRequest{
+func (m *GRPCClient) HorizontalRecommendation(partition string, time int64) (rec int32, err error) {
+	resp, err := m.client.HorizontalRecommendation(context.Background(), &proto.HorizontalRecommendationRequest{
 		Partition: partition,
 		Time:      time,
 	})
 	if err != nil {
 		return 0, err
+	}
+	return resp.Rec, nil
+}
+
+func (m *GRPCClient) VerticalRecommendation(partition string, time int64) (rec []*proto.RecommendedPodResources, err error) {
+	resp, err := m.client.VerticalRecommendation(context.Background(), &proto.VerticalRecommendationRequest{
+		Partition: partition,
+		Time:      time,
+	})
+	if err != nil {
+		return []*proto.RecommendedPodResources{}, err
 	}
 	return resp.Rec, nil
 }
@@ -100,12 +111,22 @@ func (m *GRPCServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.E
 	return &proto.Empty{}, nil
 }
 
-func (m *GRPCServer) Scale(ctx context.Context, req *proto.ScaleRequest) (*proto.ScaleResponse, error) {
-	rec, err := m.Impl.Scale(req.Partition, req.Time)
+func (m *GRPCServer) HorizontalRecommendation(ctx context.Context, req *proto.HorizontalRecommendationRequest) (*proto.HorizontalRecommendationResponse, error) {
+	rec, err := m.Impl.HorizontalRecommendation(req.Partition, req.Time)
 	if err != nil {
 		return nil, err
 	}
-	return &proto.ScaleResponse{
+	return &proto.HorizontalRecommendationResponse{
+		Rec: rec,
+	}, nil
+}
+
+func (m *GRPCServer) VerticalRecommendation(ctx context.Context, req *proto.VerticalRecommendationRequest) (*proto.VerticalRecommendationResponse, error) {
+	rec, err := m.Impl.VerticalRecommendation(req.Partition, req.Time)
+	if err != nil {
+		return nil, err
+	}
+	return &proto.VerticalRecommendationResponse{
 		Rec: rec,
 	}, nil
 }
