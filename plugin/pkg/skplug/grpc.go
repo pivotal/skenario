@@ -55,7 +55,7 @@ func (m *GRPCClient) Stat(partition string, stats []*proto.Stat) error {
 }
 
 func (m *GRPCClient) HorizontalRecommendation(partition string, time int64) (rec int32, err error) {
-	resp, err := m.client.HorizontalRecommendation(context.Background(), &proto.HorizontalSizeRequest{
+	resp, err := m.client.HorizontalRecommendation(context.Background(), &proto.HorizontalRecommendationRequest{
 		Partition: partition,
 		Time:      time,
 	})
@@ -66,7 +66,7 @@ func (m *GRPCClient) HorizontalRecommendation(partition string, time int64) (rec
 }
 
 func (m *GRPCClient) VerticalRecommendation(partition string, time int64) (rec []*proto.RecommendedPodResources, err error) {
-	resp, err := m.client.VerticalRecommendation(context.Background(), &proto.VerticalSizeRequest{
+	resp, err := m.client.VerticalRecommendation(context.Background(), &proto.VerticalRecommendationRequest{
 		Partition: partition,
 		Time:      time,
 	})
@@ -111,22 +111,22 @@ func (m *GRPCServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.E
 	return &proto.Empty{}, nil
 }
 
-func (m *GRPCServer) HorizontalRecommendation(ctx context.Context, req *proto.HorizontalSizeRequest) (*proto.HorizontalSizeResponse, error) {
+func (m *GRPCServer) HorizontalRecommendation(ctx context.Context, req *proto.HorizontalRecommendationRequest) (*proto.HorizontalRecommendationResponse, error) {
 	rec, err := m.Impl.HorizontalRecommendation(req.Partition, req.Time)
 	if err != nil {
 		return nil, err
 	}
-	return &proto.HorizontalSizeResponse{
+	return &proto.HorizontalRecommendationResponse{
 		Rec: rec,
 	}, nil
 }
 
-func (m *GRPCServer) VerticalRecommendation(ctx context.Context, req *proto.VerticalSizeRequest) (*proto.VerticalSizeResponse, error) {
+func (m *GRPCServer) VerticalRecommendation(ctx context.Context, req *proto.VerticalRecommendationRequest) (*proto.VerticalRecommendationResponse, error) {
 	rec, err := m.Impl.VerticalRecommendation(req.Partition, req.Time)
 	if err != nil {
 		return nil, err
 	}
-	return &proto.VerticalSizeResponse{
+	return &proto.VerticalRecommendationResponse{
 		Rec: rec,
 	}, nil
 }
