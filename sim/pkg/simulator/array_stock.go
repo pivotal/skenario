@@ -20,7 +20,7 @@ func (as *arrayStock) Count() uint64 {
 	return uint64(len(as.stock))
 }
 
-//time complexity O(len(as.stock))
+//time complexity O(1)
 func (as *arrayStock) EntitiesInStock() []*Entity {
 	return as.stock
 }
