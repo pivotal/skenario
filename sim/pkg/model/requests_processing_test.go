@@ -127,7 +127,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 				assert.Equal(t, simulator.StockName("RequestsComplete"), envFake.Movements[0].To().Name())
 			})
 			it("allocated cpu resource for a request is freed", func() {
-				rawSubject.Remove()
+				rawSubject.Remove(nil)
 				assert.Less(t, math.Abs(*rawSubject.occupiedCPUCapacityMillisPerSecond-0.0), 0.001)
 			})
 		})

@@ -118,7 +118,7 @@ func (env *environment) Run() ([]CompletedMovement, []IgnoredMovement, error) {
 
 		env.current = movement.OccursAt()
 
-		moved := movement.From().Remove()
+		moved := movement.From().Remove(movement.WhatToMove())
 		if moved == nil {
 			env.ignored = append(env.ignored, IgnoredMovement{Movement: movement, Reason: FromStockIsEmpty})
 		} else {
@@ -158,8 +158,8 @@ func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 }
 
 func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue) *environment {
-	beforeStock := NewThroughStock("BeforeScenario", "Scenario")
-	runningStock := NewThroughStock("RunningScenario", "Scenario")
+	beforeStock := NewArrayThroughStock("BeforeScenario", "Scenario")
+	runningStock := NewArrayThroughStock("RunningScenario", "Scenario")
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
@@ -192,9 +192,9 @@ func setupScenarioMovements(env *environment, startAt time.Time, haltAt time.Tim
 		panic(fmt.Errorf("could not add Scenario entity to haltedScenario: %s", err.Error()))
 	}
 
-	startMovement := NewMovement("start_to_running", startAt, beforeScenario, runningScenario)
+	startMovement := NewMovement("start_to_running", startAt, beforeScenario, runningScenario, &scenarioEntity)
 	startMovement.AddNote("Start scenario")
-	haltMovement := NewMovement("running_to_halted", haltAt, runningScenario, haltedScenario)
+	haltMovement := NewMovement("running_to_halted", haltAt, runningScenario, haltedScenario, &scenarioEntity)
 	haltMovement.AddNote("Halt scenario")
 
 	env.AddToSchedule(startMovement)

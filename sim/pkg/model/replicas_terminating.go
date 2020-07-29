@@ -48,8 +48,8 @@ func (rts *replicasTerminatingStock) EntitiesInStock() []*simulator.Entity {
 	return rts.delegate.EntitiesInStock()
 }
 
-func (rts *replicasTerminatingStock) Remove() simulator.Entity {
-	return rts.delegate.Remove()
+func (rts *replicasTerminatingStock) Remove(entity *simulator.Entity) simulator.Entity {
+	return rts.delegate.Remove(entity)
 }
 
 func (rts *replicasTerminatingStock) Add(entity simulator.Entity) error {
@@ -68,6 +68,7 @@ func (rts *replicasTerminatingStock) Add(entity simulator.Entity) error {
 		terminateAt,
 		rts.delegate,
 		rts.replicasTerminated,
+		&entity,
 	))
 
 	return nil
@@ -77,7 +78,7 @@ func NewReplicasTerminatingStock(env simulator.Environment, config ReplicasConfi
 	return &replicasTerminatingStock{
 		env:                env,
 		config:             config,
-		delegate:           simulator.NewThroughStock("ReplicasTerminating", "Replica"),
+		delegate:           simulator.NewArrayThroughStock("ReplicasTerminating", "Replica"),
 		replicasTerminated: replicasTerminated,
 	}
 }

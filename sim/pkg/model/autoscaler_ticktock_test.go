@@ -66,7 +66,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 		it("always has 1 entity stocked", func() {
 			assert.Equal(t, subject.Count(), uint64(1))
 
-			ent := subject.Remove()
+			ent := subject.Remove(nil)
 			err := subject.Add(ent)
 			assert.NoError(t, err)
 			err = subject.Add(ent)
@@ -74,16 +74,16 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 			assert.Equal(t, subject.Count(), uint64(1))
 
-			subject.Remove()
-			subject.Remove()
-			subject.Remove()
+			subject.Remove(nil)
+			subject.Remove(nil)
+			subject.Remove(nil)
 			assert.Equal(t, subject.Count(), uint64(1))
 		})
 	})
 
 	describe("Remove()", func() {
 		it("gives back the one HPAAutoscaler", func() {
-			assert.Equal(t, subject.Remove(), subject.Remove())
+			assert.Equal(t, subject.Remove(nil), subject.Remove(nil))
 		})
 	})
 
@@ -105,7 +105,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 		describe("driving the HPA autoscaler", func() {
 			describe("controlling time", func() {
 				it.Before(func() {
-					ent := subject.Remove()
+					ent := subject.Remove(nil)
 					err := subject.Add(ent)
 					assert.NoError(t, err)
 				})
@@ -125,7 +125,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 					err := rawCluster.replicasActive.Add(newReplica)
 					assert.NoError(t, err)
 
-					ent := subject.Remove()
+					ent := subject.Remove(nil)
 					err = subject.Add(ent)
 					assert.NoError(t, err)
 				})
@@ -146,7 +146,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						err := cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
 						assert.NoError(t, err)
 
-						ent := subject.Remove()
+						ent := subject.Remove(nil)
 						err = subject.Add(ent)
 						assert.NoError(t, err)
 					})
@@ -166,7 +166,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						assert.NoError(t, err)
 
 						envFake.ThePlugin.(*FakePluginPartition).scaleTo = 1
-						ent := subject.Remove()
+						ent := subject.Remove(nil)
 						err = subject.Add(ent)
 						assert.NoError(t, err)
 					})
@@ -198,7 +198,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 					err = rawCluster.replicasActive.Add(newReplica2)
 					assert.NoError(t, err)
 
-					ent := subject.Remove()
+					ent := subject.Remove(nil)
 					err = subject.Add(ent)
 					assert.NoError(t, err)
 

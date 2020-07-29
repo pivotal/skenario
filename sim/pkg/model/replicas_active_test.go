@@ -63,22 +63,39 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 		})
 	})
 
-	describe("Remove()", func() {
+	describe("Remove a particular entity", func() {
 		var replicaFake *FakeReplica
+		var entity simulator.Entity
 
 		it.Before(func() {
 			replicaFake = new(FakeReplica)
 			subject.Add(replicaFake)
-			subject.Remove()
+			entity = simulator.Entity(replicaFake)
+		})
+
+		it("returns a particular entity from stock", func() {
+			assert.Equal(t, subject.Remove(&entity), entity)
+		})
+	})
+
+	describe("Remove when the entity is already removed", func() {
+		var replicaFake *FakeReplica
+		var entity simulator.Entity
+
+		it.Before(func() {
+			replicaFake = new(FakeReplica)
+			subject.Add(replicaFake)
+			entity = simulator.Entity(replicaFake)
+			subject.Remove(&entity)
 		})
 
 		it("tells the Replica entity that it is terminating", func() {
 			assert.True(t, replicaFake.DeactivateCalled)
 		})
 
-		it("returns nil if it is empty", func() {
+		it("returns nil if if it is empty", func() {
 			assert.Zero(t, subject.Count())
-			assert.Nil(t, subject.Remove())
+			assert.Nil(t, subject.Remove(&entity))
 		})
 	})
 }

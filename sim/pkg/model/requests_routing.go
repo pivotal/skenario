@@ -49,8 +49,8 @@ func (rbs *requestsRoutingStock) EntitiesInStock() []*simulator.Entity {
 	return rbs.delegate.EntitiesInStock()
 }
 
-func (rbs *requestsRoutingStock) Remove() simulator.Entity {
-	return rbs.delegate.Remove()
+func (rbs *requestsRoutingStock) Remove(entity *simulator.Entity) simulator.Entity {
+	return rbs.delegate.Remove(entity)
 }
 
 func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
@@ -68,6 +68,7 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
 			rbs,
 			replica.RequestsProcessing(),
+			&entity,
 		))
 	} else {
 		rbs.env.AddToSchedule(simulator.NewMovement(
@@ -75,6 +76,7 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 			rbs.env.CurrentMovementTime().Add(1*time.Nanosecond),
 			rbs,
 			rbs.requestsFailed,
+			&entity,
 		))
 	}
 
@@ -84,7 +86,7 @@ func (rbs *requestsRoutingStock) Add(entity simulator.Entity) error {
 func NewRequestsRoutingStock(env simulator.Environment, replicas ReplicasActiveStock, requestsFailed simulator.SinkStock) RequestsRoutingStock {
 	return &requestsRoutingStock{
 		env:            env,
-		delegate:       simulator.NewThroughStock("RequestsRouting", "Request"),
+		delegate:       simulator.NewArrayThroughStock("RequestsRouting", "Request"),
 		replicas:       replicas,
 		requestsFailed: requestsFailed,
 		countRequests:  0,

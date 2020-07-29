@@ -64,8 +64,8 @@ func (rds *replicasDesiredStock) EntitiesInStock() []*simulator.Entity {
 	return rds.delegate.EntitiesInStock()
 }
 
-func (rds *replicasDesiredStock) Remove() simulator.Entity {
-	ent := rds.delegate.Remove()
+func (rds *replicasDesiredStock) Remove(entity *simulator.Entity) simulator.Entity {
+	ent := rds.delegate.Remove(entity)
 	if ent == nil {
 		return nil
 	}
@@ -77,6 +77,7 @@ func (rds *replicasDesiredStock) Remove() simulator.Entity {
 			nextTerminate,
 			rds.replicasLaunching,
 			rds.replicasTerminating,
+			&ent,
 		))
 	} else {
 		rds.env.AddToSchedule(simulator.NewMovement(
@@ -84,6 +85,7 @@ func (rds *replicasDesiredStock) Remove() simulator.Entity {
 			nextTerminate,
 			rds.replicasActive,
 			rds.replicasTerminating,
+			&ent,
 		))
 	}
 
@@ -101,6 +103,7 @@ func (rds *replicasDesiredStock) Add(entity simulator.Entity) error {
 		rds.env.CurrentMovementTime().Add(1*time.Nanosecond),
 		rds.replicaSource,
 		rds.replicasLaunching,
+		nil,
 	))
 
 	rds.env.AddToSchedule(simulator.NewMovement(
@@ -108,6 +111,7 @@ func (rds *replicasDesiredStock) Add(entity simulator.Entity) error {
 		rds.env.CurrentMovementTime().Add(rds.config.LaunchDelay),
 		rds.replicasLaunching,
 		rds.replicasActive,
+		nil,
 	))
 
 	return nil
@@ -117,7 +121,7 @@ func NewReplicasDesiredStock(env simulator.Environment, config ReplicasConfig, r
 	return &replicasDesiredStock{
 		env:                 env,
 		config:              config,
-		delegate:            simulator.NewThroughStock("ReplicasDesired", "Desired"),
+		delegate:            simulator.NewArrayThroughStock("ReplicasDesired", "Desired"),
 		replicaSource:       replicaSource,
 		replicasLaunching:   replicasLaunching,
 		replicasActive:      replicasActive,

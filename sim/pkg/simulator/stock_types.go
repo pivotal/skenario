@@ -25,7 +25,7 @@ type baseStock interface {
 }
 
 type removable interface {
-	Remove() Entity
+	Remove(entity *Entity) Entity
 }
 
 type addable interface {

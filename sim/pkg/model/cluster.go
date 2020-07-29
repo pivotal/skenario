@@ -109,7 +109,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 		config:              config,
 		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, replicasConfig.MaxRPS),
-		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
+		replicasLaunching:   simulator.NewArrayThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
 		replicasTerminating: NewReplicasTerminatingStock(env, replicasConfig, replicasTerminated),
 		replicasTerminated:  replicasTerminated,

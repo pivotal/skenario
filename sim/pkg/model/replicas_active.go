@@ -44,16 +44,15 @@ func (ras *replicasActiveStock) EntitiesInStock() []*simulator.Entity {
 	return ras.delegate.EntitiesInStock()
 }
 
-func (ras *replicasActiveStock) Remove() simulator.Entity {
-	entity := ras.delegate.Remove()
-	if entity == nil {
+func (ras *replicasActiveStock) Remove(entity *simulator.Entity) simulator.Entity {
+	removedEntity := ras.delegate.Remove(entity)
+	if removedEntity == nil {
 		return nil
 	}
 
-	replica := entity.(Replica)
+	replica := removedEntity.(ReplicaEntity)
 	replica.Deactivate()
-
-	return entity
+	return removedEntity
 }
 
 func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
@@ -65,6 +64,6 @@ func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
 func NewReplicasActiveStock(env simulator.Environment) ReplicasActiveStock {
 	return &replicasActiveStock{
 		env:      env,
-		delegate: simulator.NewThroughStock("ReplicasActive", "Replica"),
+		delegate: simulator.NewArrayThroughStock("ReplicasActive", "Replica"),
 	}
 }

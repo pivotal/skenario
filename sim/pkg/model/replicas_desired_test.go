@@ -41,9 +41,9 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		replicasLaunching = simulator.NewThroughStock("ReplicasLaunching", "Replica")
-		replicasActive = simulator.NewThroughStock("ReplicasActive", "Replica")
-		replicasTerminated = simulator.NewThroughStock("ReplicasTerminated", "Replica")
+		replicasLaunching = simulator.NewArrayThroughStock("ReplicasLaunching", "Replica")
+		replicasActive = simulator.NewArrayThroughStock("ReplicasActive", "Replica")
+		replicasTerminated = simulator.NewArrayThroughStock("ReplicasTerminated", "Replica")
 		replicaSource = NewReplicaSource(envFake, 100)
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
 		envFake = NewFakeEnvironment()
@@ -73,7 +73,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 			subject.Add(simulator.NewEntity("desired-1", "Desired"))
 			assert.Equal(t, uint64(1), subject.Count())
 
-			subject.Remove()
+			subject.Remove(nil)
 			assert.Equal(t, uint64(0), subject.Count())
 		})
 	})
@@ -114,7 +114,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				err := rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
 
-				subject.Remove()
+				subject.Remove(nil)
 			})
 
 			it("schedules movements from ReplicasLaunching to ReplicasTerminating", func() {
@@ -130,7 +130,7 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				err := rawSubject.replicasActive.Add(newReplica)
 				assert.NoError(t, err)
 
-				subject.Remove()
+				subject.Remove(nil)
 			})
 
 			it("schedules movements from ReplicasActive to ReplicasTerminating", func() {
@@ -149,8 +149,8 @@ func testReplicasDesired(t *testing.T, describe spec.G, it spec.S) {
 				err = rawSubject.replicasLaunching.Add(simulator.NewEntity("already launching", simulator.EntityKind("Replica")))
 				assert.NoError(t, err)
 
-				subject.Remove()
-				subject.Remove()
+				subject.Remove(nil)
+				subject.Remove(nil)
 			})
 
 			it("schedules movements from ReplicasActive to ReplicasTerminating", func() {

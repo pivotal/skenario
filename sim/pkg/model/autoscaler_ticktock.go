@@ -50,7 +50,7 @@ func (asts *autoscalerTicktockStock) EntitiesInStock() []*simulator.Entity {
 	return []*simulator.Entity{&asts.autoscalerEntity}
 }
 
-func (asts *autoscalerTicktockStock) Remove() simulator.Entity {
+func (asts *autoscalerTicktockStock) Remove(entity *simulator.Entity) simulator.Entity {
 	return asts.autoscalerEntity
 }
 
@@ -71,7 +71,8 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	if delta > 0 {
 		for i := int32(0); i < delta; i++ {
-			err := asts.desiredSource.Add(simulator.NewEntity("Desired", "Desired"))
+			desiredEntity := simulator.NewEntity("Desired", "Desired")
+			err := asts.desiredSource.Add(desiredEntity)
 			if err != nil {
 				return err
 			}
@@ -81,6 +82,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 				currentTime.Add(1*time.Nanosecond),
 				asts.desiredSource,
 				asts.cluster.Desired(),
+				&desiredEntity,
 			))
 		}
 	} else if delta < 0 {
@@ -90,6 +92,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 				currentTime.Add(1*time.Nanosecond),
 				asts.cluster.Desired(),
 				asts.desiredSink,
+				nil,
 			))
 		}
 	} else {
@@ -123,7 +126,7 @@ func NewAutoscalerTicktockStock(env simulator.Environment, scalerEntity simulato
 		env:              env,
 		cluster:          cluster,
 		autoscalerEntity: scalerEntity,
-		desiredSource:    simulator.NewThroughStock("DesiredSource", "Desired"),
-		desiredSink:      simulator.NewThroughStock("DesiredSink", "Desired"),
+		desiredSource:    simulator.NewArrayThroughStock("DesiredSource", "Desired"),
+		desiredSink:      simulator.NewArrayThroughStock("DesiredSink", "Desired"),
 	}
 }

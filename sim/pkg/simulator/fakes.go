@@ -45,7 +45,7 @@ func (mss *MockStockType) EntitiesInStock() []*Entity {
 	return []*Entity{}
 }
 
-func (mss *MockStockType) Remove() Entity {
+func (mss *MockStockType) Remove(entity *Entity) Entity {
 	mss.Called()
 	return NewEntity("test entity", "mock kind")
 }
@@ -79,7 +79,7 @@ func (es *EchoSourceStockType) EntitiesInStock() []*Entity {
 	return []*Entity{}
 }
 
-func (es *EchoSourceStockType) Remove() Entity {
+func (es *EchoSourceStockType) Remove(entity *Entity) Entity {
 	name := EntityName(fmt.Sprintf("entity-%d", es.series))
 	es.series++
 	return NewEntity(name, es.kind)

@@ -45,7 +45,7 @@ func (ts *trafficSource) EntitiesInStock() []*simulator.Entity {
 	return []*simulator.Entity{}
 }
 
-func (ts *trafficSource) Remove() simulator.Entity {
+func (ts *trafficSource) Remove(entity *simulator.Entity) simulator.Entity {
 	return NewRequestEntity(ts.env, ts.requestsRouting, ts.requestConfig)
 }
 

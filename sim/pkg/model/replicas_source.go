@@ -45,7 +45,7 @@ func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
 	return []*simulator.Entity{}
 }
 
-func (rs *replicaSource) Remove() simulator.Entity {
+func (rs *replicaSource) Remove(entity *simulator.Entity) simulator.Entity {
 	return NewReplicaEntity(rs.env, &rs.failedSink)
 }
 

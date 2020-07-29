@@ -102,35 +102,35 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 
 		describe("the scheduled movement will occur during the simulation", func() {
 			it("returns true", func() {
-				movement = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock)
+				movement = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock, nil)
 				assert.True(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the scheduled movement would occur at halt", func() {
 			it("returns false", func() {
-				movement = NewMovement("test movement kind", time.Unix(777777, 0), fromStock, toStock)
+				movement = NewMovement("test movement kind", time.Unix(777777, 0), fromStock, toStock, nil)
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the scheduled movement would occur after the simulation halts", func() {
 			it("returns false", func() {
-				movement = NewMovement("test movement kind", time.Unix(999999, 0), fromStock, toStock)
+				movement = NewMovement("test movement kind", time.Unix(999999, 0), fromStock, toStock, nil)
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the movement would occur before the current simulation time", func() {
 			it("returns false", func() {
-				movement = NewMovement("test movement kind", time.Unix(111111, 0), fromStock, toStock)
+				movement = NewMovement("test movement kind", time.Unix(111111, 0), fromStock, toStock, nil)
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
 
 		describe("the movement would occur at the current simulation time", func() {
 			it("returns false", func() {
-				movement = NewMovement("test movement kind", time.Unix(222222, 0), fromStock, toStock)
+				movement = NewMovement("test movement kind", time.Unix(222222, 0), fromStock, toStock, nil)
 				assert.False(t, subject.AddToSchedule(movement))
 			})
 		})
@@ -152,7 +152,7 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 				fromMock.On("Remove").Return(e)
 				toMock.On("Add", e).Return(nil)
 
-				movement = NewMovement("test movement kind", time.Unix(333333, 0), fromMock, toMock)
+				movement = NewMovement("test movement kind", time.Unix(333333, 0), fromMock, toMock, nil)
 
 				subject.AddToSchedule(movement)
 				_, _, err = subject.Run()
@@ -179,8 +179,8 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 					subject = NewEnvironment(ctx, startTime, runFor)
 					assert.NotNil(t, subject)
 
-					first = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock)
-					second = NewMovement("test movement kind", time.Unix(444444, 0), fromStock, toStock)
+					first = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock, nil)
+					second = NewMovement("test movement kind", time.Unix(444444, 0), fromStock, toStock, nil)
 
 					subject.AddToSchedule(first)
 					subject.AddToSchedule(second)
@@ -212,15 +212,15 @@ func testEnvironment(t *testing.T, describe spec.G, it spec.S) {
 					subject = NewEnvironment(ctx, startTime, runFor)
 					assert.NotNil(t, subject)
 
-					nilStock = NewThroughStock("NilStock", "test movement kind")
+					nilStock = NewArrayThroughStock("NilStock", "test movement kind")
 
 					var err error
 
-					tooEarly = NewMovement("test movement kind", time.Unix(111111, 0), fromStock, toStock)
-					goldilocks = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock)
-					collides = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock)
-					tooLate = NewMovement("test movement kind", time.Unix(999999, 0), fromStock, toStock)
-					nilEntity = NewMovement("test movement kind", time.Unix(444444, 0), nilStock, toStock)
+					tooEarly = NewMovement("test movement kind", time.Unix(111111, 0), fromStock, toStock, nil)
+					goldilocks = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock, nil)
+					collides = NewMovement("test movement kind", time.Unix(333333, 0), fromStock, toStock, nil)
+					tooLate = NewMovement("test movement kind", time.Unix(999999, 0), fromStock, toStock, nil)
+					nilEntity = NewMovement("test movement kind", time.Unix(444444, 0), nilStock, toStock, nil)
 
 					subject.AddToSchedule(tooEarly)
 					subject.AddToSchedule(goldilocks)
