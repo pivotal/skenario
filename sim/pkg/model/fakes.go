@@ -19,22 +19,22 @@ import (
 	"context"
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
+	"skenario/pkg/plugindispatcher"
 	"time"
 
-	"skenario/pkg/plugin"
 	"skenario/pkg/simulator"
 )
 
 type FakeEnvironment struct {
-	Movements          []simulator.Movement
-	TheTime            time.Time
-	TheHaltTime        time.Time
-	TheCPUUtilizations []*simulator.CPUUtilization
-	ThePlugin          plugin.PluginPartition
+	Movements           []simulator.Movement
+	TheTime             time.Time
+	TheHaltTime         time.Time
+	TheCPUUtilizations  []*simulator.CPUUtilization
+	ThePluginDispatcher plugindispatcher.PluginDispatcher
 }
 
-func (fe *FakeEnvironment) Plugin() plugin.PluginPartition {
-	return fe.ThePlugin
+func (fe *FakeEnvironment) PluginDispatcher() plugindispatcher.PluginDispatcher {
+	return fe.ThePluginDispatcher
 }
 
 func (fe *FakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
@@ -68,7 +68,7 @@ func (fe *FakeEnvironment) AppendCPUUtilization(cpu *simulator.CPUUtilization) {
 
 func NewFakeEnvironment() *FakeEnvironment {
 	return &FakeEnvironment{
-		ThePlugin: NewFakePluginPartition(),
+		ThePluginDispatcher: NewFakePluginPartition(),
 	}
 }
 
@@ -119,28 +119,32 @@ func (fr *FakeReplica) GetCPUCapacity() float64 {
 	return fr.totalCPUCapacityMillisPerSecond
 }
 
-type FakePluginPartition struct {
+type FakeHpaPluginPartition struct {
 	scaleTimes []int64
 	stats      []*proto.Stat
 	scaleTo    int32
 }
 
-func (fp *FakePluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
+func (fp *FakeHpaPluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
 	return nil
 }
 
-func (fp *FakePluginPartition) Stat(stat []*proto.Stat) error {
+func (fp *FakeHpaPluginPartition) Stat(stat []*proto.Stat) error {
 	fp.stats = append(fp.stats, stat...)
 	return nil
 }
 
-func (fp *FakePluginPartition) Scale(time int64) (rec int32, err error) {
+func (fp *FakeHpaPluginPartition) ScaleHorizontally(time int64) (rec int32, err error) {
 	fp.scaleTimes = append(fp.scaleTimes, time)
 	return fp.scaleTo, nil
 }
 
-func NewFakePluginPartition() *FakePluginPartition {
-	return &FakePluginPartition{
+func (fp *FakeHpaPluginPartition) ScaleVertically(time int64) (rec []*proto.RecommendedPodResources, err error) {
+	panic("unimplemented")
+}
+
+func NewFakePluginPartition() *FakeHpaPluginPartition {
+	return &FakeHpaPluginPartition{
 		scaleTimes: make([]int64, 0),
 		stats:      make([]*proto.Stat, 0),
 	}

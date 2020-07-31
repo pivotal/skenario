@@ -171,7 +171,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = env.Plugin().Event(startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
+	err = env.PluginDispatcher().Event(startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
 	if err != nil {
 		panic(err)
 	}
