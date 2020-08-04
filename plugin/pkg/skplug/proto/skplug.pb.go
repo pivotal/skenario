@@ -573,9 +573,9 @@ type VerticalRecommendationResponse struct {
 }
 type RecommendedPodResources struct {
 	PodName              string   `protobuf:"bytes,2,opt,name=pod_name,json=podName,proto3" json:"pod_name,omitempty"`
-	LowerBound           int32    `protobuf:"varint,4,opt,name=lower_bound,proto3" json:"lower_bound,omitempty"`
-	UpperBound           int32    `protobuf:"varint,4,opt,name=upper_bound,proto3" json:"upper_bound,omitempty"`
-	Target               int32    `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
+	LowerBound           int64    `protobuf:"varint,4,opt,name=lower_bound,proto3" json:"lower_bound,omitempty"`
+	UpperBound           int64    `protobuf:"varint,4,opt,name=upper_bound,proto3" json:"upper_bound,omitempty"`
+	Target               int64    `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
 	ResourceName         string   `protobuf:"bytes,2,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
