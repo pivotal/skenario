@@ -44,6 +44,7 @@ replace (
 // Checkout https://github.com/josephburnett/kubernetes.git branch plugin
 replace k8s.io/kubernetes => ../../kubernetes
 
+// Checkout https://github.com/juliababkina/autoscaler.git branch plugin
 replace k8s.io/autoscaler/vertical-pod-autoscaler => ../../autoscaler/vertical-pod-autoscaler
 
 // TODO: replace this import with github.com/skenario/plugin
