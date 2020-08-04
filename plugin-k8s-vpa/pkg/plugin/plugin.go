@@ -282,32 +282,29 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	//		ResourceName: v1.ResourceMemory.String(),
 	//	})
 	//}
-	//TODO remove this code after fullfilling
-	vpas := a.recommender.GetClusterState().Vpas
-
-	if vpas == nil {
+	//TODO remove this code after fulfilling
+	vpa := a.recommender.GetClusterState().Vpas[model.VpaID{Namespace: "", VpaName: ""}]
+	if vpa.Recommendation == nil {
 		return recommendation, nil
 	}
-	for _, vpa := range vpas {
-		for _, rec := range vpa.Recommendation.ContainerRecommendations {
+	for _, rec := range vpa.Recommendation.ContainerRecommendations {
 
-			//TODO make this part generic
-			recommendation = append(recommendation, &proto.RecommendedPodResources{
-				PodName:      rec.ContainerName,
-				LowerBound:   rec.LowerBound.Cpu().Value(),
-				UpperBound:   rec.UpperBound.Cpu().Value(),
-				Target:       rec.Target.Cpu().Value(),
-				ResourceName: v1.ResourceCPU.String(),
-			})
+		//TODO make this part generic
+		recommendation = append(recommendation, &proto.RecommendedPodResources{
+			PodName:      rec.ContainerName,
+			LowerBound:   rec.LowerBound.Cpu().Value(),
+			UpperBound:   rec.UpperBound.Cpu().Value(),
+			Target:       rec.Target.Cpu().Value(),
+			ResourceName: v1.ResourceCPU.String(),
+		})
 
-			recommendation = append(recommendation, &proto.RecommendedPodResources{
-				PodName:      rec.ContainerName,
-				LowerBound:   rec.LowerBound.Memory().Value(),
-				UpperBound:   rec.UpperBound.Memory().Value(),
-				Target:       rec.Target.Memory().Value(),
-				ResourceName: v1.ResourceMemory.String(),
-			})
-		}
+		recommendation = append(recommendation, &proto.RecommendedPodResources{
+			PodName:      rec.ContainerName,
+			LowerBound:   rec.LowerBound.Memory().Value(),
+			UpperBound:   rec.UpperBound.Memory().Value(),
+			Target:       rec.Target.Memory().Value(),
+			ResourceName: v1.ResourceMemory.String(),
+		})
 	}
 
 	return recommendation, nil
