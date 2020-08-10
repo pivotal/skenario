@@ -139,9 +139,10 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 	}
 
 	for _, pod := range asts.EntitiesInStock() {
-		for _, recommendation := range podToRecommendations[(*pod).Name()] {
+		for _, recommendation := range podToRecommendations[string((*pod).Name())] {
 			if recommendation.GetResourceName() == "cpu" {
-				if (*pod).(Replica).GetCPUCapacity() < recommendation.LowerBound || (*pod).(Replica).GetCPUCapacity() > recommendation.UpperBound {
+				resourceRequest := int64((*pod).(Replica).GetCPUCapacity())
+				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
 
 				}
 			}
