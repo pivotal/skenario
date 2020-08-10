@@ -18,6 +18,7 @@ package serve
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
 	"log"
 	"net/http"
 	"skenario/pkg/simulator"
@@ -171,7 +172,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = env.Plugin().Event(startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
+	err = plugindispatcher.Event(env.PluginPartition(), startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
 	if err != nil {
 		panic(err)
 	}

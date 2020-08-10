@@ -42,10 +42,10 @@ func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
 		config = ClusterConfig{}
 		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
 		envFake = &FakeEnvironment{
-			Movements:   make([]simulator.Movement, 0),
-			TheTime:     startAt,
-			TheHaltTime: startAt.Add(1 * time.Hour),
-			ThePlugin:   NewFakePluginPartition(),
+			Movements:          make([]simulator.Movement, 0),
+			TheTime:            startAt,
+			TheHaltTime:        startAt.Add(1 * time.Hour),
+			ThePluginPartition: NewFakePluginPartition(),
 		}
 		cluster = NewCluster(envFake, config, replicasConfig)
 	})

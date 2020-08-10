@@ -18,9 +18,9 @@ package simulator
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"sync/atomic"
 	"time"
-
-	"skenario/pkg/plugin"
 )
 
 const (
@@ -30,7 +30,7 @@ const (
 )
 
 type Environment interface {
-	Plugin() plugin.PluginPartition
+	PluginPartition() string
 	AddToSchedule(movement Movement) (added bool)
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
@@ -57,8 +57,8 @@ type CPUUtilization struct {
 }
 
 type environment struct {
-	ctx    context.Context
-	plugin plugin.PluginPartition
+	ctx             context.Context
+	pluginPartition string
 
 	current time.Time
 	startAt time.Time
@@ -74,8 +74,8 @@ type environment struct {
 	cpuUtilizations []*CPUUtilization
 }
 
-func (env *environment) Plugin() plugin.PluginPartition {
-	return env.plugin
+func (env *environment) PluginPartition() string {
+	return env.pluginPartition
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -142,7 +142,7 @@ func (env *environment) Context() context.Context {
 	return env.ctx
 }
 
-var environmentSequence int32 = 0
+var partitionSequence int32 = 0
 
 func (env *environment) CPUUtilizations() []*CPUUtilization {
 	return env.cpuUtilizations
@@ -163,11 +163,11 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
-		ctx:     ctx,
-		plugin:  plugin.NewPluginPartition(),
-		startAt: startAt,
-		haltAt:  startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
-		current: startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
+		ctx:             ctx,
+		pluginPartition: strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
+		startAt:         startAt,
+		haltAt:          startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
+		current:         startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
 
 		beforeScenario:  beforeStock,
 		runningScenario: runningStock,

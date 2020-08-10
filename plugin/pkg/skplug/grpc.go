@@ -57,7 +57,7 @@ func (m *GRPCClient) Stat(partition string, stats []*proto.Stat) error {
 func (m *GRPCClient) HorizontalRecommendation(partition string, time int64) (rec int32, err error) {
 	resp, err := m.client.HorizontalRecommendation(context.Background(), &proto.HorizontalRecommendationRequest{
 		Partition: partition,
-		Time:      time,
+		TimeNanos: time,
 	})
 	if err != nil {
 		return 0, err
@@ -68,10 +68,18 @@ func (m *GRPCClient) HorizontalRecommendation(partition string, time int64) (rec
 func (m *GRPCClient) VerticalRecommendation(partition string, time int64) (rec []*proto.RecommendedPodResources, err error) {
 	resp, err := m.client.VerticalRecommendation(context.Background(), &proto.VerticalRecommendationRequest{
 		Partition: partition,
-		Time:      time,
+		TimeNanos: time,
 	})
 	if err != nil {
 		return []*proto.RecommendedPodResources{}, err
+	}
+	return resp.Rec, nil
+}
+
+func (m *GRPCClient) GetCapabilities() (rec []proto.Capability, err error) {
+	resp, err := m.client.GetCapabilities(context.Background(), &proto.Empty{})
+	if err != nil {
+		return []proto.Capability{}, err
 	}
 	return resp.Rec, nil
 }
@@ -112,7 +120,7 @@ func (m *GRPCServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.E
 }
 
 func (m *GRPCServer) HorizontalRecommendation(ctx context.Context, req *proto.HorizontalRecommendationRequest) (*proto.HorizontalRecommendationResponse, error) {
-	rec, err := m.Impl.HorizontalRecommendation(req.Partition, req.Time)
+	rec, err := m.Impl.HorizontalRecommendation(req.Partition, req.TimeNanos)
 	if err != nil {
 		return nil, err
 	}
@@ -122,11 +130,21 @@ func (m *GRPCServer) HorizontalRecommendation(ctx context.Context, req *proto.Ho
 }
 
 func (m *GRPCServer) VerticalRecommendation(ctx context.Context, req *proto.VerticalRecommendationRequest) (*proto.VerticalRecommendationResponse, error) {
-	rec, err := m.Impl.VerticalRecommendation(req.Partition, req.Time)
+	rec, err := m.Impl.VerticalRecommendation(req.Partition, req.TimeNanos)
 	if err != nil {
 		return nil, err
 	}
 	return &proto.VerticalRecommendationResponse{
+		Rec: rec,
+	}, nil
+}
+
+func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.Empty) (*proto.GetCapabilitiesResponse, error) {
+	rec, err := m.Impl.GetCapabilities()
+	if err != nil {
+		return nil, err
+	}
+	return &proto.GetCapabilitiesResponse{
 		Rec: rec,
 	}, nil
 }

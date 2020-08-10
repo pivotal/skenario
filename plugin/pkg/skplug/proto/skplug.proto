@@ -50,9 +50,9 @@ message StatRequest {
 
 
 message VerticalRecommendationRequest{
-string partition = 1;
-    int64 time_nanos = 2;
-    }
+  string partition = 1;
+  int64 time_nanos = 2;
+}
 
 message VerticalRecommendationResponse{
   repeated RecommendedPodResources rec = 1;
@@ -74,9 +74,21 @@ message  HorizontalRecommendationRequest{
 message HorizontalRecommendationResponse{
   int32 rec = 1;
 }
+
+enum Capability{
+  EVENT = 0;
+  STAT = 1;
+  VERTICAL_RECOMMENDATION = 2;
+  HORIZONTAL_RECOMMENDATION = 3;
+}
+
+message GetCapabilitiesResponse{
+  repeated Capability rec = 1;
+}
 service Plugin {
   rpc Event(EventRequest) returns (Empty);
   rpc Stat(StatRequest) returns (Empty);
   rpc HorizontalRecommendation(HorizontalRecommendationRequest) returns (HorizontalRecommendationResponse);
   rpc VerticalRecommendation(VerticalRecommendationRequest) returns (VerticalRecommendationResponse);
+  rpc GetCapabilities(Empty) returns (GetCapabilitiesResponse);
 }
