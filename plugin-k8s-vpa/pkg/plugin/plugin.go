@@ -59,7 +59,7 @@ var checkpointsGCInterval = flag.Duration("checkpoints-gc-interval", 3*time.Seco
 
 // Create a non-concurrent, non-cached informer for simulation.
 
-var _ coreinformers.PodInformer = &fakePodInformer{}
+var _ coreinformers.PodInformer = &fakePodInformer{informer: &fakeSharedIndexInformer{}}
 
 type fakePodInformer struct {
 	lister   corelisters.PodLister
@@ -260,28 +260,56 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	defer a.mux.Unlock()
 	a.recommender.RunOnce(time.Unix(0, now))
 	recommendation := make([]*proto.RecommendedPodResources, 0)
-	if a.vpa.Status.Recommendation == nil {
+	//TODO recommendations should be updated in vpa.status, but now they don't, uncomment this code after fixing it in an issue
+	//if a.vpa.Status.Recommendation == nil {
+	//	return recommendation, nil
+	//}
+	//for _, rec := range a.vpa.Status.Recommendation.ContainerRecommendations {
+	//
+	//	recommendation = append(recommendation, &proto.RecommendedPodResources{
+	//		PodName:      rec.ContainerName,
+	//		LowerBound:   rec.LowerBound.Cpu().Value(),
+	//		UpperBound:   rec.UpperBound.Cpu().Value(),
+	//		Target:       rec.Target.Cpu().Value(),
+	//		ResourceName: v1.ResourceCPU.String(),
+	//	})
+	//
+	//	recommendation = append(recommendation, &proto.RecommendedPodResources{
+	//		PodName:      rec.ContainerName,
+	//		LowerBound:   rec.LowerBound.Memory().Value(),
+	//		UpperBound:   rec.UpperBound.Memory().Value(),
+	//		Target:       rec.Target.Memory().Value(),
+	//		ResourceName: v1.ResourceMemory.String(),
+	//	})
+	//}
+	//TODO remove this code after fullfilling
+	vpas := a.recommender.GetClusterState().Vpas
+
+	if vpas == nil {
 		return recommendation, nil
 	}
-	for _, rec := range a.vpa.Status.Recommendation.ContainerRecommendations {
+	for _, vpa := range vpas {
+		for _, rec := range vpa.Recommendation.ContainerRecommendations {
 
-		//TODO make this part generic
-		recommendation = append(recommendation, &proto.RecommendedPodResources{
-			PodName:      rec.ContainerName,
-			LowerBound:   rec.LowerBound.Cpu().Value(),
-			UpperBound:   rec.UpperBound.Cpu().Value(),
-			Target:       rec.Target.Cpu().Value(),
-			ResourceName: v1.ResourceCPU.String(),
-		})
+			//TODO make this part generic
+			recommendation = append(recommendation, &proto.RecommendedPodResources{
+				PodName:      rec.ContainerName,
+				LowerBound:   rec.LowerBound.Cpu().Value(),
+				UpperBound:   rec.UpperBound.Cpu().Value(),
+				Target:       rec.Target.Cpu().Value(),
+				ResourceName: v1.ResourceCPU.String(),
+			})
 
-		recommendation = append(recommendation, &proto.RecommendedPodResources{
-			PodName:      rec.ContainerName,
-			LowerBound:   rec.LowerBound.Memory().Value(),
-			UpperBound:   rec.UpperBound.Memory().Value(),
-			Target:       rec.Target.Memory().Value(),
-			ResourceName: v1.ResourceMemory.String(),
-		})
+			recommendation = append(recommendation, &proto.RecommendedPodResources{
+				PodName:      rec.ContainerName,
+				LowerBound:   rec.LowerBound.Memory().Value(),
+				UpperBound:   rec.UpperBound.Memory().Value(),
+				Target:       rec.Target.Memory().Value(),
+				ResourceName: v1.ResourceMemory.String(),
+			})
+		}
 	}
+
 	return recommendation, nil
 }
 
