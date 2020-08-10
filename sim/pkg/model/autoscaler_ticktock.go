@@ -138,12 +138,33 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 		podToRecommendations[recommendation.PodName] = append(podToRecommendations[recommendation.PodName], recommendation)
 	}
 
+	//Iterate through replicas
 	for _, pod := range asts.EntitiesInStock() {
+
+		//We have recommendations for the replica
 		for _, recommendation := range podToRecommendations[string((*pod).Name())] {
 			if recommendation.GetResourceName() == "cpu" {
+				//Check if we need to update this replica
 				resourceRequest := int64((*pod).(Replica).GetCPUCapacity())
 				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
+					//update
+					//We evict this replica
+					asts.env.AddToSchedule(simulator.NewMovement(
+						"evict_replica",
+						currentTime.Add(1*time.Nanosecond),
+						asts.cluster.ActiveStock(),
+						asts.cluster.TerminatingStock(),
+						pod,
+					))
 
+					//We create new one with recommendations
+					asts.env.AddToSchedule(simulator.NewMovement(
+						"begin_launch",
+						asts.env.CurrentMovementTime().Add(1*time.Nanosecond),
+						asts.desiredSource,
+						asts.cluster.Desired(),
+						NewReplicaEntity(asts.env, asts.cluster.replicaSource.(*replicaSource).failedSink),
+					))
 				}
 			}
 		}

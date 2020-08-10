@@ -37,6 +37,7 @@ type ClusterModel interface {
 	RecordToAutoscaler(atTime *time.Time)
 	RoutingStock() RequestsRoutingStock
 	ActiveStock() simulator.ThroughStock
+	TerminatingStock() ReplicasTerminatingStock
 }
 
 type clusterModel struct {
@@ -60,6 +61,10 @@ func (cm *clusterModel) Env() simulator.Environment {
 func (cm *clusterModel) Desired() ReplicasDesiredStock {
 	return cm.replicasDesired
 }
+func (cm *clusterModel) TerminatingStock() ReplicasTerminatingStock {
+	return cm.replicasTerminating
+}
+
 func (cm *clusterModel) CurrentLaunching() uint64 {
 	return cm.replicasLaunching.Count()
 }
