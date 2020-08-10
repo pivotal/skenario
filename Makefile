@@ -17,3 +17,8 @@ build-plugin-k8s :
 	mkdir -p build
 	cd plugin-k8s
 	go build -o ../build/plugin-k8s ./cmd/main.go
+
+build-plugin-k8s-vpa :
+	mkdir -p build
+	cd plugin-k8s-vpa
+	go build -o ../build/plugin-k8s-vpa ./cmd/main.go
