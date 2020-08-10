@@ -678,9 +678,9 @@ type RecommendedPodResources struct {
 	unknownFields protoimpl.UnknownFields
 
 	PodName      string `protobuf:"bytes,1,opt,name=pod_name,json=podName,proto3" json:"pod_name,omitempty"`
-	LowerBound   int32  `protobuf:"varint,2,opt,name=lower_bound,json=lowerBound,proto3" json:"lower_bound,omitempty"`
-	UpperBound   int32  `protobuf:"varint,3,opt,name=upper_bound,json=upperBound,proto3" json:"upper_bound,omitempty"`
-	Target       int32  `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
+	LowerBound   int64  `protobuf:"varint,2,opt,name=lower_bound,json=lowerBound,proto3" json:"lower_bound,omitempty"`
+	UpperBound   int64  `protobuf:"varint,3,opt,name=upper_bound,json=upperBound,proto3" json:"upper_bound,omitempty"`
+	Target       int64  `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
 	ResourceName string `protobuf:"bytes,5,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
 }
 
