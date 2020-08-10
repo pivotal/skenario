@@ -723,21 +723,21 @@ func (x *RecommendedPodResources) GetPodName() string {
 	return ""
 }
 
-func (x *RecommendedPodResources) GetLowerBound() int32 {
+func (x *RecommendedPodResources) GetLowerBound() int64 {
 	if x != nil {
 		return x.LowerBound
 	}
 	return 0
 }
 
-func (x *RecommendedPodResources) GetUpperBound() int32 {
+func (x *RecommendedPodResources) GetUpperBound() int64 {
 	if x != nil {
 		return x.UpperBound
 	}
 	return 0
 }
 
-func (x *RecommendedPodResources) GetTarget() int32 {
+func (x *RecommendedPodResources) GetTarget() int64 {
 	if x != nil {
 		return x.Target
 	}
