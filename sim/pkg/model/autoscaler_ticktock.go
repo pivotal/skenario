@@ -63,7 +63,8 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	currentTime := asts.env.CurrentMovementTime()
 
 	asts.cluster.RecordToAutoscaler(&currentTime)
-	asts.adjustHorizontally(&currentTime)
+
+	//asts.adjustHorizontally(&currentTime)
 	asts.adjustVertically(&currentTime)
 
 	//calculate CPU utilization
@@ -158,12 +159,14 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 					))
 
 					//We create new one with recommendations
+					newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
+					newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
 					asts.env.AddToSchedule(simulator.NewMovement(
 						"begin_launch",
 						asts.env.CurrentMovementTime().Add(1*time.Nanosecond),
 						asts.desiredSource,
 						asts.cluster.Desired(),
-						NewReplicaEntity(asts.env, asts.cluster.replicaSource.(*replicaSource).failedSink),
+						&newReplica,
 					))
 				}
 			}
