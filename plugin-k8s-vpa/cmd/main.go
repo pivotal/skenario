@@ -150,13 +150,6 @@ func (p *pluginServer) deletePod(part partition, pod *skplug.Pod) error {
 func main() {
 	klog.InitFlags(flag.CommandLine)
 	klog.Infof("Starting Skenario Kubernetes VPA plugin.")
-	//test := newPluginServer()
-	//test.createAutoscaler("1", &skplug.Autoscaler{
-	//	// TODO: select type and plugin based on the scenario.
-	//	Type: "vpa.v2beta2.autoscaling.k8s.io",
-	//	Yaml: vpaYaml,
-	//})
-	//test.VerticalRecommendation("1", time.Now().UnixNano())
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: skplug.Handshake,
 		Plugins: map[string]plugin.Plugin{
@@ -167,17 +160,3 @@ func main() {
 		GRPCServer: plugin.DefaultGRPCServer,
 	})
 }
-
-//const vpaYaml = `
-//apiVersion: autoscaling.k8s.io/v1
-//kind: VerticalPodAutoscaler
-//metadata:
-//name: my-rec-vpa
-//spec:
-//targetRef:
-//  apiVersion: "apps/v1"
-//  kind:       Deployment
-//  name:       my-rec-deployment
-//updatePolicy:
-//  updateMode: "Off"
-//`
