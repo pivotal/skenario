@@ -260,7 +260,7 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	defer a.mux.Unlock()
 	a.recommender.RunOnce(time.Unix(0, now))
 	recommendation := make([]*proto.RecommendedPodResources, 0)
-	//TODO recommendations should be updated in vpa.status, but now they don't, uncomment this code after fixing it in an issue
+	//TODO recommendations should be updated in vpa.status, but now they don't, uncomment this code after fixing it in an issue https://github.com/pivotal/skenario/issues/100
 	//if a.vpa.Status.Recommendation == nil {
 	//	return recommendation, nil
 	//}
@@ -282,7 +282,7 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	//		ResourceName: v1.ResourceMemory.String(),
 	//	})
 	//}
-	//TODO remove this code after fulfilling
+	//TODO remove this code after fulfilling https://github.com/pivotal/skenario/issues/100
 	vpa := a.recommender.GetClusterState().Vpas[model.VpaID{Namespace: "", VpaName: ""}]
 	if vpa.Recommendation == nil {
 		return recommendation, nil
