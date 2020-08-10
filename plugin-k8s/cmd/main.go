@@ -148,6 +148,10 @@ func (p *pluginServer) deletePod(part partition, pod *skplug.Pod) error {
 	return autoscaler.DeletePod((*proto.Pod)(pod))
 }
 
+func (p *pluginServer) GetCapabilities() (rec []proto.Capability, err error) {
+	return []proto.Capability{proto.Capability_EVENT, proto.Capability_STAT, proto.Capability_HORIZONTAL_RECOMMENDATION}, nil
+}
+
 func main() {
 	klog.InitFlags(flag.CommandLine)
 	klog.Infof("Starting Skenario Kubernetes HPA plugin.")

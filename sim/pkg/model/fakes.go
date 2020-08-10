@@ -17,24 +17,22 @@ package model
 
 import (
 	"context"
-	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
-	"skenario/pkg/plugindispatcher"
 	"time"
 
 	"skenario/pkg/simulator"
 )
 
 type FakeEnvironment struct {
-	Movements           []simulator.Movement
-	TheTime             time.Time
-	TheHaltTime         time.Time
-	TheCPUUtilizations  []*simulator.CPUUtilization
-	ThePluginDispatcher plugindispatcher.PluginDispatcher
+	Movements          []simulator.Movement
+	TheTime            time.Time
+	TheHaltTime        time.Time
+	TheCPUUtilizations []*simulator.CPUUtilization
+	ThePluginPartition string
 }
 
-func (fe *FakeEnvironment) PluginDispatcher() plugindispatcher.PluginDispatcher {
-	return fe.ThePluginDispatcher
+func (fe *FakeEnvironment) PluginPartition() string {
+	return fe.ThePluginPartition
 }
 
 func (fe *FakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
@@ -68,7 +66,7 @@ func (fe *FakeEnvironment) AppendCPUUtilization(cpu *simulator.CPUUtilization) {
 
 func NewFakeEnvironment() *FakeEnvironment {
 	return &FakeEnvironment{
-		ThePluginDispatcher: NewFakePluginPartition(),
+		ThePluginPartition: "1",
 	}
 }
 
@@ -117,35 +115,4 @@ func (fr *FakeReplica) Stats() []*proto.Stat {
 
 func (fr *FakeReplica) GetCPUCapacity() float64 {
 	return fr.totalCPUCapacityMillisPerSecond
-}
-
-type FakeHpaPluginPartition struct {
-	scaleTimes []int64
-	stats      []*proto.Stat
-	scaleTo    int32
-}
-
-func (fp *FakeHpaPluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
-	return nil
-}
-
-func (fp *FakeHpaPluginPartition) Stat(stat []*proto.Stat) error {
-	fp.stats = append(fp.stats, stat...)
-	return nil
-}
-
-func (fp *FakeHpaPluginPartition) ScaleHorizontally(time int64) (rec int32, err error) {
-	fp.scaleTimes = append(fp.scaleTimes, time)
-	return fp.scaleTo, nil
-}
-
-func (fp *FakeHpaPluginPartition) ScaleVertically(time int64) (rec []*proto.RecommendedPodResources, err error) {
-	panic("unimplemented")
-}
-
-func NewFakePluginPartition() *FakeHpaPluginPartition {
-	return &FakeHpaPluginPartition{
-		scaleTimes: make([]int64, 0),
-		stats:      make([]*proto.Stat, 0),
-	}
 }

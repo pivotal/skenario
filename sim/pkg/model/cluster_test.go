@@ -116,14 +116,14 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 			rawSubject.replicasActive.Add(secondReplica)
 
 			subject.RecordToAutoscaler(&theTime)
-			routingStockRecorded = *envFake.ThePluginDispatcher.(*FakeHpaPluginPartition).stats[0]
+			routingStockRecorded = *envFake.ThePluginPartition.(*FakeHpaPluginPartition).stats[0]
 		})
 
 		// TODO immediately record arrivals at routingStock
 
 		it("records once for the routingStock and twice for each replica in ReplicasActive, we have 2 replicas", func() {
-			stats := envFake.ThePluginDispatcher.(*FakeHpaPluginPartition).stats
-			assert.Len(t, envFake.ThePluginDispatcher.(*FakeHpaPluginPartition).stats, 5)
+			stats := envFake.ThePluginPartition.(*FakeHpaPluginPartition).stats
+			assert.Len(t, envFake.ThePluginPartition.(*FakeHpaPluginPartition).stats, 5)
 			assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
 			assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
 			assert.Equal(t, stats[2].Type, proto.MetricType_CPU_MILLIS)

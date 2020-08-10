@@ -17,9 +17,10 @@ package serve
 
 import (
 	"context"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
 	"log"
 	"net/http"
-	"skenario/pkg/plugindispatcher"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -32,7 +33,7 @@ type SkenarioServer struct {
 }
 
 func (ss *SkenarioServer) Serve() {
-	plugindispatcher.Init()
+	plugindispatcher.Init(os.Args[1:])
 	router := chi.NewRouter()
 	router.Use(middleware.NoCache)
 	router.Use(middleware.DefaultCompress)

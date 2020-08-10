@@ -18,7 +18,8 @@ package simulator
 import (
 	"context"
 	"fmt"
-	"skenario/pkg/plugindispatcher"
+	"strconv"
+	"sync/atomic"
 	"time"
 )
 
@@ -29,7 +30,7 @@ const (
 )
 
 type Environment interface {
-	PluginDispatcher() plugindispatcher.PluginDispatcher
+	PluginPartition() string
 	AddToSchedule(movement Movement) (added bool)
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
@@ -56,8 +57,8 @@ type CPUUtilization struct {
 }
 
 type environment struct {
-	ctx              context.Context
-	pluginDispatcher plugindispatcher.PluginDispatcher
+	ctx             context.Context
+	pluginPartition string
 
 	current time.Time
 	startAt time.Time
@@ -73,8 +74,8 @@ type environment struct {
 	cpuUtilizations []*CPUUtilization
 }
 
-func (env *environment) PluginDispatcher() plugindispatcher.PluginDispatcher {
-	return env.pluginDispatcher
+func (env *environment) PluginPartition() string {
+	return env.pluginPartition
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -141,7 +142,7 @@ func (env *environment) Context() context.Context {
 	return env.ctx
 }
 
-var environmentSequence int32 = 0
+var partitionSequence int32 = 0
 
 func (env *environment) CPUUtilizations() []*CPUUtilization {
 	return env.cpuUtilizations
@@ -162,11 +163,11 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
-		ctx:              ctx,
-		pluginDispatcher: plugindispatcher.NewPluginDispatcher(),
-		startAt:          startAt,
-		haltAt:           startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
-		current:          startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
+		ctx:             ctx,
+		pluginPartition: strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
+		startAt:         startAt,
+		haltAt:          startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
+		current:         startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
 
 		beforeScenario:  beforeStock,
 		runningScenario: runningStock,

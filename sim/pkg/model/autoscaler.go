@@ -16,6 +16,7 @@
 package model
 
 import (
+	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
 	"log"
 	"time"
 
@@ -53,7 +54,7 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
-	err := env.PluginDispatcher().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
+	err := plugindispatcher.Event(env.PluginPartition(), startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
 		// TODO: select type and plugin based on the scenario.
 		Type: "hpa.v2beta2.autoscaling.k8s.io",
 		Yaml: hpaYaml,

@@ -17,6 +17,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -62,7 +63,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	currentTime := asts.env.CurrentMovementTime()
 
 	asts.cluster.RecordToAutoscaler(&currentTime)
-	autoscalerDesired, err := asts.env.PluginDispatcher().ScaleHorizontally(currentTime.UnixNano())
+	autoscalerDesired, err := plugindispatcher.HorizontalRecommendation(asts.env.PluginPartition(), currentTime.UnixNano())
 	if err != nil {
 		panic(err)
 	}
