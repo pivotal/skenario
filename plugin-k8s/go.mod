@@ -3,7 +3,7 @@ module github.com/josephburnett/sk-plugin-k8s
 go 1.12
 
 require (
-	github.com/hashicorp/go-plugin v1.0.1
+	github.com/hashicorp/go-plugin v1.3.0
 	github.com/josephburnett/sk-plugin v0.0.0 //-20190726113842-f4cc79709047
 	k8s.io/api v0.18.0
 	k8s.io/apimachinery v0.18.0

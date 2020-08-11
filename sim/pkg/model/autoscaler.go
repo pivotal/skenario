@@ -16,9 +16,9 @@
 package model
 
 import (
-	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
-	"log"
 	"time"
+
+	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
 
 	"skenario/pkg/simulator"
 
@@ -62,7 +62,6 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Created autoscaler.")
 
 	// TODO: create initial replicas config.
 	// Create the first pod since HPA can't scale from zero.
