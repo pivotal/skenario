@@ -38,8 +38,10 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 	var replicasConfig ReplicasConfig
 	var cluster ClusterModel
+	var dispatcherFake *FakeDispatcher
 
 	it.Before(func() {
+		dispatcherFake = NewFakeDispatcher()
 		envFake = NewFakeEnvironment()
 		envFake.TheTime = time.Unix(0, 0)
 
@@ -111,7 +113,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("triggers the autoscaler calculation with the current time", func() {
-					assert.Equal(t, time.Unix(0, 0).UnixNano(), envFake.PluginPartition().(*FakeHpaPluginPartition).scaleTimes[0])
+					assert.Equal(t, time.Unix(0, 0).UnixNano(), dispatcherFake.scaleTimes[0])
 				})
 			})
 

@@ -17,7 +17,7 @@ package serve
 
 import (
 	"context"
-	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
 	"log"
 	"net/http"
 	"os"
@@ -33,7 +33,7 @@ type SkenarioServer struct {
 }
 
 func (ss *SkenarioServer) Serve() {
-	plugindispatcher.Init(os.Args[1:])
+	dispatcher.GetInstance().Init(os.Args[1:])
 	router := chi.NewRouter()
 	router.Use(middleware.NoCache)
 	router.Use(middleware.DefaultCompress)
@@ -64,7 +64,7 @@ func (ss *SkenarioServer) Shutdown() {
 	}
 
 	log.Println("Shutting down autoscaler plugins")
-	plugindispatcher.Shutdown()
+	dispatcher.GetInstance().Shutdown()
 
 	log.Println("Done.")
 }

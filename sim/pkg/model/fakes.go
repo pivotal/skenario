@@ -17,6 +17,7 @@ package model
 
 import (
 	"context"
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"time"
 
@@ -115,4 +116,36 @@ func (fr *FakeReplica) Stats() []*proto.Stat {
 
 func (fr *FakeReplica) GetCPUCapacity() float64 {
 	return fr.totalCPUCapacityMillisPerSecond
+}
+
+type FakeDispatcher struct {
+	scaleTimes []int64
+	stats      []*proto.Stat
+	scaleTo    int32
+}
+
+func (fp *FakeDispatcher) Event(partition string, time int64, typ proto.EventType, object skplug.Object) error {
+	return nil
+}
+
+func (fp *FakeDispatcher) Stat(partition string, stat []*proto.Stat) error {
+	fp.stats = append(fp.stats, stat...)
+	return nil
+}
+
+func (fp *FakeDispatcher) HorizontalRecommendation(partition string, time int64) (rec int32, err error) {
+	fp.scaleTimes = append(fp.scaleTimes, time)
+	return fp.scaleTo, nil
+}
+
+func (fp *FakeDispatcher) VerticalRecommendation(partition string, time int64) (rec []*proto.RecommendedPodResources, err error) {
+	//TODO implement it after injecting vertical scaling logic into Skenario
+	panic("unimplemented")
+}
+
+func NewFakeDispatcher() *FakeDispatcher {
+	return &FakeDispatcher{
+		scaleTimes: make([]int64, 0),
+		stats:      make([]*proto.Stat, 0),
+	}
 }

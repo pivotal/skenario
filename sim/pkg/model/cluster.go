@@ -16,7 +16,7 @@
 package model
 
 import (
-	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
 	"time"
 
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
@@ -85,7 +85,7 @@ func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
 		r := (*e).(ReplicaEntity)
 		stats = append(stats, r.Stats()...)
 	}
-	err := plugindispatcher.Stat(cm.env.PluginPartition(), stats)
+	err := dispatcher.Stat(cm.env.PluginPartition(), stats)
 	if err != nil {
 		panic(err)
 	}
