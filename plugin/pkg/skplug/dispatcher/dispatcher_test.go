@@ -77,9 +77,9 @@ func testDispatcher(t *testing.T, describe spec.G, it spec.S) {
 		rec, err = subject.VerticalRecommendation(partition, time.Now().UnixNano())
 		assert.Nil(t, err)
 		assert.Len(t, rec, 1)
-		assert.Equal(t, rec[0].Target, 50)
-		assert.Equal(t, rec[0].UpperBound, 50)
-		assert.Equal(t, rec[0].LowerBound, 50)
+		assert.Equal(t, rec[0].Target, int64(50))
+		assert.Equal(t, rec[0].UpperBound, int64(100))
+		assert.Equal(t, rec[0].LowerBound, int64(1))
 		assert.Equal(t, rec[0].PodName, "Pod1")
 
 	})
