@@ -18,7 +18,6 @@ package serve
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"skenario/pkg/simulator"
 	"time"

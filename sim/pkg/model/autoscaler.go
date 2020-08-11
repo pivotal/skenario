@@ -16,7 +16,6 @@
 package model
 
 import (
-	"log"
 	"time"
 
 	"skenario/pkg/simulator"
