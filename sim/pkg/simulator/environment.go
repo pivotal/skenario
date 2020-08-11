@@ -19,8 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
-	"strconv"
-	"sync/atomic"
+	"skenario/pkg/plugin"
 	"time"
 )
 
@@ -31,8 +30,7 @@ const (
 )
 
 type Environment interface {
-	PluginPartition() string
-	PluginDispatcher() dispatcher.Dispatcher
+	Plugin() plugin.PluginPartition
 	AddToSchedule(movement Movement) (added bool)
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
@@ -60,7 +58,7 @@ type CPUUtilization struct {
 
 type environment struct {
 	ctx              context.Context
-	pluginPartition  string
+	pluginPartition  plugin.PluginPartition
 	pluginDispatcher dispatcher.Dispatcher
 
 	current time.Time
@@ -77,7 +75,7 @@ type environment struct {
 	cpuUtilizations []*CPUUtilization
 }
 
-func (env *environment) PluginPartition() string {
+func (env *environment) Plugin() plugin.PluginPartition {
 	return env.pluginPartition
 }
 
@@ -166,12 +164,11 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
-		ctx:              ctx,
-		pluginPartition:  strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
-		pluginDispatcher: dispatcher.GetInstance(),
-		startAt:          startAt,
-		haltAt:           startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
-		current:          startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
+		ctx:             ctx,
+		pluginPartition: plugin.NewPluginPartition(),
+		startAt:         startAt,
+		haltAt:          startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
+		current:         startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
 
 		beforeScenario:  beforeStock,
 		runningScenario: runningStock,

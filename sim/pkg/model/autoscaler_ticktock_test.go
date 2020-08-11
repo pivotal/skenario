@@ -38,10 +38,8 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 	var replicasConfig ReplicasConfig
 	var cluster ClusterModel
-	var dispatcherFake *FakeDispatcher
 
 	it.Before(func() {
-		dispatcherFake = NewFakeDispatcher()
 		envFake = NewFakeEnvironment()
 		envFake.TheTime = time.Unix(0, 0)
 
@@ -113,7 +111,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("triggers the autoscaler calculation with the current time", func() {
-					assert.Equal(t, time.Unix(0, 0).UnixNano(), dispatcherFake.scaleTimes[0])
+					assert.Equal(t, time.Unix(0, 0).UnixNano(), envFake.Plugin().(*FakePluginPartition).scaleTimes[0])
 				})
 			})
 
@@ -133,7 +131,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("delegates statistics updating to ClusterModel", func() {
-					stats := envFake.ThePluginPartition.(*FakeHpaPluginPartition).stats
+					stats := envFake.ThePlugin.(*FakePluginPartition).stats
 					assert.Len(t, stats, 3)
 					assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
 					assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
@@ -144,7 +142,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 			describe("the autoscaler was able to make a recommendation", func() {
 				describe("to scale up", func() {
 					it.Before(func() {
-						envFake.ThePluginPartition.(*FakeHpaPluginPartition).scaleTo = 8
+						envFake.ThePlugin.(*FakePluginPartition).scaleTo = 8
 						err := cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
 						assert.NoError(t, err)
 
@@ -167,7 +165,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						err = cluster.Desired().Add(simulator.NewEntity("desired-1", "Desired"))
 						assert.NoError(t, err)
 
-						envFake.ThePluginPartition.(*FakeHpaPluginPartition).scaleTo = 1
+						envFake.ThePlugin.(*FakePluginPartition).scaleTo = 1
 						ent := subject.Remove(nil)
 						err = subject.Add(ent)
 						assert.NoError(t, err)
