@@ -18,11 +18,11 @@ package serve
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
-	"log"
 	"net/http"
 	"skenario/pkg/simulator"
 	"time"
+
+	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
@@ -176,7 +176,6 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Deleted autoscaler.")
 }
 
 func cpuUtilizations(dbFileName string, scenarioRunId int64) []CPUUtilizationMetric {

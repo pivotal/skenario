@@ -2,11 +2,13 @@ package plugindispatcher
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
-	"os"
-	"os/exec"
 )
 
 var capabilityToPlugins map[proto.Capability][]*skplug.Plugin
@@ -49,8 +51,6 @@ func VerticalRecommendation(partition string, time int64) (rec []*proto.Recommen
 
 func Init(pluginsPaths []string) {
 	capabilityToPlugins = make(map[proto.Capability][]*skplug.Plugin, 0)
-	// We don't want to see the plugin logs.
-	//log.SetOutput(ioutil.Discard)
 	for _, pluginPath := range pluginsPaths {
 		// We're a host. Start by launching the plugin process.
 		client := plugin.NewClient(&plugin.ClientConfig{
@@ -59,6 +59,11 @@ func Init(pluginsPaths []string) {
 			Cmd:             exec.Command("sh", "-c", pluginPath),
 			AllowedProtocols: []plugin.Protocol{
 				plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
+			Logger: hclog.New(&hclog.LoggerOptions{
+				Output: hclog.DefaultOutput,
+				Level:  hclog.Info,
+				Name:   "plugin",
+			}),
 		})
 
 		// Connect via RPC
