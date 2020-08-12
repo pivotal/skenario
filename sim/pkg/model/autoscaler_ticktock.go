@@ -139,35 +139,39 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 		podToRecommendations[recommendation.PodName] = append(podToRecommendations[recommendation.PodName], recommendation)
 	}
 
-	//Iterate through replicas
-	for _, pod := range asts.EntitiesInStock() {
-
+	//Iterate through replicas from 1 index because always should be one active replica
+	pods := asts.cluster.ActiveStock().EntitiesInStock()
+	for i := 1; i < len(pods); i++ {
+		pod := pods[i]
 		//We have recommendations for the replica
 		for _, recommendation := range podToRecommendations[string((*pod).Name())] {
 			if recommendation.GetResourceName() == "cpu" {
 				//Check if we need to update this replica
 				resourceRequest := int64((*pod).(Replica).GetCPUCapacity())
 				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
+					(*pod).(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
 					//update
 					//We evict this replica
-					asts.env.AddToSchedule(simulator.NewMovement(
-						"evict_replica",
-						currentTime.Add(1*time.Nanosecond),
-						asts.cluster.ActiveStock(),
-						asts.cluster.TerminatingStock(),
-						pod,
-					))
-
-					//We create new one with recommendations
-					newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
-					newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
-					asts.env.AddToSchedule(simulator.NewMovement(
-						"begin_launch",
-						asts.env.CurrentMovementTime().Add(1*time.Nanosecond),
-						asts.desiredSource,
-						asts.cluster.Desired(),
-						&newReplica,
-					))
+					//asts.env.AddToSchedule(simulator.NewMovement(
+					//	"evict_replica",
+					//	currentTime.Add(1*time.Nanosecond),
+					//	asts.cluster.ActiveStock(),
+					//	asts.cluster.TerminatingStock(),
+					//	pod,
+					//))
+					//
+					////We create new one with recommendations
+					//newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
+					//newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
+					//asts.cluster.ActiveStock().Add(newReplica)
+					//asts.cluster.Desired().Add(newReplica)
+					//asts.env.AddToSchedule(simulator.NewMovement(
+					//	"begin_launch",
+					//	asts.env.CurrentMovementTime().Add(1*time.Nanosecond),
+					//	asts.cluster.Desired(),
+					//	asts.cluster.ActiveStock(),
+					//	&newReplica,
+					//))
 				}
 			}
 		}
