@@ -13,10 +13,7 @@ import (
 type Dispatcher interface {
 	Init(pluginsPaths []string)
 	Shutdown()
-	Event(partition string, time int64, typ proto.EventType, object skplug.Object) error
-	Stat(partition string, stat []*proto.Stat) error
-	HorizontalRecommendation(partition string, time int64) (rec int32, err error)
-	VerticalRecommendation(partition string, time int64) (rec []*proto.RecommendedPodResources, err error)
+	GetPlugin() skplug.Plugin
 }
 
 type dispatcher struct {
@@ -24,6 +21,9 @@ type dispatcher struct {
 	pluginsServers      []skplug.Plugin
 	pluginsClients      []*plugin.Client
 }
+
+var _ skplug.Plugin = &dispatcher{}
+var _ Dispatcher = &dispatcher{}
 
 var instance *dispatcher
 var once sync.Once
@@ -112,13 +112,27 @@ func (d *dispatcher) registerPlugin(pluginServer *skplug.Plugin) {
 	}
 }
 
-func GetInstance() Dispatcher {
+func (d *dispatcher) GetCapabilities() (rec []proto.Capability, err error) {
+	return []proto.Capability{}, nil
+}
+
+func GetDispatcher() Dispatcher {
 	once.Do(func() {
 		instance = &dispatcher{
 			capabilityToPlugins: make(map[proto.Capability][]*skplug.Plugin, 0),
 		}
 	})
 	return instance
+}
+
+func NewDispatcher() Dispatcher {
+	return &dispatcher{
+		capabilityToPlugins: make(map[proto.Capability][]*skplug.Plugin, 0),
+	}
+}
+
+func (d *dispatcher) GetPlugin() skplug.Plugin {
+	return d
 }
 
 func (d *dispatcher) Shutdown() {

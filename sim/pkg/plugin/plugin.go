@@ -16,31 +16,31 @@ type PluginPartition interface {
 }
 
 type pluginPartition struct {
-	partition  string
-	dispatcher dispatcher.Dispatcher
+	partition string
+	plugin    skplug.Plugin
 }
 
 var partitionSequence int32 = 0
 
 func NewPluginPartition() PluginPartition {
 	return &pluginPartition{
-		partition:  strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
-		dispatcher: dispatcher.GetInstance(),
+		partition: strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
+		plugin:    dispatcher.GetDispatcher().GetPlugin(),
 	}
 }
 
 func (p *pluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
-	return p.dispatcher.Event(p.partition, time, typ, object)
+	return p.plugin.Event(p.partition, time, typ, object)
 }
 
 func (p *pluginPartition) Stat(stat []*proto.Stat) error {
-	return p.dispatcher.Stat(p.partition, stat)
+	return p.plugin.Stat(p.partition, stat)
 }
 
 func (p *pluginPartition) HorizontalRecommendation(time int64) (rec int32, err error) {
-	return p.dispatcher.HorizontalRecommendation(p.partition, time)
+	return p.plugin.HorizontalRecommendation(p.partition, time)
 }
 
 func (p *pluginPartition) VerticalRecommendation(time int64) (rec []*proto.RecommendedPodResources, err error) {
-	return p.dispatcher.VerticalRecommendation(p.partition, time)
+	return p.plugin.VerticalRecommendation(p.partition, time)
 }

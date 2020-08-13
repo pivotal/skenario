@@ -14,7 +14,7 @@ var subject Dispatcher
 var rawSubject *dispatcher
 
 func TestDispatcher(t *testing.T) {
-	subject = GetInstance()
+	subject = GetDispatcher()
 	subject.Init([]string{"../../../../build/plugin-fake"})
 	rawSubject = subject.(*dispatcher)
 	spec.Run(t, "Dispatcher", testDispatcher, spec.Report(report.Terminal{}))
