@@ -29,13 +29,12 @@ import (
 
 type SkenarioServer struct {
 	IndexRoot  string
+	Dispatcher dispatcher.Dispatcher
 	srv        *http.Server
-	dispatcher dispatcher.Dispatcher
 }
 
 func (ss *SkenarioServer) Serve() {
-	ss.dispatcher = dispatcher.NewDispatcher()
-	ss.dispatcher.Init(os.Args[1:])
+	ss.Dispatcher.Init(os.Args[1:])
 	router := chi.NewRouter()
 	router.Use(middleware.NoCache)
 	router.Use(middleware.DefaultCompress)
@@ -43,7 +42,7 @@ func (ss *SkenarioServer) Serve() {
 
 	router.Mount("/debug", middleware.Profiler())
 	router.Mount("/", http.FileServer(http.Dir(ss.IndexRoot)))
-	router.HandleFunc("/run", RunHandler(&ss.dispatcher))
+	router.HandleFunc("/run", RunHandler(&ss.Dispatcher))
 
 	ss.srv = &http.Server{
 		Addr:    "0.0.0.0:3000",
@@ -66,7 +65,7 @@ func (ss *SkenarioServer) Shutdown() {
 	}
 
 	log.Println("Shutting down autoscaler plugins")
-	ss.dispatcher.Shutdown()
+	ss.Dispatcher.Shutdown()
 
 	log.Println("Done.")
 }

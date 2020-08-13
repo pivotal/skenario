@@ -17,7 +17,9 @@ package simulator
 
 import (
 	"fmt"
-
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -83,4 +85,39 @@ func (es *EchoSourceStockType) Remove(entity *Entity) Entity {
 	name := EntityName(fmt.Sprintf("entity-%d", es.series))
 	es.series++
 	return NewEntity(name, es.kind)
+}
+
+type fakeDispatcher struct {
+}
+
+func (fd *fakeDispatcher) Init(pluginsPaths []string) {
+}
+func (fd *fakeDispatcher) Shutdown() {
+}
+func (fd *fakeDispatcher) GetPlugin() skplug.Plugin {
+	return fd
+}
+
+func NewFakeDispatcher() dispatcher.Dispatcher {
+	return &fakeDispatcher{}
+}
+
+func (fd *fakeDispatcher) Event(partition string, time int64, typ proto.EventType, object skplug.Object) error {
+	return nil
+}
+
+func (fd *fakeDispatcher) Stat(partition string, stat []*proto.Stat) error {
+	return nil
+}
+
+func (fd *fakeDispatcher) HorizontalRecommendation(partition string, time int64) (rec int32, err error) {
+	return 0, nil
+}
+
+func (fd *fakeDispatcher) VerticalRecommendation(partition string, time int64) (rec []*proto.RecommendedPodResources, err error) {
+	return []*proto.RecommendedPodResources{}, nil
+}
+
+func (fd *fakeDispatcher) GetCapabilities() (rec []proto.Capability, err error) {
+	return []proto.Capability{}, nil
 }

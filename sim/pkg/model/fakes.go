@@ -123,6 +123,7 @@ type FakePluginPartition struct {
 	scaleTimes []int64
 	stats      []*proto.Stat
 	scaleTo    int32
+	plugin     skplug.Plugin
 }
 
 func (fp *FakePluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {

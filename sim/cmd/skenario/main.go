@@ -16,6 +16,7 @@
 package main
 
 import (
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
 	"os"
 	"os/signal"
 
@@ -26,7 +27,7 @@ func main() {
 	sighup := make(chan os.Signal, 1)
 	signal.Notify(sighup, os.Interrupt)
 
-	server := serve.SkenarioServer{IndexRoot: "sim/pkg/serve"}
+	server := serve.SkenarioServer{IndexRoot: "sim/pkg/serve", Dispatcher: dispatcher.NewDispatcher()}
 	server.Serve()
 
 	<-sighup
