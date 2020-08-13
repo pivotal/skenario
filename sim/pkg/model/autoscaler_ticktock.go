@@ -147,7 +147,7 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 		for _, recommendation := range podToRecommendations[string((*pod).Name())] {
 			if recommendation.GetResourceName() == "cpu" {
 				//Check if we need to update this replica
-				resourceRequest := int64((*pod).(Replica).GetCPUCapacity())
+				resourceRequest := int32((*pod).(Replica).GetCPUCapacity())
 				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
 					//update
 					//We evict this replica
@@ -161,9 +161,7 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 
 					//We create new one with recommendations
 					newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
-					newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.UpperBound)
-					//asts.cluster.ActiveStock().Add(newReplica)
-					//asts.cluster.Desired().Add(newReplica)
+					newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
 					asts.cluster.LaunchingStock().Add(newReplica)
 					asts.env.AddToSchedule(simulator.NewMovement(
 						"create_updated_replica",
