@@ -22,10 +22,10 @@ type pluginPartition struct {
 
 var partitionSequence int32 = 0
 
-func NewPluginPartition() PluginPartition {
+func NewPluginPartition(dispatcher *dispatcher.Dispatcher) PluginPartition {
 	return &pluginPartition{
 		partition: strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
-		plugin:    dispatcher.GetDispatcher().GetPlugin(),
+		plugin:    (*dispatcher).GetPlugin(),
 	}
 }
 

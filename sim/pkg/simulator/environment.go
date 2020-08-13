@@ -153,19 +153,19 @@ func (env *environment) AppendCPUUtilization(cpuUtilization *CPUUtilization) {
 	env.cpuUtilizations = append(env.cpuUtilizations, cpuUtilization)
 }
 
-func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration) Environment {
+func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, dispatcher *dispatcher.Dispatcher) Environment {
 	pqueue := NewMovementPriorityQueue()
-	return newEnvironment(ctx, startAt, runFor, pqueue)
+	return newEnvironment(ctx, startAt, runFor, pqueue, dispatcher)
 }
 
-func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue) *environment {
+func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue, dispatcher *dispatcher.Dispatcher) *environment {
 	beforeStock := NewArrayThroughStock("BeforeScenario", "Scenario")
 	runningStock := NewArrayThroughStock("RunningScenario", "Scenario")
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
 		ctx:             ctx,
-		pluginPartition: plugin.NewPluginPartition(),
+		pluginPartition: plugin.NewPluginPartition(dispatcher),
 		startAt:         startAt,
 		haltAt:          startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
 		current:         startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement

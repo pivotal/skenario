@@ -89,7 +89,7 @@ type SkenarioRunRequest struct {
 
 var environmentSequence int32 = 0
 
-func RunHandler(dispatcher dispatcher.Dispatcher) func(w http.ResponseWriter, r *http.Request) {
+func RunHandler(dispatcher *dispatcher.Dispatcher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -99,7 +99,7 @@ func RunHandler(dispatcher dispatcher.Dispatcher) func(w http.ResponseWriter, r 
 			panic(err.Error())
 		}
 
-		env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
+		env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor, dispatcher)
 
 		clusterConf := buildClusterConfig(runReq)
 		asConf := buildAutoscalerConfig(runReq)

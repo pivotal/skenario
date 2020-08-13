@@ -7,7 +7,6 @@ import (
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"os"
 	"os/exec"
-	"sync"
 )
 
 type Dispatcher interface {
@@ -24,9 +23,6 @@ type dispatcher struct {
 
 var _ skplug.Plugin = &dispatcher{}
 var _ Dispatcher = &dispatcher{}
-
-var instance *dispatcher
-var once sync.Once
 
 func (d *dispatcher) Event(partition string, time int64, typ proto.EventType, object skplug.Object) error {
 	for _, pluginServer := range d.capabilityToPlugins[proto.Capability_EVENT] {
@@ -114,15 +110,6 @@ func (d *dispatcher) registerPlugin(pluginServer *skplug.Plugin) {
 
 func (d *dispatcher) GetCapabilities() (rec []proto.Capability, err error) {
 	return []proto.Capability{}, nil
-}
-
-func GetDispatcher() Dispatcher {
-	once.Do(func() {
-		instance = &dispatcher{
-			capabilityToPlugins: make(map[proto.Capability][]*skplug.Plugin, 0),
-		}
-	})
-	return instance
 }
 
 func NewDispatcher() Dispatcher {

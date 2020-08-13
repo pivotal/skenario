@@ -43,7 +43,7 @@ func (ss *SkenarioServer) Serve() {
 
 	router.Mount("/debug", middleware.Profiler())
 	router.Mount("/", http.FileServer(http.Dir(ss.IndexRoot)))
-	router.HandleFunc("/run", RunHandler(ss.dispatcher))
+	router.HandleFunc("/run", RunHandler(&ss.dispatcher))
 
 	ss.srv = &http.Server{
 		Addr:    "0.0.0.0:3000",
