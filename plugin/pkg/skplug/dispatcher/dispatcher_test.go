@@ -20,8 +20,10 @@ func TestDispatcher(t *testing.T) {
 	spec.Run(t, "Dispatcher", testDispatcher, spec.Report(report.Terminal{}))
 }
 func testDispatcher(t *testing.T, describe spec.G, it spec.S) {
-	var partition string
-	partition = "0"
+	noErrorPartition := "noErrorPartition"
+	errorPartition := "errorPartition"
+	concurrentPartition1 := "concurrentPartition1"
+	concurrentPartition2 := "concurrentPartition2"
 
 	it("Dispatcher registered one plugin", func() {
 		assert.Len(t, rawSubject.pluginsServers, 1)
@@ -32,55 +34,105 @@ func testDispatcher(t *testing.T, describe spec.G, it spec.S) {
 		assert.Len(t, rawSubject.capabilityToPlugins[proto.Capability_STAT], 1)
 	})
 	describe("Event", func() {
-		it("create autoscaler", func() {
-			err := subject.Event(partition, time.Now().UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{})
+		it("create autoscaler with an existent partition, no error", func() {
+			err := subject.Event(noErrorPartition, time.Now().UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{})
 			assert.Nil(t, err)
 		})
 
-		it("create pod", func() {
-			err := subject.Event(partition, time.Now().UnixNano(), proto.EventType_CREATE, &skplug.Pod{})
+		it("create pod with an existent partition, no error", func() {
+			err := subject.Event(noErrorPartition, time.Now().UnixNano(), proto.EventType_CREATE, &skplug.Pod{})
 			assert.Nil(t, err)
 		})
 
-		it("delete pod", func() {
-			err := subject.Event(partition, time.Now().UnixNano(), proto.EventType_DELETE, &skplug.Pod{})
+		it("delete pod with an existent partition, no error", func() {
+			err := subject.Event(noErrorPartition, time.Now().UnixNano(), proto.EventType_DELETE, &skplug.Pod{})
 			assert.Nil(t, err)
 		})
 
-		it("delete autoscaler", func() {
-			err := subject.Event(partition, time.Now().UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
+		it("delete autoscaler with an existent partition, no error", func() {
+			err := subject.Event(noErrorPartition, time.Now().UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
 			assert.Nil(t, err)
+		})
+		it("create autoscaler with non-existent partition, produce an error", func() {
+			err := subject.Event(errorPartition, time.Now().UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{})
+			assert.NotNil(t, err)
+		})
+
+		it("create pod with non-existent partition, produce an error", func() {
+			err := subject.Event(errorPartition, time.Now().UnixNano(), proto.EventType_CREATE, &skplug.Pod{})
+			assert.NotNil(t, err)
+		})
+
+		it("delete pod with non-existent partition, produce an error", func() {
+			err := subject.Event(errorPartition, time.Now().UnixNano(), proto.EventType_DELETE, &skplug.Pod{})
+			assert.NotNil(t, err)
+		})
+
+		it("delete autoscaler with non-existent partition, produce an error", func() {
+			err := subject.Event(errorPartition, time.Now().UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
+			assert.NotNil(t, err)
 		})
 	})
-	it("Stat", func() {
-		err := subject.Stat(partition, []*proto.Stat{})
-		assert.Nil(t, err)
+	describe("Stat", func() {
+		it("call with an existent partition, no error", func() {
+			err := subject.Stat(noErrorPartition, []*proto.Stat{})
+			assert.Nil(t, err)
+		})
+		it("call with non-existent partition, produce an error", func() {
+			err := subject.Stat(errorPartition, []*proto.Stat{})
+			assert.NotNil(t, err)
+		})
 	})
 
-	it("HorizontalRecommendation", func() {
+	describe("HorizontalRecommendation", func() {
 		var rec int32
 		var err error
+		it("case with two concurrent partitions", func() {
+			rec, err = subject.HorizontalRecommendation(concurrentPartition1, time.Now().UnixNano())
+			assert.Nil(t, err)
+			assert.Equal(t, rec, int32(1))
 
-		rec, err = subject.HorizontalRecommendation("1", time.Now().UnixNano())
-		assert.Nil(t, err)
-		assert.Equal(t, rec, int32(1))
-
-		rec, err = subject.HorizontalRecommendation("2", time.Now().UnixNano())
-		assert.Nil(t, err)
-		assert.Equal(t, rec, int32(2))
+			rec, err = subject.HorizontalRecommendation(concurrentPartition2, time.Now().UnixNano())
+			assert.Nil(t, err)
+			assert.Equal(t, rec, int32(2))
+		})
+		it("call with an existent partition, no error", func() {
+			rec, err = subject.HorizontalRecommendation(noErrorPartition, time.Now().UnixNano())
+			assert.Nil(t, err)
+		})
+		it("call with non-existent partition, produce an error", func() {
+			rec, err = subject.HorizontalRecommendation(errorPartition, time.Now().UnixNano())
+			assert.NotNil(t, err)
+		})
 	})
 
-	it("VerticalRecommendation", func() {
+	describe("VerticalRecommendation", func() {
 		var rec []*proto.RecommendedPodResources
 		var err error
+		it("case with two concurrent partitions", func() {
+			rec, err = subject.VerticalRecommendation(concurrentPartition1, time.Now().UnixNano())
+			assert.Nil(t, err)
+			assert.Len(t, rec, 1)
+			assert.Equal(t, rec[0].Target, int64(50))
+			assert.Equal(t, rec[0].UpperBound, int64(100))
+			assert.Equal(t, rec[0].LowerBound, int64(1))
+			assert.Equal(t, rec[0].PodName, "Pod1")
 
-		rec, err = subject.VerticalRecommendation(partition, time.Now().UnixNano())
-		assert.Nil(t, err)
-		assert.Len(t, rec, 1)
-		assert.Equal(t, rec[0].Target, int64(50))
-		assert.Equal(t, rec[0].UpperBound, int64(100))
-		assert.Equal(t, rec[0].LowerBound, int64(1))
-		assert.Equal(t, rec[0].PodName, "Pod1")
-
+			rec, err = subject.VerticalRecommendation(concurrentPartition2, time.Now().UnixNano())
+			assert.Nil(t, err)
+			assert.Len(t, rec, 1)
+			assert.Equal(t, rec[0].Target, int64(100))
+			assert.Equal(t, rec[0].UpperBound, int64(200))
+			assert.Equal(t, rec[0].LowerBound, int64(100))
+			assert.Equal(t, rec[0].PodName, "Pod1")
+		})
+		it("call with an existent partition, no error", func() {
+			rec, err = subject.VerticalRecommendation(noErrorPartition, time.Now().UnixNano())
+			assert.Nil(t, err)
+		})
+		it("call with non-existent partition, produce an error", func() {
+			rec, err = subject.VerticalRecommendation(errorPartition, time.Now().UnixNano())
+			assert.NotNil(t, err)
+		})
 	})
 }
