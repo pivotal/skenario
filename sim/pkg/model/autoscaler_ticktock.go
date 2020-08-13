@@ -149,29 +149,29 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 				//Check if we need to update this replica
 				resourceRequest := int64((*pod).(Replica).GetCPUCapacity())
 				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
-					(*pod).(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
 					//update
 					//We evict this replica
-					//asts.env.AddToSchedule(simulator.NewMovement(
-					//	"evict_replica",
-					//	currentTime.Add(1*time.Nanosecond),
-					//	asts.cluster.ActiveStock(),
-					//	asts.cluster.TerminatingStock(),
-					//	pod,
-					//))
-					//
-					////We create new one with recommendations
-					//newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
-					//newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
+					asts.env.AddToSchedule(simulator.NewMovement(
+						"evict_replica",
+						currentTime.Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay),
+						asts.cluster.ActiveStock(),
+						asts.cluster.TerminatingStock(),
+						pod,
+					))
+
+					//We create new one with recommendations
+					newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
+					newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.UpperBound)
 					//asts.cluster.ActiveStock().Add(newReplica)
 					//asts.cluster.Desired().Add(newReplica)
-					//asts.env.AddToSchedule(simulator.NewMovement(
-					//	"begin_launch",
-					//	asts.env.CurrentMovementTime().Add(1*time.Nanosecond),
-					//	asts.cluster.Desired(),
-					//	asts.cluster.ActiveStock(),
-					//	&newReplica,
-					//))
+					asts.cluster.LaunchingStock().Add(newReplica)
+					asts.env.AddToSchedule(simulator.NewMovement(
+						"create_updated_replica",
+						asts.env.CurrentMovementTime().Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay),
+						asts.cluster.LaunchingStock(),
+						asts.cluster.ActiveStock(),
+						&newReplica,
+					))
 				}
 			}
 		}

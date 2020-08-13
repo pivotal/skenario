@@ -38,6 +38,7 @@ type ClusterModel interface {
 	RoutingStock() RequestsRoutingStock
 	ActiveStock() simulator.ThroughStock
 	TerminatingStock() ReplicasTerminatingStock
+	LaunchingStock() simulator.ThroughStock
 }
 
 type clusterModel struct {
@@ -63,6 +64,10 @@ func (cm *clusterModel) Desired() ReplicasDesiredStock {
 }
 func (cm *clusterModel) TerminatingStock() ReplicasTerminatingStock {
 	return cm.replicasTerminating
+}
+
+func (cm *clusterModel) LaunchingStock() simulator.ThroughStock {
+	return cm.replicasLaunching
 }
 
 func (cm *clusterModel) CurrentLaunching() uint64 {
