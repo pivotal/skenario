@@ -3,7 +3,7 @@ module plugin-k8s-vpa
 go 1.14
 
 require (
-	github.com/hashicorp/go-plugin v1.0.1
+	github.com/hashicorp/go-plugin v1.3.0
 	github.com/josephburnett/sk-plugin v0.0.0 //-20190726113842-f4cc79709047
 	github.com/prometheus/client_golang v1.0.0
 	k8s.io/api v0.17.9
