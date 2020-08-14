@@ -118,7 +118,7 @@ func NewReplicaEntity(env simulator.Environment, failedSink *simulator.SinkStock
 	re := &replicaEntity{
 		env:                                env,
 		number:                             replicaNum,
-		totalCPUCapacityMillisPerSecond:    100,
+		totalCPUCapacityMillisPerSecond:    1000,
 		occupiedCPUCapacityMillisPerSecond: 0,
 	}
 

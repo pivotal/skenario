@@ -292,9 +292,9 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 		//TODO make this part generic
 		recommendation = append(recommendation, &proto.RecommendedPodResources{
 			PodName:      rec.ContainerName,
-			LowerBound:   int32(rec.LowerBound.Cpu().Value()),
-			UpperBound:   int32(rec.UpperBound.Cpu().Value()),
-			Target:       int32(rec.Target.Cpu().Value()),
+			LowerBound:   int32(rec.LowerBound.Cpu().MilliValue()),
+			UpperBound:   int32(rec.UpperBound.Cpu().MilliValue()),
+			Target:       int32(rec.Target.Cpu().MilliValue()),
 			ResourceName: v1.ResourceCPU.String(),
 		})
 

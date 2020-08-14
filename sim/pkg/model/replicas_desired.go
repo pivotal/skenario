@@ -43,7 +43,7 @@ type replicasDesiredStock struct {
 	delegate            simulator.ThroughStock
 	replicaSource       ReplicaSource
 	replicasLaunching   simulator.ThroughStock
-	replicasActive      simulator.ThroughStock
+	replicasActive      ReplicasActiveStock
 	replicasTerminating ReplicasTerminatingStock
 	launchingCount      uint64
 }
@@ -117,7 +117,7 @@ func (rds *replicasDesiredStock) Add(entity simulator.Entity) error {
 	return nil
 }
 
-func NewReplicasDesiredStock(env simulator.Environment, config ReplicasConfig, replicaSource ReplicaSource, replicasLaunching, replicasActive simulator.ThroughStock, replicasTerminating ReplicasTerminatingStock) ReplicasDesiredStock {
+func NewReplicasDesiredStock(env simulator.Environment, config ReplicasConfig, replicaSource ReplicaSource, replicasLaunching, replicasActive ReplicasActiveStock, replicasTerminating ReplicasTerminatingStock) ReplicasDesiredStock {
 	return &replicasDesiredStock{
 		env:                 env,
 		config:              config,

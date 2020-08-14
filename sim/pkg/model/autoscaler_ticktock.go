@@ -139,36 +139,36 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 		podToRecommendations[recommendation.PodName] = append(podToRecommendations[recommendation.PodName], recommendation)
 	}
 
-	//Iterate through replicas from 1 index because always should be one active replica
+	//Iterate through replicas
 	pods := asts.cluster.ActiveStock().EntitiesInStock()
-	for i := 1; i < len(pods); i++ {
-		pod := pods[i]
+	for _, pod := range pods {
 		//We have recommendations for the replica
 		for _, recommendation := range podToRecommendations[string((*pod).Name())] {
 			if recommendation.GetResourceName() == "cpu" {
 				//Check if we need to update this replica
 				resourceRequest := int32((*pod).(Replica).GetCPUCapacity())
-				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
+				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.Target {
 					//update
-					//We evict this replica
-					asts.env.AddToSchedule(simulator.NewMovement(
-						"evict_replica",
-						currentTime.Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay),
-						asts.cluster.ActiveStock(),
-						asts.cluster.TerminatingStock(),
-						pod,
-					))
-
 					//We create new one with recommendations
 					newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
 					newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(recommendation.Target)
 					asts.cluster.LaunchingStock().Add(newReplica)
+
 					asts.env.AddToSchedule(simulator.NewMovement(
 						"create_updated_replica",
-						asts.env.CurrentMovementTime().Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay),
+						currentTime.Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay),
 						asts.cluster.LaunchingStock(),
 						asts.cluster.ActiveStock(),
 						&newReplica,
+					))
+
+					//We evict the existent replica
+					asts.env.AddToSchedule(simulator.NewMovement(
+						"evict_replica",
+						currentTime.Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay).Add(time.Nanosecond),
+						asts.cluster.ActiveStock(),
+						asts.cluster.TerminatingStock(),
+						pod,
 					))
 				}
 			}
