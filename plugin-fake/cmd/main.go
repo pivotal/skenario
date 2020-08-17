@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/hashicorp/go-plugin"
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
@@ -12,7 +13,6 @@ const (
 )
 
 type partition string
-type pod_name string
 
 var _ skplug.Plugin = &fakePluginServer{}
 
@@ -23,16 +23,8 @@ func newPluginServer() *fakePluginServer {
 	return &fakePluginServer{}
 }
 
-type PartitionError struct {
-	error
-}
-
-func (pe *PartitionError) Error() string {
-	return "non-existent autoscaler partition error"
-}
-
-func NewPartitionError(s string) error {
-	return &PartitionError{}
+func NewPartitionError() error {
+	return errors.New("non-existent autoscaler partition error")
 }
 func (p *fakePluginServer) Event(part string, time int64, typ proto.EventType, object skplug.Object) error {
 	switch o := object.(type) {
@@ -68,7 +60,7 @@ func (fp *fakePluginServer) Stat(part string, stat []*proto.Stat) error {
 	case "noErrorPartition":
 		return nil
 	case "errorPartition":
-		return NewPartitionError("non-existent autoscaler partition")
+		return NewPartitionError()
 	default:
 		return nil
 	}
@@ -79,7 +71,7 @@ func (fp *fakePluginServer) HorizontalRecommendation(part string, time int64) (r
 	case "noErrorPartition":
 		return 0, nil
 	case "errorPartition":
-		return 0, NewPartitionError("non-existent autoscaler partition")
+		return 0, NewPartitionError()
 	case "concurrentPartition1":
 		return 1, nil
 	case "concurrentPartition2":
@@ -94,7 +86,7 @@ func (fp *fakePluginServer) VerticalRecommendation(part string, time int64) (rec
 	case "noErrorPartition":
 		return []*proto.RecommendedPodResources{}, nil
 	case "errorPartition":
-		return []*proto.RecommendedPodResources{}, NewPartitionError("non-existent autoscaler partition")
+		return []*proto.RecommendedPodResources{}, NewPartitionError()
 	case "concurrentPartition1":
 		return []*proto.RecommendedPodResources{
 			{
@@ -123,7 +115,7 @@ func (fp *fakePluginServer) createAutoscaler(part partition, a *skplug.Autoscale
 	case "noErrorPartition":
 		return nil
 	case "errorPartition":
-		return NewPartitionError("non-existent autoscaler partition")
+		return NewPartitionError()
 	default:
 		return nil
 	}
@@ -134,7 +126,7 @@ func (fp *fakePluginServer) deleteAutoscaler(part partition) error {
 	case "noErrorPartition":
 		return nil
 	case "errorPartition":
-		return NewPartitionError("non-existent autoscaler partition")
+		return NewPartitionError()
 	default:
 		return nil
 	}
@@ -145,7 +137,7 @@ func (fp *fakePluginServer) createPod(part partition, pod *skplug.Pod) error {
 	case "noErrorPartition":
 		return nil
 	case "errorPartition":
-		return NewPartitionError("non-existent autoscaler partition")
+		return NewPartitionError()
 	default:
 		return nil
 	}
@@ -156,7 +148,7 @@ func (fp *fakePluginServer) updatePod(part partition, pod *skplug.Pod) error {
 	case "noErrorPartition":
 		return nil
 	case "errorPartition":
-		return NewPartitionError("non-existent autoscaler partition")
+		return NewPartitionError()
 	default:
 		return nil
 	}
@@ -167,7 +159,7 @@ func (fp *fakePluginServer) deletePod(part partition, pod *skplug.Pod) error {
 	case "noErrorPartition":
 		return nil
 	case "errorPartition":
-		return NewPartitionError("non-existent autoscaler partition")
+		return NewPartitionError()
 	default:
 		return nil
 	}
