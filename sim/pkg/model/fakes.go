@@ -17,7 +17,9 @@ package model
 
 import (
 	"context"
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
+	"skenario/pkg/plugin"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -28,11 +30,11 @@ type FakeEnvironment struct {
 	TheTime            time.Time
 	TheHaltTime        time.Time
 	TheCPUUtilizations []*simulator.CPUUtilization
-	ThePluginPartition string
+	ThePlugin          plugin.PluginPartition
 }
 
-func (fe *FakeEnvironment) PluginPartition() string {
-	return fe.ThePluginPartition
+func (fe *FakeEnvironment) Plugin() plugin.PluginPartition {
+	return fe.ThePlugin
 }
 
 func (fe *FakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {
@@ -66,7 +68,7 @@ func (fe *FakeEnvironment) AppendCPUUtilization(cpu *simulator.CPUUtilization) {
 
 func NewFakeEnvironment() *FakeEnvironment {
 	return &FakeEnvironment{
-		ThePluginPartition: "1",
+		ThePlugin: NewFakePluginPartition(),
 	}
 }
 
@@ -115,4 +117,37 @@ func (fr *FakeReplica) Stats() []*proto.Stat {
 
 func (fr *FakeReplica) GetCPUCapacity() float64 {
 	return fr.totalCPUCapacityMillisPerSecond
+}
+
+type FakePluginPartition struct {
+	scaleTimes []int64
+	stats      []*proto.Stat
+	scaleTo    int32
+	plugin     skplug.Plugin
+}
+
+func (fp *FakePluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
+	return nil
+}
+
+func (fp *FakePluginPartition) Stat(stat []*proto.Stat) error {
+	fp.stats = append(fp.stats, stat...)
+	return nil
+}
+
+func (fp *FakePluginPartition) HorizontalRecommendation(time int64) (rec int32, err error) {
+	fp.scaleTimes = append(fp.scaleTimes, time)
+	return fp.scaleTo, nil
+}
+
+func (fp *FakePluginPartition) VerticalRecommendation(time int64) (rec []*proto.RecommendedPodResources, err error) {
+	//TODO implement it after injecting vertical scaling in Skenario
+	panic("unimplemented")
+}
+
+func NewFakePluginPartition() *FakePluginPartition {
+	return &FakePluginPartition{
+		scaleTimes: make([]int64, 0),
+		stats:      make([]*proto.Stat, 0),
+	}
 }

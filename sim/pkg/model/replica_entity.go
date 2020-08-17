@@ -18,8 +18,6 @@ package model
 import (
 	"fmt"
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
-	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
-
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"skenario/pkg/simulator"
 )
@@ -52,7 +50,7 @@ var replicaNum int
 
 func (re *replicaEntity) Activate() {
 	now := re.env.CurrentMovementTime().UnixNano()
-	err := plugindispatcher.Event(re.env.PluginPartition(), now, proto.EventType_CREATE, &skplug.Pod{
+	err := re.env.Plugin().Event(now, proto.EventType_CREATE, &skplug.Pod{
 		Name: string(re.Name()),
 		// TODO: enumerate states in proto.
 		State:          "active",
@@ -66,7 +64,7 @@ func (re *replicaEntity) Activate() {
 
 func (re *replicaEntity) Deactivate() {
 	now := re.env.CurrentMovementTime().UnixNano()
-	err := plugindispatcher.Event(re.env.PluginPartition(), now, proto.EventType_DELETE, &skplug.Pod{
+	err := re.env.Plugin().Event(now, proto.EventType_DELETE, &skplug.Pod{
 		Name: string(re.Name()),
 	})
 	if err != nil {

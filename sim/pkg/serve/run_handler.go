@@ -18,11 +18,10 @@ package serve
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
 	"net/http"
 	"skenario/pkg/simulator"
 	"time"
-
-	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
@@ -90,91 +89,93 @@ type SkenarioRunRequest struct {
 
 var environmentSequence int32 = 0
 
-func RunHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func RunHandler(dispatcher *dispatcher.Dispatcher) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 
-	runReq := &SkenarioRunRequest{}
-	err := json.NewDecoder(r.Body).Decode(runReq)
-	if err != nil {
-		panic(err.Error())
-	}
+		runReq := &SkenarioRunRequest{}
+		err := json.NewDecoder(r.Body).Decode(runReq)
+		if err != nil {
+			panic(err.Error())
+		}
 
-	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
+		env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor, dispatcher)
 
-	clusterConf := buildClusterConfig(runReq)
-	asConf := buildAutoscalerConfig(runReq)
-	replicasConfig := model.ReplicasConfig{
-		LaunchDelay:    runReq.LaunchDelay,
-		TerminateDelay: runReq.TerminateDelay,
-	}
+		clusterConf := buildClusterConfig(runReq)
+		asConf := buildAutoscalerConfig(runReq)
+		replicasConfig := model.ReplicasConfig{
+			LaunchDelay:    runReq.LaunchDelay,
+			TerminateDelay: runReq.TerminateDelay,
+		}
 
-	requestConfig := model.RequestConfig{
-		CPUTimeMillis: runReq.RequestCPUTimeMillis,
-		IOTimeMillis:  runReq.RequestIOTimeMillis,
-		Timeout:       runReq.RequestTimeout,
-	}
+		requestConfig := model.RequestConfig{
+			CPUTimeMillis: runReq.RequestCPUTimeMillis,
+			IOTimeMillis:  runReq.RequestIOTimeMillis,
+			Timeout:       runReq.RequestTimeout,
+		}
 
-	cluster := model.NewCluster(env, clusterConf, replicasConfig)
+		cluster := model.NewCluster(env, clusterConf, replicasConfig)
 
-	model.NewAutoscaler(env, startAt, cluster, asConf)
-	trafficSource := model.NewTrafficSource(env, cluster.RoutingStock(), requestConfig)
+		model.NewAutoscaler(env, startAt, cluster, asConf)
+		trafficSource := model.NewTrafficSource(env, cluster.RoutingStock(), requestConfig)
 
-	var traffic trafficpatterns.Pattern
-	switch runReq.TrafficPattern {
-	case "golang_rand_uniform":
-		traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.RoutingStock(), runReq.UniformConfig)
-	case "step":
-		traffic = trafficpatterns.NewStep(env, trafficSource, cluster.RoutingStock(), runReq.StepConfig)
-	case "ramp":
-		traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.RoutingStock(), runReq.RampConfig)
-	case "sinusoidal":
-		traffic = trafficpatterns.NewSinusoidal(env, trafficSource, cluster.RoutingStock(), runReq.SinusoidalConfig)
-	}
+		var traffic trafficpatterns.Pattern
+		switch runReq.TrafficPattern {
+		case "golang_rand_uniform":
+			traffic = trafficpatterns.NewUniformRandom(env, trafficSource, cluster.RoutingStock(), runReq.UniformConfig)
+		case "step":
+			traffic = trafficpatterns.NewStep(env, trafficSource, cluster.RoutingStock(), runReq.StepConfig)
+		case "ramp":
+			traffic = trafficpatterns.NewRamp(env, trafficSource, cluster.RoutingStock(), runReq.RampConfig)
+		case "sinusoidal":
+			traffic = trafficpatterns.NewSinusoidal(env, trafficSource, cluster.RoutingStock(), runReq.SinusoidalConfig)
+		}
 
-	traffic.Generate()
+		traffic.Generate()
 
-	completed, ignored, err := env.Run()
-	if err != nil {
-		panic(err.Error())
-	}
+		completed, ignored, err := env.Run()
+		if err != nil {
+			panic(err.Error())
+		}
 
-	var dbFileName string
-	if runReq.InMemoryDatabase {
-		dbFileName = "file::memory:?cache=shared"
-	} else {
-		dbFileName = "skenario.db"
-	}
+		var dbFileName string
+		if runReq.InMemoryDatabase {
+			dbFileName = "file::memory:?cache=shared"
+		} else {
+			dbFileName = "skenario.db"
+		}
 
-	conn, err := sqlite3.Open(dbFileName)
-	if err != nil {
-		panic(fmt.Errorf("could not open database file '%s': %s", dbFileName, err.Error()))
-	}
-	defer conn.Close()
+		conn, err := sqlite3.Open(dbFileName)
+		if err != nil {
+			panic(fmt.Errorf("could not open database file '%s': %s", dbFileName, err.Error()))
+		}
+		defer conn.Close()
 
-	store := data.NewRunStore(conn)
-	scenarioRunId, err := store.Store(completed, ignored, clusterConf, asConf, "skenario_web", traffic.Name(), runReq.RunFor, env.CPUUtilizations())
-	if err != nil {
-		fmt.Printf("there was an error saving data: %s", err.Error())
-	}
+		store := data.NewRunStore(conn)
+		scenarioRunId, err := store.Store(completed, ignored, clusterConf, asConf, "skenario_web", traffic.Name(), runReq.RunFor, env.CPUUtilizations())
+		if err != nil {
+			fmt.Printf("there was an error saving data: %s", err.Error())
+		}
 
-	var vds = SkenarioRunResponse{
-		RanFor:            env.HaltTime().Sub(startAt),
-		TrafficPattern:    traffic.Name(),
-		TallyLines:        tallyLines(dbFileName, scenarioRunId),
-		ResponseTimes:     responseTimes(dbFileName, scenarioRunId),
-		RequestsPerSecond: requestsPerSecond(dbFileName, scenarioRunId),
-		CPUUtilizations:   cpuUtilizations(dbFileName, scenarioRunId),
-	}
+		var vds = SkenarioRunResponse{
+			RanFor:            env.HaltTime().Sub(startAt),
+			TrafficPattern:    traffic.Name(),
+			TallyLines:        tallyLines(dbFileName, scenarioRunId),
+			ResponseTimes:     responseTimes(dbFileName, scenarioRunId),
+			RequestsPerSecond: requestsPerSecond(dbFileName, scenarioRunId),
+			CPUUtilizations:   cpuUtilizations(dbFileName, scenarioRunId),
+		}
 
-	err = json.NewEncoder(w).Encode(vds)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+		err = json.NewEncoder(w).Encode(vds)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-	err = plugindispatcher.Event(env.PluginPartition(), startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
-	if err != nil {
-		panic(err)
+		err = env.Plugin().Event(startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 

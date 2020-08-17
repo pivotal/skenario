@@ -17,6 +17,7 @@ package data
 
 import (
 	"context"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,11 +44,13 @@ func testStorer(t *testing.T, describe spec.G, it spec.S) {
 	var runFor time.Duration
 	var clusterConf model.ClusterConfig
 	var kpaConf model.AutoscalerConfig
+	var dispatcher dispatcher.Dispatcher
 
 	it.Before(func() {
+		dispatcher = simulator.NewFakeDispatcher()
 		startAt = time.Unix(0, 123456789)
 		runFor = 10 * time.Minute
-		env = simulator.NewEnvironment(context.Background(), startAt, runFor)
+		env = simulator.NewEnvironment(context.Background(), startAt, runFor, &dispatcher)
 
 		clusterConf = model.ClusterConfig{
 			LaunchDelay:      11 * time.Second,

@@ -18,8 +18,8 @@ package simulator
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"sync/atomic"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
+	"skenario/pkg/plugin"
 	"time"
 )
 
@@ -30,7 +30,7 @@ const (
 )
 
 type Environment interface {
-	PluginPartition() string
+	Plugin() plugin.PluginPartition
 	AddToSchedule(movement Movement) (added bool)
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
@@ -57,8 +57,9 @@ type CPUUtilization struct {
 }
 
 type environment struct {
-	ctx             context.Context
-	pluginPartition string
+	ctx              context.Context
+	pluginPartition  plugin.PluginPartition
+	pluginDispatcher dispatcher.Dispatcher
 
 	current time.Time
 	startAt time.Time
@@ -74,7 +75,7 @@ type environment struct {
 	cpuUtilizations []*CPUUtilization
 }
 
-func (env *environment) PluginPartition() string {
+func (env *environment) Plugin() plugin.PluginPartition {
 	return env.pluginPartition
 }
 
@@ -152,19 +153,19 @@ func (env *environment) AppendCPUUtilization(cpuUtilization *CPUUtilization) {
 	env.cpuUtilizations = append(env.cpuUtilizations, cpuUtilization)
 }
 
-func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration) Environment {
+func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, dispatcher *dispatcher.Dispatcher) Environment {
 	pqueue := NewMovementPriorityQueue()
-	return newEnvironment(ctx, startAt, runFor, pqueue)
+	return newEnvironment(ctx, startAt, runFor, pqueue, dispatcher)
 }
 
-func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue) *environment {
+func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration, pqueue MovementPriorityQueue, dispatcher *dispatcher.Dispatcher) *environment {
 	beforeStock := NewArrayThroughStock("BeforeScenario", "Scenario")
 	runningStock := NewArrayThroughStock("RunningScenario", "Scenario")
 	haltingStock := NewHaltingSink("HaltedScenario", "Scenario", pqueue)
 
 	env := &environment{
 		ctx:             ctx,
-		pluginPartition: strconv.Itoa(int(atomic.AddInt32(&partitionSequence, 1))),
+		pluginPartition: plugin.NewPluginPartition(dispatcher),
 		startAt:         startAt,
 		haltAt:          startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
 		current:         startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement

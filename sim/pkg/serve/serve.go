@@ -17,7 +17,7 @@ package serve
 
 import (
 	"context"
-	"github.com/josephburnett/sk-plugin/pkg/skplug/plugindispatcher"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
 	"log"
 	"net/http"
 	"os"
@@ -28,12 +28,13 @@ import (
 )
 
 type SkenarioServer struct {
-	IndexRoot string
-	srv       *http.Server
+	IndexRoot  string
+	Dispatcher dispatcher.Dispatcher
+	srv        *http.Server
 }
 
 func (ss *SkenarioServer) Serve() {
-	plugindispatcher.Init(os.Args[1:])
+	ss.Dispatcher.Init(os.Args[1:])
 	router := chi.NewRouter()
 	router.Use(middleware.NoCache)
 	router.Use(middleware.DefaultCompress)
@@ -41,7 +42,7 @@ func (ss *SkenarioServer) Serve() {
 
 	router.Mount("/debug", middleware.Profiler())
 	router.Mount("/", http.FileServer(http.Dir(ss.IndexRoot)))
-	router.HandleFunc("/run", RunHandler)
+	router.HandleFunc("/run", RunHandler(&ss.Dispatcher))
 
 	ss.srv = &http.Server{
 		Addr:    "0.0.0.0:3000",
@@ -64,7 +65,7 @@ func (ss *SkenarioServer) Shutdown() {
 	}
 
 	log.Println("Shutting down autoscaler plugins")
-	plugindispatcher.Shutdown()
+	ss.Dispatcher.Shutdown()
 
 	log.Println("Done.")
 }

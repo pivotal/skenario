@@ -18,8 +18,10 @@ package serve
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/dispatcher"
 	"net/http"
 	"net/http/httptest"
+	"skenario/pkg/simulator"
 	"testing"
 	"time"
 
@@ -182,6 +184,8 @@ func testRunHandler(t *testing.T, describe spec.G, it spec.S) {
 }
 
 func trafficPatternBefore(t *testing.T, pattern string) *SkenarioRunResponse {
+	var dispatcher dispatcher.Dispatcher
+	dispatcher = simulator.NewFakeDispatcher()
 	skenarioRunRequest := &SkenarioRunRequest{
 		InMemoryDatabase: true,
 		RunFor:           20 * time.Second,
@@ -197,7 +201,7 @@ func trafficPatternBefore(t *testing.T, pattern string) *SkenarioRunResponse {
 	assert.NoError(t, err)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/run", RunHandler)
+	mux.HandleFunc("/run", RunHandler(&dispatcher))
 
 	recorder := httptest.NewRecorder()
 	mux.ServeHTTP(recorder, req)
