@@ -64,12 +64,16 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 	// TODO: create initial replicas config.
 	// Create the first pod since HPA can't scale from zero.
 	cm := cluster.(*clusterModel)
-	rs := cm.replicaSource.(*replicaSource)
 	for i := 0; i < int(cm.config.InitialNumberOfReplicas); i++ {
-		err = cm.replicasActive.Add(NewReplicaEntity(rs.env, &rs.failedSink))
-		if err != nil {
-			panic(err)
-		}
+		cm.replicasLaunching.Add(NewReplicaEntity(env, &cm.replicaSource.(*replicaSource).failedSink))
+		env.AddToSchedule(simulator.NewMovement(
+			"start_initial_replica",
+			startAt.Add(time.Nanosecond),
+			cm.replicasLaunching,
+			cm.replicasActive,
+			nil,
+		))
+
 	}
 	as := &autoscaler{
 		env:      env,
