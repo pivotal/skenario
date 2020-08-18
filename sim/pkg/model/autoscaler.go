@@ -102,34 +102,32 @@ const hpaYaml = `
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-name: hpa
-namespace: default
+  name: hpa
+  namespace: default
 spec:
-maxReplicas: 10
-metrics:
-- resource:
-    name: cpu
-    target:
-      averageUtilization: 50
-      type: Utilization
-  type: Resource
-minReplicas: 1
-scaleTargetRef:
-  apiVersion: extensions/v1beta1
-  kind: Deployment
-  name: deployment
+  maxReplicas: 10
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 50
+        type: Utilization
+    type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: deployment
 `
 
-const vpaYaml = `
-apiVersion: autoscaling.k8s.io/v1
+const vpaYaml = `apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-name: my-app-vpa
+  name: my-app-vpa
 spec:
-targetRef:
-apiVersion: "apps/v1"
-kind:       Deployment
-name:       my-app
-updatePolicy:
-updateMode: "Auto"
-`
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       my-app-deployment
+  updatePolicy:
+    updateMode: "Auto"`
