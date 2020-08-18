@@ -52,14 +52,17 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
 
-	err := env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
+	env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
 		// TODO: select type and plugin based on the scenario.
 		Type: "vpa.v2beta2.autoscaling.k8s.io",
 		Yaml: vpaYaml,
 	})
-	if err != nil {
-		panic(err)
-	}
+
+	env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
+		// TODO: select type and plugin based on the scenario.
+		Type: "hpa.v2beta2.autoscaling.k8s.io",
+		Yaml: hpaYaml,
+	})
 
 	// TODO: create initial replicas config.
 	// Create the first pod since HPA can't scale from zero.
@@ -95,27 +98,27 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 	return as
 }
 
-//const hpaYaml = `
-//apiVersion: autoscaling/v2beta2
-//kind: HorizontalPodAutoscaler
-//metadata:
-// name: hpa
-// namespace: default
-//spec:
-// maxReplicas: 10
-// metrics:
-// - resource:
-//     name: cpu
-//     target:
-//       averageUtilization: 50
-//       type: Utilization
-//   type: Resource
-// minReplicas: 1
-// scaleTargetRef:
-//   apiVersion: extensions/v1beta1
-//   kind: Deployment
-//   name: deployment
-//`
+const hpaYaml = `
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+name: hpa
+namespace: default
+spec:
+maxReplicas: 10
+metrics:
+- resource:
+    name: cpu
+    target:
+      averageUtilization: 50
+      type: Utilization
+  type: Resource
+minReplicas: 1
+scaleTargetRef:
+  apiVersion: extensions/v1beta1
+  kind: Deployment
+  name: deployment
+`
 
 const vpaYaml = `
 apiVersion: autoscaling.k8s.io/v1

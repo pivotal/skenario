@@ -64,7 +64,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 
 	asts.cluster.RecordToAutoscaler(&currentTime)
 
-	//asts.adjustHorizontally(&currentTime)
+	asts.adjustHorizontally(&currentTime)
 	asts.adjustVertically(&currentTime)
 
 	//calculate CPU utilization
