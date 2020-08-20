@@ -147,7 +147,7 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 			if recommendation.GetResourceName() == "cpu" {
 				//Check if we need to update this replica
 				resourceRequest := int32((*pod).(Replica).GetCPUCapacity())
-				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.Target {
+				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
 					//update
 					//We create new one with recommendations
 					newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)

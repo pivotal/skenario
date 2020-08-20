@@ -28,7 +28,8 @@ func (d *dispatcher) Event(partition string, time int64, typ proto.EventType, ob
 	for _, pluginServer := range d.capabilityToPlugins[proto.Capability_EVENT] {
 		err := (*pluginServer).Event(partition, time, typ, object)
 		if err != nil {
-			return err
+			//TODO decide how to fix it
+			//return err
 		}
 	}
 	return nil

@@ -283,7 +283,8 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	//	})
 	//}
 	//TODO remove this code after fulfilling https://github.com/pivotal/skenario/issues/100
-	vpa := a.recommender.GetClusterState().Vpas[model.VpaID{Namespace: "", VpaName: ""}]
+	vpa := a.recommender.GetClusterState().Vpas[model.VpaID{Namespace: "", VpaName: "my-app-vpa"}]
+	log.Println(a.recommender.GetClusterState().Vpas)
 	if vpa.Recommendation == nil {
 		return recommendation, nil
 	}
