@@ -26,6 +26,8 @@ import (
 
 type AutoscalerConfig struct {
 	TickInterval time.Duration
+	HpaEnabled   bool
+	HpaYaml      string
 }
 
 type AutoscalerModel interface {
@@ -51,21 +53,22 @@ func (c *stubCluster) ListPods() ([]*skplug.Pod, error) {
 func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config AutoscalerConfig) AutoscalerModel {
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
-
-	err := env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
-		// TODO: select type and plugin based on the scenario.
-		Type: "hpa.v2beta2.autoscaling.k8s.io",
-		Yaml: hpaYaml,
-	})
-	if err != nil {
-		panic(err)
+	if config.HpaEnabled {
+		err := env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
+			// TODO: select type and plugin based on the scenario.
+			Type: "hpa.v2beta2.autoscaling.k8s.io",
+			Yaml: config.HpaYaml,
+		})
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// TODO: create initial replicas config.
 	// Create the first pod since HPA can't scale from zero.
 	cm := cluster.(*clusterModel)
 	rs := cm.replicaSource.(*replicaSource)
-	err = cm.replicasActive.Add(NewReplicaEntity(rs.env, &rs.failedSink))
+	err := cm.replicasActive.Add(NewReplicaEntity(rs.env, &rs.failedSink))
 	if err != nil {
 		panic(err)
 	}
@@ -89,25 +92,3 @@ func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster Cluster
 
 	return as
 }
-
-const hpaYaml = `
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: hpa
-  namespace: default
-spec:
-  maxReplicas: 10
-  metrics:
-  - resource:
-      name: cpu
-      target:
-        averageUtilization: 50
-        type: Utilization
-    type: Resource
-  minReplicas: 1
-  scaleTargetRef:
-    apiVersion: extensions/v1beta1
-    kind: Deployment
-    name: deployment
-`

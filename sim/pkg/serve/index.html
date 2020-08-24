@@ -135,7 +135,8 @@
                             <label class="label" for="uniformConfigNumberOfRequests">Number of Requests</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="uniformConfigNumberOfRequests" value="100" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="uniformConfigNumberOfRequests" value="100"
+                                   min="1" step="1"/>
                         </div>
                     </div>
                 </div>
@@ -145,7 +146,8 @@
                             <label class="label" for="stepConfigStepAfter">Step After (seconds)</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="stepConfigStepAfter" value="10" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="stepConfigStepAfter" value="10" min="1"
+                                   step="1"/>
                         </div>
                     </div>
                     <div class="field is-horizontal">
@@ -181,7 +183,8 @@
                             <label class="label" for="sinusoidalConfigAmplitude">Amplitude (RPS)</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="sinusoidalConfigAmplitude" value="1" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="sinusoidalConfigAmplitude" value="1" min="1"
+                                   step="1"/>
                         </div>
                     </div>
                     <div class="field is-horizontal">
@@ -189,14 +192,15 @@
                             <label class="label" for="sinusoidalConfigPeriod">Period (seconds)</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="sinusoidalConfigPeriod" value="50" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="sinusoidalConfigPeriod" value="50" min="1"
+                                   step="1"/>
                         </div>
                     </div>
                 </div>
             </div>
 
 
-            <button class="button is-primary is-fullwidth" type="button" onclick="doRun(event); return false">Execute
+            <button class="button is-primary is-fullwidth" id="executeSimulation" type="button" onclick="doRun(event); return false">Execute
                 simulation
             </button>
         </form>
@@ -419,6 +423,8 @@
         let requestTimeoutSec = parseInt(document.querySelector("input[id='requestTimeoutSec']").value);
         let requestCPUTimeMillis = parseInt(document.querySelector("input[id='requestCPUTimeMillis']").value);
         let requestIOTimeMillis = parseInt(document.querySelector("input[id='requestIOTimeMillis']").value);
+        let hpaEnabled = document.querySelector("input[id='hpa']").checked;
+        let hpaYaml = document.querySelector("textarea[id='hpaYaml']").value;
 
         let second = 1000000000;
         let skenarioRunRequest = {
@@ -428,6 +434,8 @@
             launch_delay: launchDelay * second,
             terminate_delay: terminateDelay * second,
             tick_interval: tickInterval * second,
+            hpa_enabled: hpaEnabled,
+            hpa_yaml: hpaYaml,
 
             request_timeout_nanos: requestTimeoutSec * second,
             request_cpu_time_millis: requestCPUTimeMillis,
