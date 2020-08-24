@@ -44,7 +44,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 		envFake.TheTime = time.Unix(0, 0)
 
 		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
-		cluster = NewCluster(envFake, ClusterConfig{}, replicasConfig)
+		cluster = NewCluster(envFake, ClusterConfig{MetricsPipelineLag: 0}, replicasConfig)
 		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "HPAAutoscaler"), cluster)
 		rawSubject = subject.(*autoscalerTicktockStock)
 	})

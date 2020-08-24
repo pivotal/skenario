@@ -20,6 +20,7 @@ import (
 	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"skenario/pkg/simulator"
+	"time"
 )
 
 type Replica interface {
@@ -28,6 +29,7 @@ type Replica interface {
 	RequestsProcessing() RequestsProcessingStock
 	Stats() []*proto.Stat
 	GetCPUCapacity() float64
+	GetCreationTimeStamp() time.Time
 }
 
 type ReplicaEntity interface {
@@ -44,6 +46,7 @@ type replicaEntity struct {
 	numRequestsSinceStat               int32
 	totalCPUCapacityMillisPerSecond    float64
 	occupiedCPUCapacityMillisPerSecond float64
+	creationTimeStamp                  time.Time
 }
 
 var replicaNum int
@@ -112,6 +115,10 @@ func (re *replicaEntity) GetCPUCapacity() float64 {
 	return re.totalCPUCapacityMillisPerSecond
 }
 
+func (re *replicaEntity) GetCreationTimeStamp() time.Time {
+	return re.creationTimeStamp
+}
+
 func NewReplicaEntity(env simulator.Environment, failedSink *simulator.SinkStock) ReplicaEntity {
 	replicaNum++
 
@@ -122,6 +129,7 @@ func NewReplicaEntity(env simulator.Environment, failedSink *simulator.SinkStock
 		occupiedCPUCapacityMillisPerSecond: 0,
 	}
 
+	re.creationTimeStamp = re.env.CurrentMovementTime()
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
 	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, failedSink, &re.totalCPUCapacityMillisPerSecond, &re.occupiedCPUCapacityMillisPerSecond)
 

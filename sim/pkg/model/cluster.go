@@ -27,6 +27,7 @@ type ClusterConfig struct {
 	TerminateDelay          time.Duration
 	NumberOfRequests        uint
 	InitialNumberOfReplicas uint
+	MetricsPipelineLag      time.Duration
 }
 
 type ClusterModel interface {
@@ -82,7 +83,11 @@ func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
 	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
 		r := (*e).(ReplicaEntity)
-		stats = append(stats, r.Stats()...)
+
+		//don't send stats until after at least "metrics pipeline lag"
+		if r.GetCreationTimeStamp().Add(cm.config.MetricsPipelineLag).UnixNano() <= atTime.UnixNano() {
+			stats = append(stats, r.Stats()...)
+		}
 	}
 	err := cm.env.Plugin().Stat(stats)
 	if err != nil {
