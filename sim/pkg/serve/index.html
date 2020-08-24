@@ -48,7 +48,7 @@
 
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="runFor">Run For (seconds)</label>
+                    <label class="label" for="runFor">Simulation Duration (seconds)</label>
                 </div>
                 <div class="control">
                     <input type="number" style="width: 5em" id="runFor" value="180" min="1"/>
@@ -64,7 +64,7 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="launchDelay">Replica Launch Delay (seconds)</label>
+                    <label class="label" for="launchDelay">Pod Launch Delay (seconds)</label>
                 </div>
                 <div class="control">
                     <input type="number" style="width: 5em" id="launchDelay" value="5" min="0.01" step="0.1"/>
@@ -72,7 +72,7 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="terminateDelay">Replica Terminate Delay (seconds)</label>
+                    <label class="label" for="terminateDelay">Pod Terminate Delay (seconds)</label>
                 </div>
                 <div class="control">
                     <input type="number" style="width: 5em" id="terminateDelay" value="1" min="0.01" step="0.1"/>
@@ -80,14 +80,33 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="tickInterval">Tick Interval (seconds)</label>
+                    <label class="label" for="tickInterval">Resync Period (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="tickInterval" value="2" min="1" step="1"/>
+                    <input type="number" style="width: 5em" id="tickInterval" value="15" min="1" step="1"/>
                 </div>
             </div>
 
             <hr>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="hpa">HPA</label>
+                </div>
+                <div class="control">
+                    <input type="checkbox" name="hpa" onclick="showObject('hpaObject', 'hpa')" style="width: 5em"
+                           id="hpa" checked/>
+                </div>
+            </div>
+            <div id="hpaObject" class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="hpaYaml">HPA Object (YAML)</label>
+                </div>
+                <div class="control">
+                    <textarea style="width: 15em; height: 30em" id="hpaYaml" min="1" step="1"></textarea>
+                </div>
+            </div>
+            <hr>
+
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
                     <label class="label" for="requestTimeoutSec">Request timeout (in seconds)</label>
@@ -211,6 +230,23 @@
 </div>
 
 <script>
+    function showObject(objectId, checkBoxId) {
+        var object = document.getElementById(objectId)
+        //hide object
+        object.style.display = "none";
+
+        //disable button Execute Simulation
+        document.getElementById("executeSimulation").disabled = true;
+
+        if (document.getElementById(checkBoxId).checked) {
+            //show object
+            object.style.display = "block";
+
+            //enable button Execute Simulation
+            document.getElementById("executeSimulation").disabled = false;
+        }
+    }
+
     const trafficSelector = document.getElementById("select-traffic-pattern");
 
     trafficSelector.onchange = setTrafficPattern;
