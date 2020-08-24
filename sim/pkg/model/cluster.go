@@ -85,7 +85,7 @@ func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
 		r := (*e).(ReplicaEntity)
 
 		//don't send stats until after at least "metrics pipeline lag"
-		if r.GetCreationTimeStamp().Add(cm.config.MetricsPipelineLag).UnixNano() <= atTime.UnixNano() {
+		if r.GetCreationTimeStamp().Add(cm.config.MetricsPipelineLag).Before(*atTime) {
 			stats = append(stats, r.Stats()...)
 		}
 	}
