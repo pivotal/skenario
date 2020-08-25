@@ -349,7 +349,7 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 		TerminateDelay:          srr.TerminateDelay,
 		NumberOfRequests:        uint(srr.UniformConfig.NumberOfRequests),
 		InitialNumberOfReplicas: srr.InitialNumberOfReplicas,
-		MetricsPipelineLag:      1 * time.Millisecond,
+		MetricsPipelineLag:      10 * time.Second,
 	}
 }
 
