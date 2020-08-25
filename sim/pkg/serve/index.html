@@ -102,7 +102,26 @@
                     <label class="label" for="hpaYaml">HPA Object (YAML)</label>
                 </div>
                 <div class="control">
-                    <textarea style="width: 15em; height: 30em" id="hpaYaml" min="1" step="1"></textarea>
+                    <textarea style="width: 15em; height: 20em; font-size: 95%" id="hpaYaml" min="1" step="1">
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+ name: hpa
+ namespace: default
+spec:
+ maxReplicas: 10
+ metrics:
+ - resource:
+     name: cpu
+     target:
+       averageUtilization: 50
+       type: Utilization
+   type: Resource
+ minReplicas: 1
+ scaleTargetRef:
+   apiVersion: extensions/v1beta1
+   kind: Deployment
+   name: deployment</textarea>
                 </div>
             </div>
             <hr>
@@ -219,7 +238,8 @@
             </div>
 
 
-            <button class="button is-primary is-fullwidth" id="executeSimulation" type="button" onclick="doRun(event); return false">Execute
+            <button class="button is-primary is-fullwidth" id="executeSimulation" type="button"
+                    onclick="doRun(event); return false">Execute
                 simulation
             </button>
         </form>
