@@ -1,7 +1,6 @@
 # Skenario
 
-Skenario is a simulator toolkit for autoscalers. It was originally created to assist with Knative Autoscaler, 
-and later re-oriented towards Horizontal Pod Autoscaler (HPA). 
+Skenario is a simulator toolkit for Kubernetes autoscaling systems. It was initially developed to support the development of the Knative horizontal pod autoscaler (KPA) but has been extended to support the Kuberentes Horizontal Pod Autoscaler (HPA) and the Vertical Pod Autoscaler (VPA). 
 
 See [the Concepts document](docs/concepts.md) for a discussion of how Skenario is designed.
 
