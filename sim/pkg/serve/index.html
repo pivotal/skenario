@@ -48,7 +48,7 @@
 
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="runFor">Run For (seconds)</label>
+                    <label class="label" for="runFor">Simulation Duration (seconds)</label>
                 </div>
                 <div class="control">
                     <input type="number" style="width: 5em" id="runFor" value="180" min="1"/>
@@ -64,7 +64,7 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="launchDelay">Replica Launch Delay (seconds)</label>
+                    <label class="label" for="launchDelay">Pod Launch Delay (seconds)</label>
                 </div>
                 <div class="control">
                     <input type="number" style="width: 5em" id="launchDelay" value="5" min="0.01" step="0.1"/>
@@ -72,7 +72,7 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="terminateDelay">Replica Terminate Delay (seconds)</label>
+                    <label class="label" for="terminateDelay">Pod Terminate Delay (seconds)</label>
                 </div>
                 <div class="control">
                     <input type="number" style="width: 5em" id="terminateDelay" value="1" min="0.01" step="0.1"/>
@@ -80,14 +80,52 @@
             </div>
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="tickInterval">Tick Interval (seconds)</label>
+                    <label class="label" for="tickInterval">Resync Period (seconds)</label>
                 </div>
                 <div class="control">
-                    <input type="number" style="width: 5em" id="tickInterval" value="2" min="1" step="1"/>
+                    <input type="number" style="width: 5em" id="tickInterval" value="15" min="1" step="1"/>
                 </div>
             </div>
 
             <hr>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="hpa">HPA</label>
+                </div>
+                <div class="control">
+                    <input type="checkbox" name="hpa" onclick="showObject('hpaObject', 'hpa')" style="width: 5em"
+                           id="hpa" checked/>
+                </div>
+            </div>
+            <div id="hpaObject" class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="hpaYaml">HPA Object (YAML)</label>
+                </div>
+                <div class="control">
+                    <textarea style="width: 15em; height: 20em; font-size: 95%" id="hpaYaml" min="1" step="1">
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+ name: hpa
+ namespace: default
+spec:
+ maxReplicas: 10
+ metrics:
+ - resource:
+     name: cpu
+     target:
+       averageUtilization: 50
+       type: Utilization
+   type: Resource
+ minReplicas: 1
+ scaleTargetRef:
+   apiVersion: extensions/v1beta1
+   kind: Deployment
+   name: deployment</textarea>
+                </div>
+            </div>
+            <hr>
+
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
                     <label class="label" for="requestTimeoutSec">Request timeout (in seconds)</label>
@@ -135,7 +173,8 @@
                             <label class="label" for="uniformConfigNumberOfRequests">Number of Requests</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="uniformConfigNumberOfRequests" value="100" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="uniformConfigNumberOfRequests" value="100"
+                                   min="1" step="1"/>
                         </div>
                     </div>
                 </div>
@@ -145,7 +184,8 @@
                             <label class="label" for="stepConfigStepAfter">Step After (seconds)</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="stepConfigStepAfter" value="10" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="stepConfigStepAfter" value="10" min="1"
+                                   step="1"/>
                         </div>
                     </div>
                     <div class="field is-horizontal">
@@ -181,7 +221,8 @@
                             <label class="label" for="sinusoidalConfigAmplitude">Amplitude (RPS)</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="sinusoidalConfigAmplitude" value="1" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="sinusoidalConfigAmplitude" value="1" min="1"
+                                   step="1"/>
                         </div>
                     </div>
                     <div class="field is-horizontal">
@@ -189,14 +230,16 @@
                             <label class="label" for="sinusoidalConfigPeriod">Period (seconds)</label>
                         </div>
                         <div class="control">
-                            <input type="number" style="width: 5em" id="sinusoidalConfigPeriod" value="50" min="1" step="1"/>
+                            <input type="number" style="width: 5em" id="sinusoidalConfigPeriod" value="50" min="1"
+                                   step="1"/>
                         </div>
                     </div>
                 </div>
             </div>
 
 
-            <button class="button is-primary is-fullwidth" type="button" onclick="doRun(event); return false">Execute
+            <button class="button is-primary is-fullwidth" id="executeSimulation" type="button"
+                    onclick="doRun(event); return false">Execute
                 simulation
             </button>
         </form>
@@ -207,6 +250,23 @@
 </div>
 
 <script>
+    function showObject(objectId, checkBoxId) {
+        var object = document.getElementById(objectId)
+        //hide object
+        object.style.display = "none";
+
+        //disable button Execute Simulation
+        document.getElementById("executeSimulation").disabled = true;
+
+        if (document.getElementById(checkBoxId).checked) {
+            //show object
+            object.style.display = "block";
+
+            //enable button Execute Simulation
+            document.getElementById("executeSimulation").disabled = false;
+        }
+    }
+
     const trafficSelector = document.getElementById("select-traffic-pattern");
 
     trafficSelector.onchange = setTrafficPattern;
@@ -419,6 +479,8 @@
         let requestTimeoutSec = parseInt(document.querySelector("input[id='requestTimeoutSec']").value);
         let requestCPUTimeMillis = parseInt(document.querySelector("input[id='requestCPUTimeMillis']").value);
         let requestIOTimeMillis = parseInt(document.querySelector("input[id='requestIOTimeMillis']").value);
+        let hpaEnabled = document.querySelector("input[id='hpa']").checked;
+        let hpaYaml = document.querySelector("textarea[id='hpaYaml']").value;
 
         let second = 1000000000;
         let skenarioRunRequest = {
@@ -428,6 +490,8 @@
             launch_delay: launchDelay * second,
             terminate_delay: terminateDelay * second,
             tick_interval: tickInterval * second,
+            hpa_enabled: hpaEnabled,
+            hpa_yaml: hpaYaml,
 
             request_timeout_nanos: requestTimeoutSec * second,
             request_cpu_time_millis: requestCPUTimeMillis,
