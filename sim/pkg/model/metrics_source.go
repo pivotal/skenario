@@ -28,7 +28,7 @@ func (mss *metricsSourceStock) EntitiesInStock() []*simulator.Entity {
 }
 
 func (mss *metricsSourceStock) Remove(entity *simulator.Entity) simulator.Entity {
-	return NewMetricsEntity(mss.env, mss.replicaEntity.Stats())
+	return NewMetricsEntity(mss.replicaEntity.Stats())
 }
 
 func NewMetricsSourceStock(env simulator.Environment, replicaEntity ReplicaEntity) MetricsSourceStock {
