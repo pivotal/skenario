@@ -16,7 +16,6 @@ type MetricsEntity interface {
 }
 
 type metricsEntity struct {
-	env    simulator.Environment
 	number int
 	stats  []*proto.Stat
 }
@@ -35,10 +34,9 @@ func (me *metricsEntity) GetStats() []*proto.Stat {
 	return me.stats
 }
 
-func NewMetricsEntity(env simulator.Environment, stats []*proto.Stat) MetricsEntity {
+func NewMetricsEntity(stats []*proto.Stat) MetricsEntity {
 	metricsNum++
 	return &metricsEntity{
-		env:    env,
 		number: metricsNum,
 		stats:  stats,
 	}
