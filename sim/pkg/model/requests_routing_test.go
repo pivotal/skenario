@@ -84,6 +84,12 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 				subject.Add(NewRequestEntity(envFake, subject, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
 			})
 
+			it("schedules metrics_tick for replicas, as we have 3 active replicas, we end up with 3 merics_tick", func() {
+				assert.Equal(t, simulator.MovementKind("metrics_tick"), envFake.Movements[0].Kind())
+				assert.Equal(t, simulator.MovementKind("metrics_tick"), envFake.Movements[1].Kind())
+				assert.Equal(t, simulator.MovementKind("metrics_tick"), envFake.Movements[2].Kind())
+			})
+
 			it("assigns the Requests to Replicas using round robin", func() {
 				first := envFake.Movements[4]
 				second := envFake.Movements[5]
@@ -108,7 +114,9 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 
 					subject.Add(request)
 				})
-
+				it("schedules metrics_tick for a replica", func() {
+					assert.Equal(t, simulator.MovementKind("metrics_tick"), envFake.Movements[0].Kind())
+				})
 				it("schedules the Request to move to a Replica for processing", func() {
 					assert.Equal(t, simulator.StockName("RequestsRouting"), envFake.Movements[1].From().Name())
 					assert.Contains(t, string(envFake.Movements[1].To().Name()), "RequestsProcessing")

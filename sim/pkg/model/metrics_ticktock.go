@@ -13,7 +13,7 @@ type MetricsTicktockStock interface {
 type metricsTicktockStock struct {
 	env             simulator.Environment
 	replicaEntity   ReplicaEntity
-	metricsSource   simulator.SourceStock
+	metricsSource   MetricsSourceStock
 	metricsPipeline MetricsPipelineStock
 }
 

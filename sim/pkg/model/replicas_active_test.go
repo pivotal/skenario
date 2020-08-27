@@ -26,7 +26,7 @@ import (
 )
 
 func TestReplicasActive(t *testing.T) {
-	spec.Run(t, "Replicas Active spec", testReplicasActive, spec.Report(report.Terminal{}))
+	spec.Run(t, "Replicas Active stock", testReplicasActive, spec.Report(report.Terminal{}))
 }
 
 func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {

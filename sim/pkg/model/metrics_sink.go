@@ -20,7 +20,7 @@ func (mss *metricsSinkStock) KindStocked() simulator.EntityKind {
 }
 
 func (mss *metricsSinkStock) Count() uint64 {
-	return mss.Count()
+	return mss.sink.Count()
 }
 
 func (mss *metricsSinkStock) EntitiesInStock() []*simulator.Entity {
@@ -46,6 +46,6 @@ func (mss *metricsSinkStock) Add(entity simulator.Entity) error {
 func NewMetricsSinkStock(env simulator.Environment) MetricsSinkStock {
 	return &metricsSinkStock{
 		env:  env,
-		sink: simulator.NewSinkStock("Metrics Sink", "Metrics"),
+		sink: simulator.NewSinkStock("MetricsSink", "Metrics"),
 	}
 }

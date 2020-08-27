@@ -82,7 +82,6 @@ type FakeReplica struct {
 	totalCPUCapacityMillisPerSecond    float64
 	occupiedCPUCapacityMillisPerSecond float64
 	metricsTicktockStock               MetricsTicktockStock
-	creationTimeStamp                  time.Time
 }
 
 func (*FakeReplica) Name() simulator.EntityName {
@@ -121,18 +120,12 @@ func (fr *FakeReplica) GetCPUCapacity() float64 {
 	return fr.totalCPUCapacityMillisPerSecond
 }
 
-func (fr *FakeReplica) GetCreationTimeStamp() time.Time {
-	return fr.creationTimeStamp
-}
-
 func (fr *FakeReplica) MetricsTicktock() MetricsTicktockStock {
 	return NewMetricsTickTockStock(NewFakeEnvironment(), fr)
 }
 
 func NewFakeReplica() *FakeReplica {
-	fakeReplica := &FakeReplica{
-		creationTimeStamp: time.Unix(0, 0),
-	}
+	fakeReplica := &FakeReplica{}
 	fakeReplica.metricsTicktockStock = NewMetricsTickTockStock(NewFakeEnvironment(), fakeReplica)
 	return fakeReplica
 }

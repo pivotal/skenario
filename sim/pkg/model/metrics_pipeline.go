@@ -26,7 +26,7 @@ func (mpls *metricsPipelineStock) KindStocked() simulator.EntityKind {
 }
 
 func (mpls *metricsPipelineStock) Count() uint64 {
-	return mpls.Count()
+	return mpls.pipeline.Count()
 }
 
 func (mpls *metricsPipelineStock) EntitiesInStock() []*simulator.Entity {
@@ -56,7 +56,7 @@ func (mpls *metricsPipelineStock) Remove(entity *simulator.Entity) simulator.Ent
 func NewMetricsPipeLineStock(env simulator.Environment) MetricsPipelineStock {
 	return &metricsPipelineStock{
 		env:      env,
-		pipeline: simulator.NewArrayThroughStock("Metrics Pipeline", "Metrics"),
+		pipeline: simulator.NewArrayThroughStock("MetricsPipeline", "Metrics"),
 		sink:     NewMetricsSinkStock(env),
 	}
 }
