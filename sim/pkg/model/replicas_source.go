@@ -46,6 +46,9 @@ func (rs *replicaSource) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rs *replicaSource) Remove(entity *simulator.Entity) simulator.Entity {
+	if entity != nil {
+		return *entity
+	}
 	return NewReplicaEntity(rs.env, &rs.failedSink)
 }
 

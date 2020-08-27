@@ -77,6 +77,9 @@ type SkenarioRunRequest struct {
 	TerminateDelay time.Duration `json:"terminate_delay"`
 	TickInterval   time.Duration `json:"tick_interval"`
 
+	HpaEnabled bool   `json:"hpa_enabled,omitempty"`
+	HpaYaml    string `json:"hpa_yaml"`
+
 	RequestTimeout       time.Duration `json:"request_timeout_nanos"`
 	RequestCPUTimeMillis int           `json:"request_cpu_time_millis"`
 	RequestIOTimeMillis  int           `json:"request_io_time_millis"`
@@ -352,5 +355,7 @@ func buildClusterConfig(srr *SkenarioRunRequest) model.ClusterConfig {
 func buildAutoscalerConfig(srr *SkenarioRunRequest) model.AutoscalerConfig {
 	return model.AutoscalerConfig{
 		TickInterval: srr.TickInterval,
+		HpaEnabled:   srr.HpaEnabled,
+		HpaYaml:      srr.HpaYaml,
 	}
 }
