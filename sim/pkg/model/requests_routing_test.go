@@ -65,15 +65,15 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 
 				replicaStock = NewReplicasActiveStock(envFake)
 
-				replicaFake = new(FakeReplica)
+				replicaFake = NewFakeReplica()
 				replicaFake.FakeReplicaNum = 11
 				replicaStock.Add(replicaFake)
 
-				replicaFake = new(FakeReplica)
+				replicaFake = NewFakeReplica()
 				replicaFake.FakeReplicaNum = 22
 				replicaStock.Add(replicaFake)
 
-				replicaFake = new(FakeReplica)
+				replicaFake = NewFakeReplica()
 				replicaFake.FakeReplicaNum = 33
 				replicaStock.Add(replicaFake)
 
@@ -85,8 +85,8 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("assigns the Requests to Replicas using round robin", func() {
-				first := envFake.Movements[1]
-				second := envFake.Movements[2]
+				first := envFake.Movements[4]
+				second := envFake.Movements[5]
 
 				assert.Equal(t, simulator.MovementKind("send_to_replica"), first.Kind())
 				assert.Equal(t, simulator.MovementKind("send_to_replica"), second.Kind())
@@ -101,7 +101,7 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 					request = NewRequestEntity(envFake, subject, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second})
 
 					replicaStock = NewReplicasActiveStock(envFake)
-					replicaFake = new(FakeReplica)
+					replicaFake = NewFakeReplica()
 					replicaStock.Add(replicaFake)
 
 					subject = NewRequestsRoutingStock(envFake, replicaStock, requestsFailedStock)
@@ -110,8 +110,8 @@ func testRequestsRouting(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("schedules the Request to move to a Replica for processing", func() {
-					assert.Equal(t, simulator.StockName("RequestsRouting"), envFake.Movements[0].From().Name())
-					assert.Contains(t, string(envFake.Movements[0].To().Name()), "RequestsProcessing")
+					assert.Equal(t, simulator.StockName("RequestsRouting"), envFake.Movements[1].From().Name())
+					assert.Contains(t, string(envFake.Movements[1].To().Name()), "RequestsProcessing")
 				})
 			})
 		})

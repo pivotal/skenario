@@ -121,14 +121,10 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		// TODO immediately record arrivals at routingStock
 
-		it("records once for the routingStock and twice for each replica in ReplicasActive, we have 2 replicas", func() {
+		it("records once for the routingStock", func() {
 			stats := envFake.ThePlugin.(*FakePluginPartition).stats
-			assert.Len(t, envFake.ThePlugin.(*FakePluginPartition).stats, 5)
+			assert.Len(t, envFake.ThePlugin.(*FakePluginPartition).stats, 1)
 			assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
-			assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
-			assert.Equal(t, stats[2].Type, proto.MetricType_CPU_MILLIS)
-			assert.Equal(t, stats[3].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
-			assert.Equal(t, stats[4].Type, proto.MetricType_CPU_MILLIS)
 
 		})
 

@@ -29,7 +29,7 @@ select
 		 end)
 	  over summation as tally
 	from completed_movements join stock_aggregate sa on sa.id in (from_stock, to_stock)
-	where kind not in ('start_to_running', 'autoscaler_tick', 'running_to_halted')
+	where kind not in ('start_to_running', 'autoscaler_tick', 'running_to_halted', 'metrics_tick', 'send_metrics_to_pipeline', 'send_metrics_to_sink')
 	and scenario_run_id = ?
     window summation as (partition by sa.name order by occurs_at asc rows unbounded preceding)
 )

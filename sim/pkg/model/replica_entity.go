@@ -27,6 +27,7 @@ type Replica interface {
 	Activate()
 	Deactivate()
 	RequestsProcessing() RequestsProcessingStock
+	MetricsTicktock() MetricsTicktockStock
 	Stats() []*proto.Stat
 	GetCPUCapacity() float64
 	GetCreationTimeStamp() time.Time
@@ -47,6 +48,7 @@ type replicaEntity struct {
 	totalCPUCapacityMillisPerSecond    float64
 	occupiedCPUCapacityMillisPerSecond float64
 	creationTimeStamp                  time.Time
+	tickTock                           MetricsTicktockStock
 }
 
 var replicaNum int
@@ -77,6 +79,10 @@ func (re *replicaEntity) Deactivate() {
 
 func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 	return re.requestsProcessing
+}
+
+func (re *replicaEntity) MetricsTicktock() MetricsTicktockStock {
+	return re.tickTock
 }
 
 func (re *replicaEntity) Stats() []*proto.Stat {
@@ -125,13 +131,13 @@ func NewReplicaEntity(env simulator.Environment, failedSink *simulator.SinkStock
 	re := &replicaEntity{
 		env:                                env,
 		number:                             replicaNum,
-		totalCPUCapacityMillisPerSecond:    100,
+		totalCPUCapacityMillisPerSecond:    1000,
 		occupiedCPUCapacityMillisPerSecond: 0,
 	}
 
 	re.creationTimeStamp = re.env.CurrentMovementTime()
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
 	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, failedSink, &re.totalCPUCapacityMillisPerSecond, &re.occupiedCPUCapacityMillisPerSecond)
-
+	re.tickTock = NewMetricsTickTockStock(env, re)
 	return re
 }

@@ -39,7 +39,7 @@ func testReplicasTerminating(t *testing.T, describe spec.G, it spec.S) {
 
 	it.Before(func() {
 		envFake = NewFakeEnvironment()
-		replicaFake = new(FakeReplica)
+		replicaFake = NewFakeReplica()
 		config = ReplicasConfig{LaunchDelay: 111 * time.Nanosecond, TerminateDelay: 222 * time.Nanosecond}
 		terminatedStock = simulator.NewSinkStock("ReplicasTerminated", "Replica")
 		subject = NewReplicasTerminatingStock(envFake, config, terminatedStock)

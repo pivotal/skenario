@@ -27,13 +27,13 @@ type ramp struct {
 	source       model.TrafficSource
 	routingStock model.RequestsRoutingStock
 	sink         model.RequestsProcessingStock
-	deltaV       int
+	deltaV       float64
 	maxRPS       int
 }
 
 type RampConfig struct {
-	DeltaV int `json:"delta_v"`
-	MaxRPS int `json:"max_rps"`
+	DeltaV float64 `json:"delta_v"`
+	MaxRPS int     `json:"max_rps"`
 }
 
 func (*ramp) Name() string {
@@ -45,9 +45,9 @@ func (r *ramp) Generate() {
 	nextRPS := r.deltaV
 	startAt := r.env.CurrentMovementTime()
 
-	for t = startAt; nextRPS <= r.maxRPS; t = t.Add(1 * time.Second) {
+	for t = startAt; int(nextRPS) <= r.maxRPS; t = t.Add(1 * time.Second) {
 		uniRand := NewUniformRandom(r.env, r.source, r.routingStock, UniformConfig{
-			NumberOfRequests: nextRPS,
+			NumberOfRequests: int(nextRPS),
 			StartAt:          t,
 			RunFor:           time.Second,
 		})
@@ -58,7 +58,7 @@ func (r *ramp) Generate() {
 	for ; nextRPS > 0; t = t.Add(1 * time.Second) {
 		nextRPS = nextRPS - r.deltaV
 		uniRand := NewUniformRandom(r.env, r.source, r.routingStock, UniformConfig{
-			NumberOfRequests: nextRPS,
+			NumberOfRequests: int(nextRPS),
 			StartAt:          t,
 			RunFor:           time.Second,
 		})
