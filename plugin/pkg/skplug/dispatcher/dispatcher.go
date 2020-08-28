@@ -25,10 +25,23 @@ var _ skplug.Plugin = &dispatcher{}
 var _ Dispatcher = &dispatcher{}
 
 func (d *dispatcher) Event(partition string, time int64, typ proto.EventType, object skplug.Object) error {
-	for _, pluginServer := range d.capabilityToPlugins[proto.Capability_EVENT] {
-		err := (*pluginServer).Event(partition, time, typ, object)
-		if err != nil {
-			return err
+	switch o := object.(type) {
+	case *skplug.Autoscaler:
+		for _, pluginServer := range d.capabilityToPlugins[proto.Capability_EVENT] {
+			pluginType, _ := (*pluginServer).PluginType()
+			if o.Type == pluginType {
+				err := (*pluginServer).Event(partition, time, typ, object)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	default:
+		for _, pluginServer := range d.capabilityToPlugins[proto.Capability_EVENT] {
+			err := (*pluginServer).Event(partition, time, typ, object)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -110,6 +123,10 @@ func (d *dispatcher) registerPlugin(pluginServer *skplug.Plugin) {
 
 func (d *dispatcher) GetCapabilities() (rec []proto.Capability, err error) {
 	return []proto.Capability{}, nil
+}
+
+func (d *dispatcher) PluginType() (rec string, err error) {
+	return "dispatcher", nil
 }
 
 func NewDispatcher() Dispatcher {

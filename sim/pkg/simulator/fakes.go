@@ -121,3 +121,7 @@ func (fd *fakeDispatcher) VerticalRecommendation(partition string, time int64) (
 func (fd *fakeDispatcher) GetCapabilities() (rec []proto.Capability, err error) {
 	return []proto.Capability{}, nil
 }
+
+func (fd *fakeDispatcher) PluginType() (rec string, err error) {
+	return "dispatcher-fake", nil
+}

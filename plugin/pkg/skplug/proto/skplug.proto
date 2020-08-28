@@ -85,10 +85,16 @@ enum Capability{
 message GetCapabilitiesResponse{
   repeated Capability rec = 1;
 }
+
+message PluginTypeResponse{
+  string rec = 1;
+}
+
 service Plugin {
   rpc Event(EventRequest) returns (Empty);
   rpc Stat(StatRequest) returns (Empty);
   rpc HorizontalRecommendation(HorizontalRecommendationRequest) returns (HorizontalRecommendationResponse);
   rpc VerticalRecommendation(VerticalRecommendationRequest) returns (VerticalRecommendationResponse);
   rpc GetCapabilities(Empty) returns (GetCapabilitiesResponse);
+  rpc PluginType(Empty) returns (PluginTypeResponse);
 }

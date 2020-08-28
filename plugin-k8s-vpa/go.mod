@@ -42,7 +42,7 @@ replace (
 )
 
 // Checkout https://github.com/josephburnett/kubernetes.git branch plugin
-replace k8s.io/kubernetes => ../../kubernetes
+replace k8s.io/kubernetes => ../../kubernetes_vpa
 
 replace k8s.io/autoscaler/vertical-pod-autoscaler => ../../autoscaler/vertical-pod-autoscaler
 

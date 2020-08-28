@@ -84,6 +84,14 @@ func (m *GRPCClient) GetCapabilities() (rec []proto.Capability, err error) {
 	return resp.Rec, nil
 }
 
+func (m *GRPCClient) PluginType() (rec string, err error) {
+	resp, err := m.client.PluginType(context.Background(), &proto.Empty{})
+	if err != nil {
+		return "", err
+	}
+	return resp.Rec, nil
+}
+
 var _ proto.PluginServer = &GRPCServer{}
 
 // GRPCServer is the gRPC server that the GRPCClient talks to.
@@ -145,6 +153,16 @@ func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.Empty) (*pr
 		return nil, err
 	}
 	return &proto.GetCapabilitiesResponse{
+		Rec: rec,
+	}, nil
+}
+
+func (m *GRPCServer) PluginType(ctx context.Context, req *proto.Empty) (*proto.PluginTypeResponse, error) {
+	rec, err := m.Impl.PluginType()
+	if err != nil {
+		return nil, err
+	}
+	return &proto.PluginTypeResponse{
 		Rec: rec,
 	}, nil
 }
