@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	pluginType = "vpa.v2beta2.autoscaling.k8s.io"
+	pluginType = "vpa.v1.autoscaling.k8s.io"
 )
 
 type partition string

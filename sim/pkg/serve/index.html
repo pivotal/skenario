@@ -521,7 +521,7 @@ spec:
             plugins['hpa.v2beta2.autoscaling.k8s.io'] = hpaYaml;
         }
         if (vpaEnabled) {
-            plugins['vpa.v2beta2.autoscaling.k8s.io'] = vpaYaml;
+            plugins['vpa.v1.autoscaling.k8s.io'] = vpaYaml;
         }
         let second = 1000000000;
         let skenarioRunRequest = {

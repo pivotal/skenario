@@ -25,6 +25,7 @@ var _ skplug.Plugin = &dispatcher{}
 var _ Dispatcher = &dispatcher{}
 
 func (d *dispatcher) Event(partition string, time int64, typ proto.EventType, object skplug.Object) error {
+	//TODO  to separate partition creation from events
 	switch o := object.(type) {
 	case *skplug.Autoscaler:
 		for _, pluginServer := range d.capabilityToPlugins[proto.Capability_EVENT] {
