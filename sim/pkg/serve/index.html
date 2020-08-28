@@ -124,6 +124,35 @@ spec:
    name: deployment</textarea>
                 </div>
             </div>
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="vpa">VPA</label>
+                </div>
+                <div class="control">
+                    <input type="checkbox" name="vpa" onclick="showObject('vpaObject', 'vpa')" style="width: 5em"
+                           id="vpa" checked/>
+                </div>
+            </div>
+            <div id="vpaObject" class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="vpaYaml">VPA Object (YAML)</label>
+                </div>
+                <div class="control">
+                    <textarea style="width: 15em; height: 20em; font-size: 95%" id="vpaYaml" min="1" step="1">
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: my-app-vpa
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       my-app-deployment
+  updatePolicy:
+    updateMode: "Auto</textarea>
+                </div>
+            </div>
+
             <hr>
 
             <div class="field is-horizontal">
@@ -261,7 +290,9 @@ spec:
         if (document.getElementById(checkBoxId).checked) {
             //show object
             object.style.display = "block";
+        }
 
+        if (document.getElementById('vpa').checked || document.getElementById('hpa').checked) {
             //enable button Execute Simulation
             document.getElementById("executeSimulation").disabled = false;
         }
@@ -479,9 +510,19 @@ spec:
         let requestTimeoutSec = parseInt(document.querySelector("input[id='requestTimeoutSec']").value);
         let requestCPUTimeMillis = parseInt(document.querySelector("input[id='requestCPUTimeMillis']").value);
         let requestIOTimeMillis = parseInt(document.querySelector("input[id='requestIOTimeMillis']").value);
+        let plugins = {};
+
         let hpaEnabled = document.querySelector("input[id='hpa']").checked;
         let hpaYaml = document.querySelector("textarea[id='hpaYaml']").value;
+        let vpaEnabled = document.querySelector("input[id='vpa']").checked;
+        let vpaYaml = document.querySelector("textarea[id='vpaYaml']").value;
 
+        if (hpaEnabled) {
+            plugins['hpa.v2beta2.autoscaling.k8s.io'] = hpaYaml;
+        }
+        if (vpaEnabled) {
+            plugins['vpa.v2beta2.autoscaling.k8s.io'] = vpaYaml;
+        }
         let second = 1000000000;
         let skenarioRunRequest = {
             in_memory_database: runInMemory,
@@ -490,8 +531,7 @@ spec:
             launch_delay: launchDelay * second,
             terminate_delay: terminateDelay * second,
             tick_interval: tickInterval * second,
-            hpa_enabled: hpaEnabled,
-            hpa_yaml: hpaYaml,
+            plugins: plugins,
 
             request_timeout_nanos: requestTimeoutSec * second,
             request_cpu_time_millis: requestCPUTimeMillis,
