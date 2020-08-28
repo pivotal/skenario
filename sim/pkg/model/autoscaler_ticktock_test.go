@@ -132,10 +132,8 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 				it("delegates statistics updating to ClusterModel", func() {
 					stats := envFake.ThePlugin.(*FakePluginPartition).stats
-					assert.Len(t, stats, 3)
+					assert.Len(t, stats, 1)
 					assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
-					assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
-					assert.Equal(t, stats[2].Type, proto.MetricType_CPU_MILLIS)
 				})
 			})
 

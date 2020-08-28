@@ -26,7 +26,7 @@ import (
 )
 
 func TestReplicasActive(t *testing.T) {
-	spec.Run(t, "Replicas Active spec", testReplicasActive, spec.Report(report.Terminal{}))
+	spec.Run(t, "Replicas Active stock", testReplicasActive, spec.Report(report.Terminal{}))
 }
 
 func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
@@ -54,7 +54,7 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 		var replicaFake *FakeReplica
 
 		it.Before(func() {
-			replicaFake = new(FakeReplica)
+			replicaFake = NewFakeReplica()
 			subject.Add(replicaFake)
 		})
 
@@ -83,7 +83,7 @@ func testReplicasActive(t *testing.T, describe spec.G, it spec.S) {
 		var entity simulator.Entity
 
 		it.Before(func() {
-			replicaFake = new(FakeReplica)
+			replicaFake = NewFakeReplica()
 			subject.Add(replicaFake)
 			entity = simulator.Entity(replicaFake)
 			subject.Remove(&entity)

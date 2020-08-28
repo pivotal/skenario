@@ -17,6 +17,7 @@ package model
 
 import (
 	"skenario/pkg/simulator"
+	"time"
 )
 
 type ReplicasActiveStock interface {
@@ -58,6 +59,12 @@ func (ras *replicasActiveStock) Remove(entity *simulator.Entity) simulator.Entit
 func (ras *replicasActiveStock) Add(entity simulator.Entity) error {
 	replica := entity.(Replica)
 	replica.Activate()
+	ras.env.AddToSchedule(simulator.NewMovement(
+		"metrics_tick",
+		ras.env.CurrentMovementTime().Add(5*time.Second),
+		replica.MetricsTicktock(),
+		replica.MetricsTicktock(),
+		&entity))
 	return ras.delegate.Add(entity)
 }
 

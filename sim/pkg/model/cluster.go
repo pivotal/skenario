@@ -79,11 +79,6 @@ func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
 	})
 	// TODO: report request count
 
-	// and then report for the replicas
-	for _, e := range cm.replicasActive.EntitiesInStock() {
-		r := (*e).(ReplicaEntity)
-		stats = append(stats, r.Stats()...)
-	}
 	err := cm.env.Plugin().Stat(stats)
 	if err != nil {
 		panic(err)

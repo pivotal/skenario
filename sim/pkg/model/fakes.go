@@ -81,6 +81,7 @@ type FakeReplica struct {
 	ProcessingStock                    RequestsProcessingStock
 	totalCPUCapacityMillisPerSecond    float64
 	occupiedCPUCapacityMillisPerSecond float64
+	metricsTicktockStock               MetricsTicktockStock
 }
 
 func (*FakeReplica) Name() simulator.EntityName {
@@ -117,6 +118,16 @@ func (fr *FakeReplica) Stats() []*proto.Stat {
 
 func (fr *FakeReplica) GetCPUCapacity() float64 {
 	return fr.totalCPUCapacityMillisPerSecond
+}
+
+func (fr *FakeReplica) MetricsTicktock() MetricsTicktockStock {
+	return NewMetricsTickTockStock(NewFakeEnvironment(), fr)
+}
+
+func NewFakeReplica() *FakeReplica {
+	fakeReplica := &FakeReplica{}
+	fakeReplica.metricsTicktockStock = NewMetricsTickTockStock(NewFakeEnvironment(), fakeReplica)
+	return fakeReplica
 }
 
 type FakePluginPartition struct {

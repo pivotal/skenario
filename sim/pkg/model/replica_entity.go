@@ -26,6 +26,7 @@ type Replica interface {
 	Activate()
 	Deactivate()
 	RequestsProcessing() RequestsProcessingStock
+	MetricsTicktock() MetricsTicktockStock
 	Stats() []*proto.Stat
 	GetCPUCapacity() float64
 }
@@ -44,6 +45,7 @@ type replicaEntity struct {
 	numRequestsSinceStat               int32
 	totalCPUCapacityMillisPerSecond    float64
 	occupiedCPUCapacityMillisPerSecond float64
+	tickTock                           MetricsTicktockStock
 }
 
 var replicaNum int
@@ -74,6 +76,10 @@ func (re *replicaEntity) Deactivate() {
 
 func (re *replicaEntity) RequestsProcessing() RequestsProcessingStock {
 	return re.requestsProcessing
+}
+
+func (re *replicaEntity) MetricsTicktock() MetricsTicktockStock {
+	return re.tickTock
 }
 
 func (re *replicaEntity) Stats() []*proto.Stat {
@@ -118,12 +124,11 @@ func NewReplicaEntity(env simulator.Environment, failedSink *simulator.SinkStock
 	re := &replicaEntity{
 		env:                                env,
 		number:                             replicaNum,
-		totalCPUCapacityMillisPerSecond:    100,
+		totalCPUCapacityMillisPerSecond:    1000,
 		occupiedCPUCapacityMillisPerSecond: 0,
 	}
-
 	re.requestsComplete = simulator.NewSinkStock(simulator.StockName(fmt.Sprintf("RequestsComplete [%d]", re.number)), "Request")
 	re.requestsProcessing = NewRequestsProcessingStock(env, re.number, re.requestsComplete, failedSink, &re.totalCPUCapacityMillisPerSecond, &re.occupiedCPUCapacityMillisPerSecond)
-
+	re.tickTock = NewMetricsTickTockStock(env, re)
 	return re
 }
