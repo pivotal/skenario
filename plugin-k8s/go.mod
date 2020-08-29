@@ -38,7 +38,7 @@ replace (
 )
 
 // Checkout https://github.com/josephburnett/kubernetes.git branch plugin
-replace k8s.io/kubernetes => ../../kubernetes_hpa
+replace k8s.io/kubernetes => ../../kubernetes
 
 // TODO: replace this import with github.com/skenario/plugin
 replace github.com/josephburnett/sk-plugin => ../plugin
