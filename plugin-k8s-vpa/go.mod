@@ -5,13 +5,13 @@ go 1.14
 require (
 	github.com/hashicorp/go-plugin v1.0.1
 	github.com/josephburnett/sk-plugin v0.0.0 //-20190726113842-f4cc79709047
-	github.com/prometheus/client_golang v1.0.0
+	github.com/prometheus/client_golang v1.7.1
 	k8s.io/api v0.17.9
 	k8s.io/apimachinery v0.17.9
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.0.0-20200723095539-0e5f460aac8c
 	k8s.io/client-go v0.17.9
 	k8s.io/klog v1.0.0
-	k8s.io/kubernetes v0.0.0
+	k8s.io/kubernetes v1.17.0
 	k8s.io/metrics v0.17.9
 )
 
@@ -40,9 +40,6 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.17.9
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.17.9
 )
-
-// Checkout https://github.com/josephburnett/kubernetes.git branch plugin
-replace k8s.io/kubernetes => ../../kubernetes
 
 replace k8s.io/autoscaler/vertical-pod-autoscaler => ../../autoscaler/vertical-pod-autoscaler
 

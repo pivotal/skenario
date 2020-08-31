@@ -27,6 +27,7 @@ type Plugin interface {
 	HorizontalRecommendation(partition string, time int64) (rec int32, err error)
 	VerticalRecommendation(partition string, time int64) (rec []*proto.RecommendedPodResources, err error)
 	GetCapabilities() (rec []proto.Capability, err error)
+	PluginType() (rec string, err error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.

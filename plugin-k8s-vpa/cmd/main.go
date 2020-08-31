@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	pluginType = "vpa.v2beta2.autoscaling.k8s.io"
+	pluginType = "vpa.v1.autoscaling.k8s.io"
 )
 
 type partition string
@@ -149,6 +149,10 @@ func (p *pluginServer) deletePod(part partition, pod *skplug.Pod) error {
 
 func (p *pluginServer) GetCapabilities() (rec []proto.Capability, err error) {
 	return []proto.Capability{proto.Capability_EVENT, proto.Capability_STAT, proto.Capability_VERTICAL_RECOMMENDATION}, nil
+}
+
+func (p *pluginServer) PluginType() (rec string, err error) {
+	return pluginType, nil
 }
 
 func main() {

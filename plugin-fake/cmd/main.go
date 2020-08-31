@@ -169,6 +169,10 @@ func (fp *fakePluginServer) GetCapabilities() (rec []proto.Capability, err error
 	return []proto.Capability{proto.Capability_EVENT, proto.Capability_STAT, proto.Capability_HORIZONTAL_RECOMMENDATION, proto.Capability_VERTICAL_RECOMMENDATION}, nil
 }
 
+func (fp *fakePluginServer) PluginType() (rec string, err error) {
+	return pluginType, nil
+}
+
 func main() {
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: skplug.Handshake,

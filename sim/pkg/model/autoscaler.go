@@ -26,8 +26,7 @@ import (
 
 type AutoscalerConfig struct {
 	TickInterval time.Duration
-	HpaEnabled   bool
-	HpaYaml      string
+	Plugins      map[string]string //key - plugin type, value - yaml configuration
 }
 
 type AutoscalerModel interface {
@@ -53,11 +52,10 @@ func (c *stubCluster) ListPods() ([]*skplug.Pod, error) {
 func NewAutoscaler(env simulator.Environment, startAt time.Time, cluster ClusterModel, config AutoscalerConfig) AutoscalerModel {
 
 	autoscalerEntity := simulator.NewEntity("Autoscaler", "Autoscaler")
-	if config.HpaEnabled {
+	for pluginType, yaml := range config.Plugins {
 		err := env.Plugin().Event(startAt.UnixNano(), proto.EventType_CREATE, &skplug.Autoscaler{
-			// TODO: select type and plugin based on the scenario.
-			Type: "hpa.v2beta2.autoscaling.k8s.io",
-			Yaml: config.HpaYaml,
+			Type: pluginType,
+			Yaml: yaml,
 		})
 		if err != nil {
 			panic(err)

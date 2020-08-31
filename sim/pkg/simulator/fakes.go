@@ -121,3 +121,8 @@ func (fd *fakeDispatcher) VerticalRecommendation(partition string, time int64) (
 func (fd *fakeDispatcher) GetCapabilities() (rec []proto.Capability, err error) {
 	return []proto.Capability{}, nil
 }
+
+//TODO to combine these into a Metadata API, because there will be more we want to return from the plugin, like default configuration etc
+func (fd *fakeDispatcher) PluginType() (rec string, err error) {
+	return "dispatcher-fake", nil
+}
