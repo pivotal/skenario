@@ -45,20 +45,20 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 		replicasConfig = ReplicasConfig{time.Second, time.Second, 100}
 		cluster = NewCluster(envFake, ClusterConfig{}, replicasConfig)
-		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "HPAAutoscaler"), cluster)
+		subject = NewAutoscalerTicktockStock(envFake, simulator.NewEntity("Autoscaler", "Autoscaler"), cluster)
 		rawSubject = subject.(*autoscalerTicktockStock)
 	})
 
 	describe("NewAutoscalerTicktockStock()", func() {
 		it("sets the entity", func() {
 			assert.Equal(t, simulator.EntityName("Autoscaler"), rawSubject.autoscalerEntity.Name())
-			assert.Equal(t, simulator.EntityKind("HPAAutoscaler"), rawSubject.autoscalerEntity.Kind())
+			assert.Equal(t, simulator.EntityKind("Autoscaler"), rawSubject.autoscalerEntity.Kind())
 		})
 	})
 
 	describe("KindStocked()", func() {
-		it("accepts HPA Autoscalers", func() {
-			assert.Equal(t, subject.KindStocked(), simulator.EntityKind("HPAAutoscaler"))
+		it("accepts Autoscalers", func() {
+			assert.Equal(t, subject.KindStocked(), simulator.EntityKind("Autoscaler"))
 		})
 	})
 
@@ -137,7 +137,7 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 			})
 
-			describe("the autoscaler was able to make a recommendation", func() {
+			describe("the HPA autoscaler was able to make a recommendation", func() {
 				describe("to scale up", func() {
 					it.Before(func() {
 						envFake.ThePlugin.(*FakePluginPartition).scaleTo = 8
@@ -207,6 +207,68 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				it("calculated average cpu utilization value is 25%", func() {
 					index := len(envFake.TheCPUUtilizations) - 1
 					assert.Less(t, math.Abs(envFake.TheCPUUtilizations[index].CPUUtilization-25.0), 1e-5)
+				})
+			})
+		})
+
+		describe("driving the VPA autoscaler", func() {
+			describe("the VPA autoscaler was able to make a recommendation", func() {
+				describe("to scale", func() {
+					it.Before(func() {
+						rawCluster := cluster.(*clusterModel)
+						failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+						replica := NewReplicaEntity(envFake, &failedSink)
+						replica.(*replicaEntity).totalCPUCapacityMillisPerSecond = 100
+						err := rawCluster.replicasActive.Add(replica)
+						assert.NoError(t, err)
+						envFake.ThePlugin.(*FakePluginPartition).verticalRec = []*proto.RecommendedPodResources{
+							{
+								PodName:      string(replica.Name()),
+								LowerBound:   150,
+								UpperBound:   500,
+								Target:       250,
+								ResourceName: "cpu",
+							},
+						}
+						ent := subject.Remove(nil)
+						err = subject.Add(ent)
+						assert.NoError(t, err)
+					})
+					it("schedules metrics_tick for updated replica", func() {
+						assert.Equal(t, simulator.MovementKind("metrics_tick"), envFake.Movements[0].Kind())
+					})
+					it("schedules movements into the ReplicasActive stock", func() {
+						assert.Equal(t, simulator.MovementKind("create_updated_replica"), envFake.Movements[1].Kind())
+					})
+					it("schedules movements into the ReplicasTerminating stock", func() {
+						assert.Equal(t, simulator.MovementKind("evict_replica"), envFake.Movements[2].Kind())
+					})
+				})
+
+				describe("not to scale", func() {
+					it.Before(func() {
+						rawCluster := cluster.(*clusterModel)
+						failedSink := simulator.NewSinkStock("fake-requestsFailed", "Request")
+						replica := NewReplicaEntity(envFake, &failedSink)
+						replica.(*replicaEntity).totalCPUCapacityMillisPerSecond = 100
+						err := rawCluster.replicasActive.Add(replica)
+						assert.NoError(t, err)
+						envFake.ThePlugin.(*FakePluginPartition).verticalRec = []*proto.RecommendedPodResources{
+							{
+								PodName:      string(replica.Name()),
+								LowerBound:   50,
+								UpperBound:   500,
+								Target:       250,
+								ResourceName: "cpu",
+							},
+						}
+						ent := subject.Remove(nil)
+						err = subject.Add(ent)
+						assert.NoError(t, err)
+					})
+					it("schedules no movements apart from metrics_tick", func() {
+						assert.Len(t, envFake.Movements, 1)
+					})
 				})
 			})
 		})

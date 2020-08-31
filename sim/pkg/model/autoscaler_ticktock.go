@@ -40,7 +40,7 @@ func (asts *autoscalerTicktockStock) Name() simulator.StockName {
 }
 
 func (asts *autoscalerTicktockStock) KindStocked() simulator.EntityKind {
-	return "HPAAutoscaler"
+	return "Autoscaler"
 }
 
 func (asts *autoscalerTicktockStock) Count() uint64 {
