@@ -342,8 +342,6 @@ so that `AutoscalerTicktockStock` is both of the `From()` and `To()` stocks in t
 Movements. On each `Add()` the stock will drive the actual HPA and VPA, prompting it to
 calculate new desired values.
 
-### Example: Metrics Ticktock
-//TODO 
 ### Example: Replicas
 
 Replicas are the unit that the HPA and VPA are scaling up and down (HPA in terms of quantity, 
@@ -374,6 +372,34 @@ to simulation accuracy will probably come from breaking that Stock into finer de
 Replicas are represented with the `ReplicaEntity`, a specialisation of Entity. The
 specialisation holds logic necessary to activate and deactivate a replica in the Kubernetes.
 
+### Example: Metrics Ticktock
+
+Every replica (when it becomes active) is triggered on a `metricsTickInterval`, defaulting to 10 seconds. 
+Upon each `metricsTickInterval` it updates its statistics and pass them to autoscaler with a lag 4 seconds.
+
+The Movements graph for Metrics is:
+
+```
+           +--------+
+           |        |                              
+           |10s     |                                      
+MetricsTicktock     |
+       |   ^        |
+       |   |________| 
+       |
+       | 
+       V                               4s 
+     MetricsSource --> MetricsPipeline --> MetricsSink --> Kubernetes autoscalers
+```
+ 
+ The diagram shows five possible Movements:
+ 
+ * `metrics_tick`, get metrics from replica. It's scheduled when replica is activated and rescheduled 
+    every metrics tick
+ * `send_metrics_to_pipeline`, pass metrics to pipeline. It's scheduled every metrics tickn
+ * `send_metrics_to_sink`, pass metrics to sink in order to send them to autoscaler 
+    after 4 seconds it cames to pipeline
+ 
 ### Example: Requests
 
 Indirectly, Requests are the signal that the Horizontal Pod Autoscaler and the Vertical 
