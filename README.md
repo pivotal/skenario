@@ -15,10 +15,12 @@ for background and notes.
 
 ## Web GUI Usage
 
-First, launch the server:
+First, build plugins. See [the Makefile].  
+
+Second, go to the sim folder and launch the server:
 
 ```
-$ go run cmd/skenario/main.go
+$ go run cmd/skenario/main.go ../build/plugin-k8s ../build/plugin-k8s-vpa
 ```
 
 Then go to [https://localhost:3000](https://localhost:3000) to see the user interface.
