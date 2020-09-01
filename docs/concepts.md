@@ -174,11 +174,11 @@ These are the main methods for interacting with a Stock. In general, this is whe
 most special-case simulation logic should be placed, because these are the methods
 called during a Movement.
 
-Note that `Remove()` does not allow the caller to select _which_ Entity to remove.
-Only that they will receive _an_ Entity, of the Stock's choosing.
+Note that `Remove()` does allow the caller to select _which_ Entity to remove.
+Also the caller is able to omit saying which Entity to remove and receive _an_ Entity, of the Stock's choosing.
 
 These methods are the main extension points for Skenario. Several specialised
-Stocks (eg RequestsBufferedStock, TrafficSource) implement simulation logic as part
+Stocks (eg RequestsRoutingStock, TrafficSource) implement simulation logic as part
 of their `Add()` or `Remove()` methods. Several of these wrap a simpler delegate
 Through stock.
 
@@ -196,20 +196,24 @@ ReplicasTerminated Stock: once an Entity reaches it, it should never be able to
 leave.
 
 A Stock with both `Add()` and `Remove()` is a Through Stock.
+There are two implementations of the generic through stock. One based on an array 
+providing O(1) list operations (e.g. for round-robin load balancing on Replicas) 
+and one based on a map provide O(n) list operations, but O(1) Add and Remove (e.g. for Request entities).
 
 ### Movements
 
 Movements are the main substitute for "events" in the DES meaning of the term. The
 core simulation loop iterates over Movements that have been Scheduled.
 
-Each Movement has four key values: Kind, OccursAt, From and To. The Kind is useful
-to group together Movements with different particulars. OccursAt is the point in
+Each Movement has four key values: Kind, OccursAt, From and To, and one optional value: WhatToMove. 
+The Kind is useful to group together Movements with different particulars. OccursAt is the point in
 simulation time at which the Movement is intended to occur. The "From" and "To"
 fields point to particular Stocks that the Environment will Remove() from and
-Add() to.
-
-Not included in Movement is a reference to a particular Entity. Instead, as noted
-above, the responsibility for selecting which Entity to move rests with the Source Stock.
+Add() to. WhatToMove is a reference to a particular Entity. If we are intended 
+to highlight which Entity we move (e.g. when we remove a specific Replica as a part of 
+updating Replicas to stick to vertical scaling recommendations), we use "WhatToMove" field 
+to point to a particular Entity. We can omit this field and the responsibility for 
+selecting which Entity to move rests with the Source Stock.  
 
 #### Relationship to the Discrete Event Simulation concept of Events
 
@@ -327,21 +331,23 @@ they were ignored.
 
 ### Example: Autoscaler Ticktock
 
-In its natural environment, the Horizontal Pod Autoscaler (HPA) is triggered on a
-`TickInterval`, defaulting to 15 seconds. Upon each `TickInterval` it updates its
-statistics and recalculates its desired number of replicas.
+In its natural environment, the Horizontal Pod Autoscaler (HPA) and The Vertical Pod Autoscaler (VPA) 
+are triggered on a `TickInterval`, defaulting to 15 seconds. Upon each `TickInterval` HPA recalculates 
+its desired number of replicas while VPA updates recommendations regarding size of replicas
+ in terms of cpu capacity.
 
 The `AutoscalerTicktockStock` is used to manage this regular behaviour. At creation
 time, Movements from the `AutoscalerTicktockStock` back into itself are scheduled,
 so that `AutoscalerTicktockStock` is both of the `From()` and `To()` stocks in the
-Movements. On each `Add()` the stock will drive the actual HPA, prompting it to update
-its statistics and calculate a new desired value.
+Movements. On each `Add()` the stock will drive the actual HPA and VPA, prompting it to
+calculate new desired values.
 
 ### Example: Replicas
 
-Replicas are the unit that the HPA is scaling up and down. The responsiveness of the
-overall system depends in no small part on how quickly Replicas can become active and
-able to process incoming traffic. The Movements graph for Replicas is:
+Replicas are the unit that the HPA and VPA are scaling up and down (HPA in terms of quantity, 
+VPA - size). The responsiveness of the overall system depends in no small part on 
+how quickly Replicas can become active and able to process incoming traffic. 
+The Movements graph for Replicas is:
 
 ```
                            +--------------------------------------+
@@ -366,12 +372,40 @@ to simulation accuracy will probably come from breaking that Stock into finer de
 Replicas are represented with the `ReplicaEntity`, a specialisation of Entity. The
 specialisation holds logic necessary to activate and deactivate a replica in the Kubernetes.
 
+### Example: Metrics Ticktock
+
+Every replica (when it becomes active) is triggered on a `metricsTickInterval`, defaulting to 10 seconds. 
+Upon each `metricsTickInterval` it updates its statistics and pass them to autoscaler with a lag 4 seconds.
+
+The Movements graph for Metrics is:
+
+```
+           +--------+
+           |        |                              
+           |10s     |                                      
+MetricsTicktock     |
+       |   ^        |
+       |   |________| 
+       |
+       | 
+       V                               4s 
+     MetricsSource --> MetricsPipeline --> MetricsSink --> Kubernetes autoscalers
+```
+ 
+ The diagram shows five possible Movements:
+ 
+ * `metrics_tick`, get metrics from replica. It's scheduled when replica is activated and rescheduled 
+    every metrics tick
+ * `send_metrics_to_pipeline`, pass metrics to pipeline. It's scheduled every metrics tickn
+ * `send_metrics_to_sink`, pass metrics to sink in order to send them to autoscaler 
+    after 4 seconds it cames to pipeline
+ 
 ### Example: Requests
 
-Indirectly, Requests are the signal that the Horizontal Pod Autoscaler is trying to respond
-to. In a traditional simulation these are called "arrivals". Unlike traditional
-simulation, the configuration of the simulated system varies throughout the simulation
-as the HPA changes its desired Replica count.
+Indirectly, Requests are the signal that the Horizontal Pod Autoscaler and the Vertical 
+Pod Autoscaler are trying to respond to. In a traditional simulation these are called 
+"arrivals". Unlike traditional simulation, the configuration of the simulated system varies 
+throughout the simulation as the HPA changes its desired Replica count.
 
 The Movements graph for Requests is:
  
