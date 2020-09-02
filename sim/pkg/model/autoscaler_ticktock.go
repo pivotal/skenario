@@ -67,7 +67,6 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	asts.adjustHorizontally(&currentTime)
 	asts.adjustVertically(&currentTime)
 
-	//calculate CPU utilization
 	asts.calculateCPUUtilization()
 
 	return nil
