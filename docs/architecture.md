@@ -61,6 +61,33 @@ Implementations provide 4 callback functions, 2 input and 2 output.
 * (output) 	HorizontalRecommendation - a request for a recommended scale in a horizontal way, given prior input callbacks.
 * (output) 	VerticalRecommendation - a request for a recommended scale in a vertical way, given prior input callbacks.
 
+### Event
+
+The Event callback informs the Implementation about the state of the simulated cluster. Each event is scoped to an environment id. 
+Every Scenario begins with the instantiation of a Simulation Environment with a unique environment id. The first event will always be CREATE Autoscaler.
+And the last event will always be DELETE Autoscaler.
+
+The CREATE Autoscaler event includes an opaque (to the Simulation) YAML blob and a string type for convenience.
+This should be a meaningful Kubernetes object which the Implementation can use to configure the environment's autoscaler for testing.
+E.g. Kubernetes would accept a HorizontalPodAutoscaler with a type of "hpa.v2beta2.autoscaling.k8s.io" or 
+a VerticalPodAutoscaler with a type of "vpa.v1.autoscaling.k8s.io"(example).
+
+The CREATE Pod event will provide basic resource request and state information on a pod in the simulated cluster.
+
+### Stat
+The Stat callback informs the Implementation about system statistics such as pod CPU usage and request concurrency. 
+The Scenario includes a parameter which determines how often to send stats.
+
+### HorizontalRecommendation
+
+The HorizontalRecommendation callback requests a desired number of pods from the Implementation. 
+The Scenario will include a parameter which determines how often to request a recommendation.
+
+### VerticalRecommendation
+
+The HorizontalRecommendation callback requests a desired size for pods from the Implementation. 
+The Scenario will include a parameter which determines how often to request a recommendation.
+
 ##Dispatcher 
 
 In the whole architecture "dispatcher" has a role of a manager.
@@ -132,8 +159,14 @@ Skenario <--- Dispatcher <--- HPA plugin <--- Kubernetes
 
 ### HPA plugin
 
-plugin-k8s is the HPA plugin. It wraps the HPA controller. 
+plugin-k8s is the HPA plugin. The HPA plugin creates a HorizontalController 
+for each Simulation Environment. It keeps track of pods and stats per environment 
+and provides them to the controller via mocks and fakes, injected at construction.
 
+Instead of starting the controller (which runs goroutines) the plugin drives 
+the controller by calling the reconcileAutoscaler method with the current HPA object. 
+The controller updates the HPA object through a reactor on the fake client.
+ 
 ## Vertical scaling in Skenario
 
 For more information how Skenario scales vertically see [concepts.md].
@@ -163,10 +196,23 @@ Skenario <--- Dispatcher <--- VPA plugin <--- Kubernetes
 
 ```
 
-
-
 ### VPA plugin
 
-plugin-k8s-vpa is the VPA plugin. It wraps the VPA recommender.  
+plugin-k8s-vpa is the VPA plugin. As vertical scaling is more complicated 
+than horizontal we are interested only in the recommender component and 
+ignore other parts and simulate their work in Skenario.
+The VPA plugin creates a Recommender for each Simulation Environment. 
+It keeps track of pods and stats per environment and provides them to the recommender
+via mocks and fakes, injected at construction.
+
+The plugin drives the recommender by calling the runOnce method with the current VPA object. 
+The recommender updates the VPA object through a reactor on the fake client.  
 
 ## Metrics lifecycle
+
+The Scenario includes a parameter which determines how often to send statistics.
+System statistics such as pod CPU usage and request concurrency go the following way
+    - Skenario asks pods to give metrics
+    - Skenario passes metrics per pod to dispatcher
+    - Dispatcher passes metrics to plugins
+    - Plugins pass metrics to the autoscalers
