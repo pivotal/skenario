@@ -129,6 +129,15 @@ VerticalRecommendation ----         > runOnce() --------------------
 ```
 The diagram above shows how Skenario communicates with Kubernetes at a high level.
 
+## Metrics lifecycle
+
+The Scenario includes a parameter which determines how often to send statistics.
+System statistics such as pod CPU usage and request concurrency go the following way
+    - Skenario asks pods to give metrics
+    - Skenario passes metrics per pod to dispatcher
+    - Dispatcher passes metrics to plugins
+    - Plugins pass metrics to the autoscalers
+
 ## Horizontal scaling in Skenario
 
 For more information how Skenario scales horizontally see [concepts.md].
@@ -207,12 +216,3 @@ via mocks and fakes, injected at construction.
 
 The plugin drives the recommender by calling the runOnce method with the current VPA object. 
 The recommender updates the VPA object through a reactor on the fake client.  
-
-## Metrics lifecycle
-
-The Scenario includes a parameter which determines how often to send statistics.
-System statistics such as pod CPU usage and request concurrency go the following way
-    - Skenario asks pods to give metrics
-    - Skenario passes metrics per pod to dispatcher
-    - Dispatcher passes metrics to plugins
-    - Plugins pass metrics to the autoscalers
