@@ -24,11 +24,11 @@ the screen showing what happened during the simulation.
 ```   
             
                             plugin-k8s --- Kubernetes
-                sk-plugin /                  /horizontal.go
-         sk-plugin       / 
+                    plugin /                  /horizontal.go
+            plugin       / 
 simulator <--> dispatcher 
                          \ 
-                sk-plugin \
+                   plugin \
                           plugin-k8s-vpa --- Autoscaler
                                                /recommender.go 
 
@@ -38,13 +38,14 @@ simulator <--> dispatcher
 * `dispatcher` - responsible for plugin management
 * `plugin-k8s, plugin-k8s-vpa` - autoscalers (hpa and vpa)wrapped in order to implement 
   the autoscaler interface and to be driven deterministically by an injected clock
-* `sk-plugin` - Autoscaler Interface 
+* `plugin` - Autoscaler Interface 
 
 The idea of architecture with plugins is to make the autoscaling part be out of the scope 
 Simulation environment. Skenario could support multiple Implementations without modifying 
 the core Simulation Environment. In other words, adding new Implementations would not require 
 updating the Simulation Environment.
-Plugins are started in a separate process by Hashicorp go-plugin. Communication is done over gRPC. 
+Plugins are started in a separate process by Hashicorp go-plugin. Communication is done over STDIN and STDOUT 
+using gRPC as a serialization mechanism. 
 
 ##Autoscaler Interface
 
@@ -208,8 +209,37 @@ Skenario <--- Dispatcher <--- VPA plugin <--- Kubernetes
 ### VPA plugin
 
 plugin-k8s-vpa is the VPA plugin. As vertical scaling is more complicated 
-than horizontal we are interested only in the recommender component and 
-ignore other parts and simulate their work in Skenario.
+than horizontal. Basically, we have 3 components in VPA - recommender, updater and admission controller.
+
+* Recommender - it monitors the current and past resource consumption and, based on it, provides recommended values containers' 
+  cpu and memory requests.
+  
+* Updater - it checks which of the managed pods have correct resources set and, if not, kills them so that they can 
+  be recreated by their controllers with the updated requests.
+
+* Admission Plugin - it sets the correct resource requests on new pods 
+  (either just created or recreated by their controller due to Updater's activity).
+  
+We are interested only in the recommender component and ignore other parts and simulate their work 
+in Skenario. We just get the recommendations from the real recommender and stick to the following algorithm
+to handle these recommendations: 
+
+ - Iterate through replicas 
+ - Check if we need to update the replica
+ - Is the resourceRequest < lowerBound of or > UpperBound => update
+    - If we need to update this replica
+        - We evict this replica 
+        - We create a new one according to the recommendation (set "Target" value as the resource request for a new replica)
+
+The recommendation has the following structure:
+
+RecommendedPodResources{
+	LowerBound   int32 
+	UpperBound   int32 
+	Target       int32  
+	ResourceName string 
+}  
+  
 The VPA plugin creates a Recommender for each Simulation Environment. 
 It keeps track of pods and stats per environment and provides them to the recommender
 via mocks and fakes, injected at construction.
