@@ -40,8 +40,8 @@ simulator <--> dispatcher
   the autoscaler interface and to be driven deterministically by an injected clock
 * `sk-plugin` - Autoscaler Interface 
 
-The idea of architecture with plugins is to make autoscaling part be out of the scope of 
-the Simulation environment. Skenario could support multiple Implementations without modifying 
+The idea of architecture with plugins is to make the autoscaling part be out of the scope 
+Simulation environment. Skenario could support multiple Implementations without modifying 
 the core Simulation Environment. In other words, adding new Implementations would not require 
 updating the Simulation Environment.
 Plugins are started in a separate process by Hashicorp go-plugin. Communication is done over gRPC. 
@@ -51,8 +51,8 @@ Plugins are started in a separate process by Hashicorp go-plugin. Communication 
 sk-plugin defines a proto for communication between a simulator and an autoscaler.  
 Plugins run out-of-process and therefore can be implemented in any language. 
 There are two plugins implementing the sk-plugin protocol. plugin-k8s wraps the HPA controller, 
-plugin-k8s-vpa wraps the VPA recommender. Also dispatcher implements the sk-plugin protocol, but it 
-is resposible for passing the right data to the right plugin. 
+plugin-k8s-vpa wraps the VPA recommender. Also, dispatcher implements the sk-plugin protocol, but it 
+is responsible for passing the right data to the right plugin. 
 
 Implementations provide 4 callback functions, 2 input and 2 output.
 
@@ -76,25 +76,25 @@ The CREATE Pod event will provide basic resource request and state information o
 
 ### Stat
 The Stat callback informs the Implementation about system statistics such as pod CPU usage and request concurrency. 
-The Scenario includes a parameter which determines how often to send stats.
+The Scenario includes a parameter that determines how often to send stats.
 
 ### HorizontalRecommendation
 
 The HorizontalRecommendation callback requests a desired number of pods from the Implementation. 
-The Scenario will include a parameter which determines how often to request a recommendation.
+The Scenario will include a parameter that determines how often to request a recommendation.
 
 ### VerticalRecommendation
 
-The HorizontalRecommendation callback requests a desired size for pods from the Implementation. 
-The Scenario will include a parameter which determines how often to request a recommendation.
+The HorizontalRecommendation callback requests the desired size for pods from the Implementation. 
+The Scenario will include a parameter that determines how often to request a recommendation.
 
 ##Dispatcher 
 
-In the whole architecture "dispatcher" has a role of a manager.
-Dispatcher is responsible for plugin lifecycle management and communication with it.
-The idea is to delegate that work to dispatcher is that we can connect as many plugins as we want
-and it does not effect Skenario at all. Skenario just considers dispatcher as a plugin and
-communicate with it as with a plugin. All multi-plugable logic is hidden in dispatcher.
+In the whole architecture "dispatcher" has the role of a manager.
+The dispatcher is responsible for plugin lifecycle management and communication with it.
+The idea is to delegate that work to the dispatcher is that we can connect as many plugins as we want
+and it does not affect Skenario at all. Skenario just considers the dispatcher as a plugin and
+communicate with it as with a plugin. All multi-pluggable logic is hidden in the dispatcher.
 
 Dispatcher knows: 
 * which plugins we need to connect and with which configuration
@@ -106,7 +106,7 @@ it knows which plugins have this method.
 ## Skenario and Kubernetes integration
 
 All communication with HPA and VPA is done over plugins. The interesting thing is to 
-look through Skenario and Kubernetes integration if we skip plugin's layer.
+look through Skenario and Kubernetes integration if we skip the plugin's layer.
 
 ```
 Skenario                            Kubernetes
@@ -131,10 +131,10 @@ The diagram above shows how Skenario communicates with Kubernetes at a high leve
 
 ## Metrics lifecycle
 
-The Scenario includes a parameter which determines how often to send statistics.
+The Scenario includes a parameter that determines how often to send statistics.
 System statistics such as pod CPU usage and request concurrency go the following way
     - Skenario asks pods to give metrics
-    - Skenario passes metrics per pod to dispatcher
+    - Skenario passes metrics per pod to the dispatcher
     - Dispatcher passes metrics to plugins
     - Plugins pass metrics to the autoscalers
 
@@ -145,18 +145,18 @@ Horizontal scaling looks like communication between components.
 
 Skenario asks dispatcher:
     - Dispatcher, tell me how many pods do I need?
-Dispatcher gets a request and delegates it to the HPA plugin:
+The dispatcher gets a request and delegates it to the HPA plugin:
     - The HPA plugin, tell me how many pods does Skenario need?
 The HPA plugin gets a request and delegates it to Kubernetes:     
     - Kubernetes, tell me how many pods does Skenario need?
-Kubernetes get a request and gives a response, the number of pods, to the HPA plugin:
-    - The HPA plugin, here is the number of pods which Skenario needs.
+Kubernetes gets a request and gives a response, the number of pods, to the HPA plugin:
+    - The HPA plugin, here is the number of pods that Skenario needs.
 The HPA plugin gets a response and passes it to the dispatcher:
-    - Dispatcher, here is the number of pods which Skenario needs.
-Dispatcher gets a response and passes it to Skenario:
-    - Skenario, here is the number of pods which you need.
+    - Dispatcher, here is the number of pods that Skenario needs.
+The dispatcher gets a response and passes it to Skenario:
+    - Skenario, here is the number of pods that you need.
 
-From architecture perspective, the diagram below reflects scaling lifecycle.
+From an architecture perspective, the diagram below reflects the scaling lifecycle.
                                 
 ```
 
@@ -183,19 +183,19 @@ Vertical scaling looks like communication between components.
 
 Skenario asks dispatcher:
     - Dispatcher, tell me which size of pods do I need?
-Dispatcher gets a request and delegates it to the VPA plugin:
+The dispatcher gets a request and delegates it to the VPA plugin:
     - The VPA plugin, tell me which size of pods does Skenario need?
 The VPA plugin gets a request and delegates it to Kubernetes:     
     - Kubernetes, tell me which size of pods does Skenario need?
-Kubernetes get a request and gives a response, the size (cpu capacity) which is
+Kubernetes gets a request and gives a response, the size (cpu capacity) that is
 appropriate for every pod, to the VPA plugin:
     - The VPA plugin, here is the size which is appropriate for every pod in Skenario.
 The HPA plugin gets a response and passes it to the dispatcher:
     - Dispatcher, here is the size which is appropriate for every pod in Skenario.
-Dispatcher gets a response and passes it to Skenario:
+The dispatcher gets a response and passes it to Skenario:
     - Skenario, here is the size which is appropriate for every pod in Skenario.
 
-From architecture perspective, the diagram below reflects scaling lifecycle.
+From an architecture perspective, the diagram below reflects the scaling lifecycle.
                                 
 ```
 
