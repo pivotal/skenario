@@ -123,6 +123,9 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 			cpuRecommendation = recommendation
 		}
 	}
+	if cpuRecommendation == nil {
+		return
+	}
 
 	//Iterate through replicas
 	pods := asts.cluster.ActiveStock().EntitiesInStock()
