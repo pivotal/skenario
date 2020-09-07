@@ -17,7 +17,6 @@ package model
 
 import (
 	"fmt"
-	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -115,20 +114,15 @@ func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
 	if err != nil {
 		panic(err)
 	}
-	//create a map podName -> []recommendedPodResources
-	podToRecommendations := make(map[string][]*proto.RecommendedPodResources, 0)
-	for _, recommendation := range recommendedPodResources {
-		podToRecommendations[recommendation.PodName] = append(podToRecommendations[recommendation.PodName], recommendation)
-	}
 
 	//Iterate through replicas
 	pods := asts.cluster.ActiveStock().EntitiesInStock()
 	for _, pod := range pods {
 		//We have recommendations for the replica
-		for _, recommendation := range podToRecommendations[string((*pod).Name())] {
+		for _, recommendation := range recommendedPodResources {
 			if recommendation.GetResourceName() == "cpu" {
 				//Check if we need to update this replica
-				resourceRequest := int32((*pod).(Replica).GetCPUCapacity())
+				resourceRequest := int64((*pod).(Replica).GetCPUCapacity())
 				if resourceRequest < recommendation.LowerBound || resourceRequest > recommendation.UpperBound {
 					//update
 					//We create new one with recommendations

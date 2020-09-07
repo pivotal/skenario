@@ -223,7 +223,6 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						assert.NoError(t, err)
 						envFake.ThePlugin.(*FakePluginPartition).verticalRec = []*proto.RecommendedPodResources{
 							{
-								PodName:      string(replica.Name()),
 								LowerBound:   150,
 								UpperBound:   500,
 								Target:       250,
@@ -255,7 +254,6 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 						assert.NoError(t, err)
 						envFake.ThePlugin.(*FakePluginPartition).verticalRec = []*proto.RecommendedPodResources{
 							{
-								PodName:      string(replica.Name()),
 								LowerBound:   50,
 								UpperBound:   500,
 								Target:       250,
