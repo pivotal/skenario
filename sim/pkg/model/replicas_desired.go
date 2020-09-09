@@ -77,7 +77,7 @@ func (rds *replicasDesiredStock) Remove(entity *simulator.Entity) simulator.Enti
 			nextTerminate,
 			rds.replicasLaunching,
 			rds.replicasTerminating,
-			&ent,
+			nil,
 		))
 	} else {
 		rds.env.AddToSchedule(simulator.NewMovement(
@@ -85,7 +85,7 @@ func (rds *replicasDesiredStock) Remove(entity *simulator.Entity) simulator.Enti
 			nextTerminate,
 			rds.replicasActive,
 			rds.replicasTerminating,
-			&ent,
+			nil,
 		))
 	}
 
