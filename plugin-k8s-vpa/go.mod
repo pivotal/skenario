@@ -41,7 +41,8 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.17.9
 )
 
-// Checkout https://github.com/autoscaler/autoscaler.git branch plugin
+// Checkout https://github.com/juliababkina/autoscaler.git branch plugin
+// TODO: land these custom changes upstream.
 replace k8s.io/autoscaler/vertical-pod-autoscaler => ../../autoscaler/vertical-pod-autoscaler
 
 // TODO: replace this import with github.com/skenario/plugin
