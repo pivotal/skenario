@@ -222,7 +222,7 @@ func NewAutoscaler(hpaYaml string) (*Autoscaler, error) {
 			}
 			podMetric := metricsapi.PodMetrics{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      stat.PodName,
+					Name:      pod.Name,
 					Namespace: "",
 					Labels:    map[string]string{"key": "value"},
 				},
