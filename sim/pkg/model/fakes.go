@@ -131,10 +131,11 @@ func NewFakeReplica() *FakeReplica {
 }
 
 type FakePluginPartition struct {
-	scaleTimes []int64
-	stats      []*proto.Stat
-	scaleTo    int32
-	plugin     skplug.Plugin
+	scaleTimes  []int64
+	stats       []*proto.Stat
+	scaleTo     int32
+	plugin      skplug.Plugin
+	verticalRec []*proto.RecommendedPodResources
 }
 
 func (fp *FakePluginPartition) Event(time int64, typ proto.EventType, object skplug.Object) error {
@@ -152,8 +153,7 @@ func (fp *FakePluginPartition) HorizontalRecommendation(time int64) (rec int32, 
 }
 
 func (fp *FakePluginPartition) VerticalRecommendation(time int64) (rec []*proto.RecommendedPodResources, err error) {
-	//TODO implement it after injecting vertical scaling in Skenario
-	panic("unimplemented")
+	return fp.verticalRec, nil
 }
 
 func NewFakePluginPartition() *FakePluginPartition {

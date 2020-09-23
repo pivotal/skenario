@@ -55,6 +55,7 @@ type Autoscaler struct {
 	stats       map[string]*proto.Stat
 }
 
+var containerName = "container"
 var checkpointsGCInterval = flag.Duration("checkpoints-gc-interval", 3*time.Second, `How often orphaned checkpoints should be garbage collected`)
 
 // Create a non-concurrent, non-cached informer for simulation.
@@ -207,7 +208,7 @@ func NewAutoscaler(vpaYaml string) (*Autoscaler, error) {
 				Window:    metav1.Duration{Duration: time.Minute},
 				Containers: []metricsapi.ContainerMetrics{
 					{
-						Name: pod.Name,
+						Name: containerName,
 						Usage: v1.ResourceList{
 							v1.ResourceCPU: *resource.NewMilliQuantity(
 								int64(cpu),
@@ -267,7 +268,6 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	//for _, rec := range a.vpa.Status.Recommendation.ContainerRecommendations {
 	//
 	//	recommendation = append(recommendation, &proto.RecommendedPodResources{
-	//		PodName:      rec.ContainerName,
 	//		LowerBound:   rec.LowerBound.Cpu().Value(),
 	//		UpperBound:   rec.UpperBound.Cpu().Value(),
 	//		Target:       rec.Target.Cpu().Value(),
@@ -275,7 +275,6 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	//	})
 	//
 	//	recommendation = append(recommendation, &proto.RecommendedPodResources{
-	//		PodName:      rec.ContainerName,
 	//		LowerBound:   rec.LowerBound.Memory().Value(),
 	//		UpperBound:   rec.UpperBound.Memory().Value(),
 	//		Target:       rec.Target.Memory().Value(),
@@ -283,28 +282,26 @@ func (a *Autoscaler) VerticalRecommendation(now int64) ([]*proto.RecommendedPodR
 	//	})
 	//}
 	//TODO remove this code after fulfilling https://github.com/pivotal/skenario/issues/100
-	vpa := a.recommender.GetClusterState().Vpas[model.VpaID{Namespace: "", VpaName: ""}]
+	vpa := a.recommender.GetClusterState().Vpas[model.VpaID{Namespace: "", VpaName: "my-app-vpa"}] //TODO(#114): fix hardcoded vpa name
 	if vpa.Recommendation == nil {
 		return recommendation, nil
 	}
 	for _, rec := range vpa.Recommendation.ContainerRecommendations {
+		if rec.ContainerName == containerName {
+			recommendation = append(recommendation, &proto.RecommendedPodResources{
+				LowerBound:   rec.LowerBound.Cpu().MilliValue(),
+				UpperBound:   rec.UpperBound.Cpu().MilliValue(),
+				Target:       rec.Target.Cpu().MilliValue(),
+				ResourceName: v1.ResourceCPU.String(),
+			})
 
-		//TODO make this part generic
-		recommendation = append(recommendation, &proto.RecommendedPodResources{
-			PodName:      rec.ContainerName,
-			LowerBound:   int32(rec.LowerBound.Cpu().Value()),
-			UpperBound:   int32(rec.UpperBound.Cpu().Value()),
-			Target:       int32(rec.Target.Cpu().Value()),
-			ResourceName: v1.ResourceCPU.String(),
-		})
-
-		recommendation = append(recommendation, &proto.RecommendedPodResources{
-			PodName:      rec.ContainerName,
-			LowerBound:   int32(rec.LowerBound.Memory().Value()),
-			UpperBound:   int32(rec.UpperBound.Memory().Value()),
-			Target:       int32(rec.Target.Memory().Value()),
-			ResourceName: v1.ResourceMemory.String(),
-		})
+			recommendation = append(recommendation, &proto.RecommendedPodResources{
+				LowerBound:   rec.LowerBound.Memory().Value(),
+				UpperBound:   rec.UpperBound.Memory().Value(),
+				Target:       rec.Target.Memory().Value(),
+				ResourceName: v1.ResourceMemory.String(),
+			})
+		}
 	}
 
 	return recommendation, nil
@@ -375,7 +372,7 @@ func (a *Autoscaler) listPods() ([]*v1.Pod, error) {
 			Spec: v1.PodSpec{
 				Containers: []v1.Container{
 					{
-						Name: pod.Name,
+						Name: containerName,
 						Resources: v1.ResourceRequirements{
 							Requests: v1.ResourceList{
 								v1.ResourceCPU: resource.MustParse(strconv.Itoa(int(pod.CpuRequest)) + "m"),

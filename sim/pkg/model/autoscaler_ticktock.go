@@ -17,6 +17,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -39,7 +40,7 @@ func (asts *autoscalerTicktockStock) Name() simulator.StockName {
 }
 
 func (asts *autoscalerTicktockStock) KindStocked() simulator.EntityKind {
-	return "HPAAutoscaler"
+	return "Autoscaler"
 }
 
 func (asts *autoscalerTicktockStock) Count() uint64 {
@@ -62,6 +63,15 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	currentTime := asts.env.CurrentMovementTime()
 
 	asts.cluster.RecordToAutoscaler(&currentTime)
+
+	asts.adjustHorizontally(&currentTime)
+	asts.adjustVertically(&currentTime)
+
+	asts.calculateCPUUtilization()
+
+	return nil
+}
+func (asts *autoscalerTicktockStock) adjustHorizontally(currentTime *time.Time) {
 	autoscalerDesired, err := asts.env.Plugin().HorizontalRecommendation(currentTime.UnixNano())
 	if err != nil {
 		panic(err)
@@ -74,7 +84,7 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 			desiredEntity := simulator.NewEntity("Desired", "Desired")
 			err := asts.desiredSource.Add(desiredEntity)
 			if err != nil {
-				return err
+				panic(err)
 			}
 
 			asts.env.AddToSchedule(simulator.NewMovement(
@@ -98,13 +108,56 @@ func (asts *autoscalerTicktockStock) Add(entity simulator.Entity) error {
 	} else {
 		// do nothing
 	}
-
-	//calculate CPU utilization
-	asts.calculateCPUUtilization()
-
-	return nil
 }
 
+func (asts *autoscalerTicktockStock) adjustVertically(currentTime *time.Time) {
+	recommendedPodResources, err := asts.env.Plugin().VerticalRecommendation(currentTime.UnixNano())
+	if err != nil {
+		panic(err)
+	}
+
+	var cpuRecommendation *proto.RecommendedPodResources
+	//get cpu recommendation
+	for _, recommendation := range recommendedPodResources {
+		if recommendation.GetResourceName() == "cpu" {
+			cpuRecommendation = recommendation
+		}
+	}
+	if cpuRecommendation == nil {
+		return
+	}
+
+	//Iterate through replicas
+	pods := asts.cluster.ActiveStock().EntitiesInStock()
+	for _, pod := range pods {
+		//Check if we need to update this replica
+		resourceRequest := int64((*pod).(Replica).GetCPUCapacity())
+		if resourceRequest < cpuRecommendation.LowerBound || resourceRequest > cpuRecommendation.UpperBound {
+			//update
+			//We create new one with recommendations
+			newReplica := NewReplicaEntity(asts.env, &asts.cluster.(*clusterModel).replicaSource.(*replicaSource).failedSink).(simulator.Entity)
+			newReplica.(*replicaEntity).totalCPUCapacityMillisPerSecond = float64(cpuRecommendation.Target)
+			asts.cluster.LaunchingStock().Add(newReplica)
+
+			asts.env.AddToSchedule(simulator.NewMovement(
+				"create_updated_replica",
+				currentTime.Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay),
+				asts.cluster.LaunchingStock(),
+				asts.cluster.ActiveStock(),
+				&newReplica,
+			))
+
+			//We evict the existent replica
+			asts.env.AddToSchedule(simulator.NewMovement(
+				"evict_replica",
+				currentTime.Add(asts.cluster.Desired().(*replicasDesiredStock).config.LaunchDelay).Add(time.Nanosecond),
+				asts.cluster.ActiveStock(),
+				asts.cluster.TerminatingStock(),
+				pod,
+			))
+		}
+	}
+}
 func (asts *autoscalerTicktockStock) calculateCPUUtilization() {
 	countActiveReplicas := 0.0
 	totalCPUUtilization := 0.0 // total cpuUtilization for all active replicas in percentage
