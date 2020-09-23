@@ -446,3 +446,10 @@ especially if processing time is very long but arrivals are infrequent.
 
 This is a good example of the System Dynamics principle that Stocks create delays and
 that these delays can lead to counter-intuitive non-linear dynamics.
+
+## CPU Model in Skenario
+
+The work of autoscalers is based on the cpu utilization metric.
+Skenario simulates the cpu allocation process and can calculate 
+the cpu utilization at any given time. 
+For more information see [Model with real CPU allocation!](https://docs.google.com/document/d/13FQa8eOeVQktmuHhlPgBm5n9lO7pxMvcK7PzsrL-HWU/edit#heading=h.m3q0jns5jtxq).
