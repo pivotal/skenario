@@ -4,7 +4,7 @@ goals = serve test build-plugin-k8s
 .ONESHELL : $(goals)
 
 run : build
-	./build/sim ./build/plugin-k8s ./build/plugin-k8s-vpa
+	./build/sim ./build/plugin-k8s
 
 build : build-sim build-plugin-k8s build-plugin-k8s-vpa
 
