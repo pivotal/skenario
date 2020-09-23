@@ -17,10 +17,10 @@ for background and notes.
 
 First, build plugins. See [the Makefile].  
 
-Second, go to the sim folder and launch the server:
+Second, launch the server:
 
 ```
-$ go run cmd/skenario/main.go ../build/plugin-k8s ../build/plugin-k8s-vpa
+$ ./build/sim ./build/plugin-k8s ./build/plugin-k8s-vpa
 ```
 
 Then go to [https://localhost:3000](https://localhost:3000) to see the user interface.
